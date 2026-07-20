@@ -285,18 +285,19 @@ func (e *Extractor) ocrRange(ctx context.Context, doc *raster.Doc, slug, ocrDir 
 		}
 		logx.Progress("OCR", i+1, total, "%dx%d px%s · %s",
 			pg.W, pg.H, saved, time.Since(started).Round(time.Second))
-		// Hasil kosong hampir selalu berarti model gagal, bukan halaman benar-benar
-		// kosong. Coba sekali lagi sebelum menerimanya.
+
 		// Pangkas pengulangan degeneratif sebelum disimpan.
-		if res := cleanOCRText(text); res.Removed > 0 || res.Degenerate {
-			text = res.Text
-			if res.Degenerate {
+		if cleanRes := cleanOCRText(text); cleanRes.Removed > 0 || cleanRes.Degenerate {
+			text = cleanRes.Text
+			if cleanRes.Degenerate {
 				notePage(ocrDir, i+1,
 					"keluaran OCR didominasi pengulangan — kemungkinan model macet; perlu ditinjau")
 				logx.Warn("hal %d/%d — keluaran berulang, dipangkas", i+1, total)
 			}
 		}
 
+		// Hasil kosong hampir selalu berarti model gagal, bukan halaman benar-benar
+		// kosong. Coba sekali lagi sebelum menerimanya.
 		if strings.TrimSpace(text) == "" {
 			retry, rerr := c.OCRClient.Vision(ctx, ocrPromptOf(c), pg.PNG,
 				localllm.Params{MaxTokens: c.OCRMaxTokens})
@@ -304,10 +305,18 @@ func (e *Extractor) ocrRange(ctx context.Context, doc *raster.Doc, slug, ocrDir 
 				return fmt.Errorf("OCR hal %d (ulang): %w", i+1, rerr)
 			}
 			text = retry.Text
-			// Pangkas pengulangan degeneratif sebelum disimpan.
-			if res := cleanOCRText(text); res.Removed > 0 || res.Degenerate {
-				text = res.Text
-				if res.Degenerate {
+
+			// [BUGFIX] Cek status terpotong pada hasil retry
+			if retry.Truncated {
+				notePage(ocrDir, i+1,
+					"keluaran OCR terpotong pada percobaan kedua — teks halaman mungkin tidak lengkap")
+				logx.Warn("hal %d/%d — keluaran terpotong (percobaan 2)", i+1, total)
+			}
+
+			// [BUGFIX] Menggunakan variabel cleanRes baru agar tidak menimpa (shadowing) variabel res di atas
+			if cleanRes := cleanOCRText(text); cleanRes.Removed > 0 || cleanRes.Degenerate {
+				text = cleanRes.Text
+				if cleanRes.Degenerate {
 					notePage(ocrDir, i+1,
 						"keluaran OCR didominasi pengulangan — kemungkinan model macet; perlu ditinjau")
 					logx.Warn("hal %d/%d — keluaran berulang, dipangkas", i+1, total)

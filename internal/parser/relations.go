@@ -53,9 +53,12 @@ type Relation struct {
 }
 
 // reCitation menangkap rujukan peraturan: <jenis> [pengubah] Nomor N Tahun YYYY [tentang ...].
+// [UPDATE UU 13/2022 & UU 15/2019] Menambahkan Peraturan Kepala Daerah, Peraturan Desa,
+// dan Peraturan Lembaga Negara sesuai hierarki dan jenis peraturan terbaru.
 var reCitation = regexp.MustCompile(
 	`(?i)(Undang-Undang Dasar|Undang-Undang|Peraturan Pemerintah Pengganti Undang-Undang|` +
-		`Peraturan Pemerintah|Peraturan Presiden|Peraturan Menteri|Peraturan Daerah|` +
+		`Peraturan Pemerintah|Peraturan Presiden|Peraturan Menteri|Peraturan Lembaga Negara|Peraturan Daerah|` +
+		`Peraturan Kepala Daerah|Peraturan Desa|` +
 		`Peraturan Gubernur|Peraturan Bupati|Peraturan Walikota|Peraturan Wali Kota|` +
 		`Qanun Aceh|Qanun|Keputusan Presiden|Instruksi Presiden|Keputusan Menteri)` +
 		`((?:\s+[^,;.()]{1,50}?)?)\s+Nomor\s+([0-9]+[A-Za-z]?)\s+Tahun\s+([0-9]{4})` +

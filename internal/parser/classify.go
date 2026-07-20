@@ -60,7 +60,9 @@ func LooksLegal(pages []string) bool {
 }
 
 // reJudulPeraturan menangkap baris judul peraturan pada halaman sampul.
-var reJudulPeraturan = regexp.MustCompile(`(?i)(UNDANG-UNDANG|PERATURAN DAERAH|PERATURAN PEMERINTAH|PERATURAN PRESIDEN|PERATURAN MENTERI|PERATURAN GUBERNUR|PERATURAN BUPATI|PERATURAN WALI ?KOTA|QANUN)\b[\s\S]{0,80}?\bNOMOR\b`)
+// [UPDATE UU 13/2022 & UU 15/2019] Menambahkan PERATURAN KEPALA DAERAH, PERATURAN DESA,
+// dan PERATURAN LEMBAGA NEGARA sesuai penyesuaian hierarki dan pengakuan jenis peraturan.
+var reJudulPeraturan = regexp.MustCompile(`(?i)(UNDANG-UNDANG|PERATURAN DAERAH|PERATURAN KEPALA DAERAH|PERATURAN DESA|PERATURAN LEMBAGA NEGARA|PERATURAN PEMERINTAH|PERATURAN PRESIDEN|PERATURAN MENTERI|PERATURAN GUBERNUR|PERATURAN BUPATI|PERATURAN WALI ?KOTA|QANUN)\b[\s\S]{0,80}?\bNOMOR\b`)
 
 // LooksLegalProbe adalah gerbang LONGGAR untuk beberapa halaman pertama saat
 // ekstraksi. Tujuannya hanya menyaring PDF yang jelas-jelas bukan peraturan

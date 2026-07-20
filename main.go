@@ -161,7 +161,7 @@ func main() {
 			if ctx.Err() != nil {
 				break
 			}
-			all = append(all, runSource(ctx, cfg, model, ep))
+			all = append(all, runSource(ctx, cancel, cfg, model, ep))
 		}
 		writeSummary(cfg.DataDir, runSummary{
 			StartedAt: start.Format(time.RFC3339),
@@ -193,7 +193,9 @@ func main() {
 }
 
 // runSource menjalankan satu putaran penuh untuk satu endpoint sumber.
-func runSource(ctx context.Context, cfg config.Config, model *localllm.Client, endpoint string) cycleStats {
+// [BUGFIX] Menerima context.CancelFunc agar bisa menghentikan seluruh siklus
+// bila terjadi kegagalan fatal (mis. model OCR tidak bisa dimuat).
+func runSource(ctx context.Context, cancel context.CancelFunc, cfg config.Config, model *localllm.Client, endpoint string) cycleStats {
 	code := downloader.SourceCode(endpoint)
 	p := layout(cfg.DataDir, code)
 	stats := cycleStats{Sumber: code, Endpoint: endpoint}
@@ -215,11 +217,11 @@ func runSource(ctx context.Context, cfg config.Config, model *localllm.Client, e
 	stats.Records = len(records)
 
 	selected := downloader.Select(records, dlCfg)
-	recBySlug := map[string]downloader.Record{}
+	rec_by_slug := map[string]downloader.Record{}
 	slugs := map[string]bool{}
 	for _, r := range selected {
 		s := downloader.Slug(r)
-		recBySlug[s] = r
+		rec_by_slug[s] = r
 		slugs[s] = true
 	}
 	for _, s := range slugsFromDisk(p.pdf) { // PDF lama yang belum tuntas diproses
@@ -264,7 +266,7 @@ func runSource(ctx context.Context, cfg config.Config, model *localllm.Client, e
 			}
 			return stats
 		}
-		parseAll(ctx, cfg, p, code, endpoint, slugs, recBySlug, &stats)
+		parseAll(ctx, cfg, p, code, endpoint, slugs, rec_by_slug, &stats)
 		return stats
 	}
 
@@ -282,7 +284,7 @@ func runSource(ctx context.Context, cfg config.Config, model *localllm.Client, e
 		if ctx.Err() != nil {
 			return stats
 		}
-		rec, known := recBySlug[slug]
+		rec, known := rec_by_slug[slug]
 		logx.Doc(idx+1, len(all), slug)
 
 		// sudah selesai sepenuhnya?
@@ -328,10 +330,11 @@ func runSource(ctx context.Context, cfg config.Config, model *localllm.Client, e
 			if ctx.Err() != nil {
 				return stats
 			}
-			// Model gagal disiapkan: masalah lingkungan, hentikan sumber ini.
+			// Model gagal disiapkan: masalah lingkungan fatal, hentikan seluruh siklus.
 			if localllm.IsLoadError(err) {
 				stats.Error = err.Error()
-				logx.Fatal(slug, "model tidak dapat disiapkan: %v", err)
+				logx.Fatal(slug, "model tidak dapat disiapkan, menghentikan siklus: %v", err)
+				cancel() // [BUGFIX] Hentikan sumber lain agar tidak spamming error
 				return stats
 			}
 			if extractor.ReportResult(exCfg, slug, err); err == extractor.ErrRejected {
@@ -342,7 +345,7 @@ func runSource(ctx context.Context, cfg config.Config, model *localllm.Client, e
 		extractor.ReportResult(exCfg, slug, nil)
 
 		// 3) parse dokumen ini
-		parseOne(cfg, p, code, endpoint, slug, recBySlug[slug], &stats)
+		parseOne(cfg, p, code, endpoint, slug, rec_by_slug[slug], &stats)
 	}
 
 	logx.Info("%s: %d OK · %d peringatan · %d gagal · %d sudah ada · %d ditolak · %d belum siap · %d menyerah",

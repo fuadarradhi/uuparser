@@ -11,7 +11,9 @@ import (
 
 // Penanda penutup: setelah ini, konten adalah pengesahan/tempat-tanggal/tanda tangan,
 // bukan bagian struktur pasal.
-var reClosing = regexp.MustCompile(`(?i)^(ditetapkan\s+di|diundangkan\s+di|agar\s+setiap\s+orang|lembaran\s+(negara|daerah)\b|tambahan\s+lembaran)`)
+// [UPDATE UU 15/2019 & UU 13/2022] Menambahkan deteksi "Berita Negara" dan "Berita Daerah"
+// sebagai sarana pengundangan resmi yang setara dengan Lembaran Negara/Daerah.
+var reClosing = regexp.MustCompile(`(?i)^(ditetapkan\s+di|diundangkan\s+di|agar\s+setiap\s+orang|lembaran\s+(negara|daerah)\b|tambahan\s+lembaran|berita\s+(negara|daerah)\b|tambahan\s+berita)`)
 
 func parseBatangTubuh(lines []string) *builder {
 	b := newBuilder(SectionBatangTubuh)

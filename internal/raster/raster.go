@@ -174,16 +174,14 @@ func cropMargins(img image.Image, pad int) image.Image {
 		return lum < 40000
 	}
 
-	// kepadatan tinta per baris & kolom
-	step := 1
-	if w*h > 2_000_000 {
-		step = 2 // cuplik pada halaman besar agar tetap murah
-	}
+	// [BUGFIX] Hilangkan step untuk akurasi piksel persis. Loop Go sangat cepat
+	// untuk ukuran w*h standar (2-4 juta piksel), dan ini menghindari bug indeks
+	// array meleset akibat step > 1.
 	rowInk := make([]int, h)
 	colInk := make([]int, w)
 	total := 0
-	for y := 0; y < h; y += step {
-		for x := 0; x < w; x += step {
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
 			if dark(b.Min.X+x, b.Min.Y+y) {
 				rowInk[y]++
 				colInk[x]++
@@ -197,14 +195,14 @@ func cropMargins(img image.Image, pad int) image.Image {
 
 	// Percobaan pertama memakai ambang kecil agar bintik noda dan bayangan tepi
 	// hasil pindai tidak menggagalkan pemotongan.
-	rowMin := maxInt(2, (w/step)/500)
-	colMin := maxInt(2, (h/step)/500)
-	top, bottom, left, right, ok := inkBox(rowInk, colInk, rowMin, colMin, step)
+	rowMin := maxInt(2, w/500)
+	colMin := maxInt(2, h/500)
+	top, bottom, left, right, ok := inkBox(rowInk, colInk, rowMin, colMin)
 
 	// Verifikasi keutuhan: bila ada tinta di luar kotak (mis. baris samar), ulangi
 	// dengan ambang paling ketat sehingga seluruh isi pasti tercakup.
 	if ok && !keepsAllInk(rowInk, colInk, top, bottom, left, right, total) {
-		top, bottom, left, right, ok = inkBox(rowInk, colInk, 1, 1, step)
+		top, bottom, left, right, ok = inkBox(rowInk, colInk, 1, 1)
 	}
 	if !ok {
 		return img
@@ -244,11 +242,12 @@ func cropMargins(img image.Image, pad int) image.Image {
 }
 
 // inkBox mencari kotak pembatas isi berdasarkan ambang kepadatan yang diberikan.
-func inkBox(rowInk, colInk []int, rowMin, colMin, step int) (top, bottom, left, right int, ok bool) {
-	top = firstAbove(rowInk, rowMin, step, false)
-	bottom = firstAbove(rowInk, rowMin, step, true)
-	left = firstAbove(colInk, colMin, step, false)
-	right = firstAbove(colInk, colMin, step, true)
+// [BUGFIX] Parameter step dihilangkan agar firstAbove mengecek setiap indeks.
+func inkBox(rowInk, colInk []int, rowMin, colMin int) (top, bottom, left, right int, ok bool) {
+	top = firstAbove(rowInk, rowMin, false)
+	bottom = firstAbove(rowInk, rowMin, true)
+	left = firstAbove(colInk, colMin, false)
+	right = firstAbove(colInk, colMin, true)
 	ok = top >= 0 && bottom >= top && left >= 0 && right >= left
 	return
 }
@@ -273,16 +272,17 @@ func keepsAllInk(rowInk, colInk []int, top, bottom, left, right, total int) bool
 
 // firstAbove mencari indeks pertama (atau terakhir bila fromEnd) yang nilainya
 // melampaui ambang.
-func firstAbove(vals []int, min, step int, fromEnd bool) int {
+// [BUGFIX] Menghapus parameter step agar tidak melewatkan indeks ganjil (misal y=1).
+func firstAbove(vals []int, min int, fromEnd bool) int {
 	if fromEnd {
-		for i := len(vals) - 1; i >= 0; i -= step {
+		for i := len(vals) - 1; i >= 0; i-- {
 			if vals[i] >= min {
 				return i
 			}
 		}
 		return -1
 	}
-	for i := 0; i < len(vals); i += step {
+	for i := 0; i < len(vals); i++ {
 		if vals[i] >= min {
 			return i
 		}
