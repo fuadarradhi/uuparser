@@ -44,8 +44,9 @@ var (
 // classifyPage1 meminta model membaca halaman pertama, lalu MEMVALIDASI
 // jawabannya sebelum dipakai. Nilai yang tidak masuk akal dibuang (dikosongkan)
 // alih-alih dipercaya — model boleh salah, database tidak boleh ikut salah.
-func classifyPage1(ctx context.Context, tc *localllm.TextClient, systemPrompt, page1 string) (store.DocMeta, []string, []string, error) {
-	res, err := tc.Generate(ctx, systemPrompt, page1)
+func classifyPage1(ctx context.Context, tc *localllm.TextClient, systemPrompt, page1 string,
+	p localllm.TextParams) (store.DocMeta, []string, []string, error) {
+	res, err := tc.GenerateWith(ctx, systemPrompt, page1, p)
 	if err != nil {
 		return store.DocMeta{}, nil, nil, err
 	}
@@ -130,29 +131,38 @@ func trimList(in []string) []string {
 
 // fixPage meminta model memperbaiki salah ketik/struktur satu halaman.
 //
-// Bila model gagal, mengembalikan teks kosong, atau hasilnya menyusut drastis
-// (indikasi model meringkas alih-alih memperbaiki — dilarang oleh prompt),
-// hasilnya DIBUANG dan teks mentah yang dipakai. Lebih baik menyisakan salah
-// ketik daripada kehilangan isi peraturan.
-func fixPage(ctx context.Context, tc *localllm.TextClient, systemPrompt, ocrText string) (fixed string, ok bool) {
+// Membedakan DUA jenis kegagalan yang sangat berbeda akibatnya:
+//
+//	galat (error != nil) — pembatalan (Ctrl+C), model gagal dimuat, konteks
+//	    habis. Ini masalah PADA SISI KITA, bukan pada dokumennya. Wajib
+//	    dikembalikan ke pemanggil supaya dokumen dikembalikan ke antrian dan
+//	    dicoba lagi utuh. Memperlakukannya seperti "keluaran buruk" berarti
+//	    halaman ditandai selesai tanpa perbaikan SELAMANYA — model yang
+//	    bermasalah, tetapi datanya yang menanggung akibat.
+//
+//	ok == false tanpa galat — model menjawab, tetapi jawabannya tidak layak
+//	    (kosong, atau menyusut drastis sehingga jelas meringkas alih-alih
+//	    memperbaiki). Di sini memang benar memakai teks OCR mentah: lebih baik
+//	    menyisakan salah ketik daripada kehilangan isi peraturan.
+func fixPage(ctx context.Context, tc *localllm.TextClient, systemPrompt, ocrText string,
+	p localllm.TextParams) (fixed string, ok bool, err error) {
 	if strings.TrimSpace(ocrText) == "" {
-		return "", false
+		return "", false, nil
 	}
-	res, err := tc.Generate(ctx, systemPrompt, ocrText)
+	res, err := tc.GenerateWith(ctx, systemPrompt, ocrText, p)
 	if err != nil {
-		return "", false
+		return "", false, err
 	}
-	out := strings.TrimSpace(res.Text)
-	out = stripCodeFence(out)
+	out := stripCodeFence(strings.TrimSpace(res.Text))
 	if out == "" {
-		return "", false
+		return "", false, nil
 	}
 	// Ambang 60%: perbaikan salah ketik hampir tidak mengubah panjang teks;
 	// penyusutan besar berarti model meringkas atau memotong.
 	if len(out) < len(strings.TrimSpace(ocrText))*6/10 {
-		return "", false
+		return "", false, nil
 	}
-	return out, true
+	return out, true, nil
 }
 
 func stripCodeFence(s string) string {

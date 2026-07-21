@@ -1,6 +1,29 @@
 package downloader
 
-import "context"
+import (
+	"context"
+	"regexp"
+	"strconv"
+)
+
+// reLeadingDigits mengambil deretan angka pertama. Nilai dari JDIH kerap
+// bercampur teks ("3", "3A", "-", "NOMOR 3"); yang dibutuhkan hanya angkanya
+// untuk diurutkan.
+var reLeadingDigits = regexp.MustCompile(`[0-9]+`)
+
+// parseSortInt mengembalikan nil bila tidak ada angka yang masuk akal —
+// dokumen tersebut lalu diurutkan paling belakang (NULLS LAST).
+func parseSortInt(s string) *int {
+	m := reLeadingDigits.FindString(s)
+	if m == "" {
+		return nil
+	}
+	v, err := strconv.Atoi(m)
+	if err != nil || v <= 0 {
+		return nil
+	}
+	return &v
+}
 
 // integrasi_source.go: implementasi Source untuk endpoint JDIH standar
 // (/integrasi mengembalikan seluruh dataset sebagai satu array JSON).
@@ -28,15 +51,21 @@ func (s *IntegrasiSource) ListDocuments(ctx context.Context) ([]RemoteDoc, error
 	}
 	out := make([]RemoteDoc, 0, len(records))
 	for _, r := range records {
-		// Hanya tautan unduh yang diambil. Metadata dari sumber (judul,
-		// jenis, nomor, tahun) SENGAJA diabaikan — sejak 2026-07-21 seluruh
-		// identitas peraturan dibaca sendiri dari halaman pertama dokumen
-		// oleh model teks, karena metadata JDIH kerap tidak konsisten.
+		// Yang diambil dari sumber: tautan unduh, plus tahun & nomor SEMATA
+		// untuk mengurutkan antrian. Judul/jenis/instansi tetap diabaikan —
+		// identitas peraturan dibaca sendiri dari halaman pertama oleh model
+		// teks, karena metadata JDIH kerap tidak konsisten. Untuk pengurutan,
+		// metadata yang sesekali keliru tidak berbahaya: paling jauh urutan
+		// pengerjaan meleset sedikit.
 		u := NormalizeURL(r.URLDownload)
 		if u == "" {
 			continue
 		}
-		out = append(out, RemoteDoc{FileURL: u})
+		out = append(out, RemoteDoc{
+			FileURL:   u,
+			SortTahun: parseSortInt(r.TahunPengundangan),
+			SortNomor: parseSortInt(r.NoPeraturan),
+		})
 	}
 	return out, nil
 }

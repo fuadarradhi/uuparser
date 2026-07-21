@@ -27,13 +27,19 @@ const (
 	// 8192 memberi ruang aman tanpa memakan KV cache besar pada model 2B.
 	textCtx = 8192
 
-	// textMaxTokens membatasi keluaran. Perbaikan halaman mengembalikan teks
-	// seukuran masukannya, jadi batas ini harus lebih besar dari satu halaman.
-	textMaxTokens = 4096
+	// textMaxTokensCap adalah batas mutlak keluaran. Batas sesungguhnya
+	// dihitung dari panjang masukan (lihat Generate): perbaikan halaman
+	// mengembalikan teks SEUKURAN masukannya, jadi keluaran yang jauh lebih
+	// panjang berarti model mengoceh. Membiarkannya berlari sampai 4096 token
+	// di CPU bisa memakan belasan menit tanpa hasil berguna.
+	textMaxTokensCap = 4096
 )
 
 // TextConfig hanya memuat hal yang berbeda antar mesin.
 type TextConfig struct {
+	// ChatTemplate menimpa deteksi otomatis (kosong = pakai milik model).
+	ChatTemplate string
+
 	ModelPath string // berkas model GGUF (model teks/thinking)
 	LibPath   string // folder berisi libllama (kosong = jalur sistem)
 	Verbose   bool
@@ -71,6 +77,12 @@ func (t *TextClient) ensureLoaded() error {
 
 	llama.Init()
 
+	// Diumumkan SEBELUM pemuatan, bukan sesudah: memuat model beberapa GB
+	// bisa memakan waktu lama, dan bila kehabisan memori prosesnya dihentikan
+	// paksa oleh sistem tanpa pesan apa pun. Tanpa baris ini, satu-satunya
+	// petunjuk yang tersisa adalah konsol yang mendadak berhenti.
+	logx.Info("memuat model teks: %s%s", t.cfg.ModelPath, sizeHint(t.cfg.ModelPath))
+
 	model, err := llama.ModelLoadFromFile(t.cfg.ModelPath, llama.ModelDefaultParams())
 	if err != nil {
 		return fmt.Errorf("memuat model teks %s: %w", t.cfg.ModelPath, err)
@@ -95,7 +107,7 @@ func (t *TextClient) ensureLoaded() error {
 	t.lctx = lctx
 	t.vocab = llama.ModelGetVocab(model)
 	t.sampler = llama.NewSampler(model, llama.DefaultSamplers, sp)
-	t.template = llama.ModelChatTemplate(model, "")
+	t.template = resolveChatTemplate(model, t.cfg.ChatTemplate, "model teks")
 	t.loaded = true
 
 	logx.Info("model teks dimuat: %s (konteks %d token)", t.cfg.ModelPath, textCtx)
@@ -104,6 +116,16 @@ func (t *TextClient) ensureLoaded() error {
 
 // Release melepaskan model teks dari memori. Backend bersama TIDAK disentuh —
 // lihat catatan di localllm.go/Shutdown.
+// Warmup memuat model teks SEKARANG — lihat alasan di Client.Warmup.
+func (t *TextClient) Warmup() error {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if err := t.ensureLoaded(); err != nil {
+		return &LoadError{Err: err}
+	}
+	return nil
+}
+
 func (t *TextClient) Release() {
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -122,13 +144,33 @@ func (t *TextClient) Release() {
 //
 // Konteks dibersihkan tiap panggilan sehingga halaman/dokumen sebelumnya tidak
 // bocor ke hasil berikutnya — alasan yang sama seperti pada jalur visi.
+// TextParams membawa pelaporan kemajuan. Tanpa ini konsol diam sepanjang
+// model teks bekerja — pada CPU itu bisa beberapa menit per halaman, dan
+// diamnya konsol mudah disalahartikan sebagai proses yang menggantung.
+type TextParams struct {
+	OnStage func(stage string)
+	OnToken func(n int)
+}
+
+// Generate menjalankan satu giliran percakapan tanpa pelaporan kemajuan.
 func (t *TextClient) Generate(ctx context.Context, systemPrompt, userText string) (Result, error) {
+	return t.GenerateWith(ctx, systemPrompt, userText, TextParams{})
+}
+
+func (t *TextClient) GenerateWith(ctx context.Context, systemPrompt, userText string, p TextParams) (Result, error) {
 	if strings.TrimSpace(userText) == "" {
 		return Result{}, fmt.Errorf("teks masukan kosong")
 	}
 
 	t.mu.Lock()
 	defer t.mu.Unlock()
+
+	// Pemuatan model beberapa GB memakan waktu lama. Umumkan LEBIH DULU
+	// lewat pelapor kemajuan: tanpa ini baris kemajuan di konsol membeku
+	// tanpa penjelasan dan proses yang sehat tampak menggantung.
+	if !t.loaded && p.OnStage != nil {
+		p.OnStage("memuat model teks" + sizeHint(t.cfg.ModelPath))
+	}
 	if err := t.ensureLoaded(); err != nil {
 		return Result{}, &LoadError{Err: err}
 	}
@@ -159,6 +201,19 @@ func (t *TextClient) Generate(ctx context.Context, systemPrompt, userText string
 			"halaman terlalu panjang untuk model teks", len(tokens), textCtx)
 	}
 
+	// Batas keluaran diturunkan dari panjang masukan: hasil perbaikan
+	// seharusnya seukuran aslinya. Kelonggaran 50% memberi ruang bila model
+	// merapikan penomoran, tetapi tetap menghentikan model yang mengoceh
+	// jauh lebih cepat daripada batas mutlak.
+	maxTokens := len(tokens)*3/2 + 256
+	if maxTokens > textMaxTokensCap {
+		maxTokens = textMaxTokensCap
+	}
+
+	if p.OnStage != nil {
+		p.OnStage("model teks membaca")
+	}
+
 	var sb strings.Builder
 	piece := make([]byte, 256)
 	truncated := true
@@ -168,7 +223,7 @@ func (t *TextClient) Generate(ctx context.Context, systemPrompt, userText string
 	// (yang sudah dibersihkan di atas). Pola berikut mengikuti contoh resmi
 	// yzma untuk model teks.
 	batch := llama.BatchGetOne(tokens)
-	for i := 0; i < textMaxTokens; i++ {
+	for i := 0; i < maxTokens; i++ {
 		if err := ctx.Err(); err != nil {
 			return Result{Text: sb.String(), Truncated: true}, err
 		}
@@ -185,6 +240,9 @@ func (t *TextClient) Generate(ctx context.Context, systemPrompt, userText string
 			sb.Write(piece[:l])
 		}
 		batch = llama.BatchGetOne([]llama.Token{token})
+		if p.OnToken != nil {
+			p.OnToken(i + 1)
+		}
 	}
 
 	return Result{Text: sb.String(), Truncated: truncated}, nil

@@ -86,6 +86,21 @@ func New(cfg Config, sink PageSink) *Extractor {
 	return &Extractor{cfg: cfg, sink: sink}
 }
 
+// PageCount melaporkan jumlah halaman sebuah PDF tanpa memprosesnya.
+//
+// Dipakai saat melanjutkan dokumen: baris kemajuan membutuhkan angka total
+// SEBELUM halaman pertama diproses, sedangkan angka itu biasanya baru
+// diketahui dari hasil pemrosesan. Tanpa ini, persentase pada tahap
+// perbaikan tertunda selalu tampil 0%.
+func PageCount(pdfPath string) (int, error) {
+	doc, err := raster.Open(pdfPath)
+	if err != nil {
+		return 0, err
+	}
+	defer doc.Close()
+	return doc.NumPages(), nil
+}
+
 // Document memproses satu PDF halaman demi halaman. Mengembalikan jumlah
 // halaman dokumen dan apakah proses dihentikan lebih awal oleh PageSink.
 func (e *Extractor) Document(ctx context.Context, pdfPath string) (totalPages int, stopped bool, err error) {

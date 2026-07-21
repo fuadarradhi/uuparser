@@ -25,6 +25,14 @@ import "context"
 // itu sendiri oleh model teks.
 type RemoteDoc struct {
 	FileURL string // URL PDF, sudah dinormalisasi lewat NormalizeURL
+
+	// SortTahun & SortNomor diambil dari metadata sumber dan HANYA dipakai
+	// untuk mengurutkan antrian (dokumen terbaru dikerjakan lebih dulu).
+	// TIDAK boleh dipakai sebagai identitas peraturan — itu tetap dibaca
+	// model dari halaman pertama. Nil bila sumber tidak menyediakannya;
+	// dokumen tanpa nilai ini dikerjakan paling belakang.
+	SortTahun *int
+	SortNomor *int
 }
 
 // Source adalah satu sumber JDIH. Implementasinya BEBAS bagaimana cara

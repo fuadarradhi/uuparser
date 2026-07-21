@@ -22,6 +22,11 @@ CREATE TABLE IF NOT EXISTS sources (
     id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     code           text NOT NULL UNIQUE,
     endpoint_url   text NOT NULL,
+
+    -- priority menentukan URUTAN PENGERJAAN antar-sumber: angka kecil
+    -- dikerjakan lebih dulu sampai habis, baru sumber berikutnya.
+    -- Contoh: 1 = Pemerintah Aceh, 2 = Banda Aceh.
+    priority       int NOT NULL DEFAULT 100,
     source_type    text NOT NULL DEFAULT 'integrasi',  -- 'integrasi' | 'scrape' | ...
     source_config  jsonb NOT NULL DEFAULT '{}'::jsonb,
     created_at     timestamptz NOT NULL DEFAULT now()
@@ -42,6 +47,16 @@ CREATE TABLE IF NOT EXISTS documents (
 
     -- Jejak asal (informasi saja, bukan identitas).
     first_source_id   uuid REFERENCES sources(id) ON DELETE SET NULL,
+
+    -- sort_tahun / sort_nomor berasal dari metadata SUMBER dan HANYA dipakai
+    -- untuk mengurutkan antrian (dokumen terbaru dikerjakan lebih dulu).
+    -- SENGAJA dipisah dari kolom `tahun`/`nomor` di bawah, yang dibaca model
+    -- dari halaman pertama dan merupakan satu-satunya sumber kebenaran untuk
+    -- identitas. Metadata JDIH boleh saja keliru: dampaknya paling jauh hanya
+    -- urutan pengerjaan yang meleset, bukan dokumen salah dikenali.
+    -- Bertipe int (bukan text) supaya 10 diurutkan setelah 9, bukan sebelum 2.
+    sort_tahun        int,
+    sort_nomor        int,
 
     -- Status pipeline.
     status            text NOT NULL DEFAULT 'pending',
@@ -75,6 +90,13 @@ CREATE TABLE IF NOT EXISTS documents (
 CREATE INDEX IF NOT EXISTS idx_documents_status ON documents (status);
 CREATE INDEX IF NOT EXISTS idx_documents_sha ON documents (pdf_sha256);
 CREATE INDEX IF NOT EXISTS idx_documents_canonical ON documents (canonical_key);
+
+-- Indeks antrian: mendukung "ambil satu pekerjaan berikutnya" pada tiap tahap
+-- tanpa memindai seluruh tabel. Urutan kolomnya mengikuti ORDER BY yang
+-- dipakai worker: status dulu (penyaring), lalu prioritas sumber, lalu
+-- dokumen terbaru.
+CREATE INDEX IF NOT EXISTS idx_documents_queue
+    ON documents (status, sort_tahun DESC NULLS LAST, sort_nomor DESC NULLS LAST);
 
 -- =====================================================================
 -- document_pages — hasil OCR per halaman DAN hasil perbaikan model teks.

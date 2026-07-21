@@ -76,7 +76,7 @@ func registerNewURLs(ctx context.Context, deps Deps) {
 		}
 		baru := 0
 		for _, d := range docs {
-			isNew, err := deps.Store.RegisterURL(ctx, row.IDStr, d.FileURL)
+			isNew, err := deps.Store.RegisterURL(ctx, row.IDStr, d.FileURL, d.SortTahun, d.SortNomor)
 			if err != nil {
 				logx.Warn("downloader: daftar tautan: %v", err)
 				continue
@@ -115,8 +115,15 @@ func processOneDownload(ctx context.Context, deps Deps, job store.DownloadJob) {
 	// sudah lengkap. Konfigurasi HTTP generik sudah cukup.
 	body, err := downloader.DownloadPDF(ctx, dlConfig(""), job.DownloadURL)
 	if err != nil {
+		// Pembatalan (Ctrl+C) bukan kegagalan dokumen: kembalikan ke antrian
+		// tanpa menambah penghitung percobaan, agar beberapa kali Ctrl+C
+		// tidak membuat dokumen sehat berakhir 'failed'.
+		if isTransient(err) {
+			_ = deps.Store.RequeueDocument(job.ID, "pending")
+			return
+		}
 		logx.Fail(job.DownloadURL, "unduh gagal: %v", err)
-		_ = deps.Store.MarkDownloadFailed(ctx, job.ID, err.Error(), maxAttempts)
+		_ = deps.Store.MarkDownloadFailed(context.Background(), job.ID, err.Error(), maxAttempts)
 		return
 	}
 
@@ -127,7 +134,7 @@ func processOneDownload(ctx context.Context, deps Deps, job store.DownloadJob) {
 	dest := filepath.Join(deps.DataDir, "pdf", downloader.FileName(sha))
 	if err := fsutil.WriteFileAtomic(dest, body, 0o644); err != nil {
 		logx.Fail(job.DownloadURL, "simpan PDF gagal: %v", err)
-		_ = deps.Store.MarkDownloadFailed(ctx, job.ID, err.Error(), maxAttempts)
+		_ = deps.Store.MarkDownloadFailed(context.Background(), job.ID, err.Error(), maxAttempts)
 		return
 	}
 

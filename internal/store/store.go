@@ -13,6 +13,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -21,6 +22,17 @@ import (
 // ErrNoWork: tidak ada baris yang bisa diambil saat ini. Worker
 // memperlakukannya sebagai "tidur sebentar", bukan galat.
 var ErrNoWork = errors.New("store: tidak ada pekerjaan tersedia")
+
+// cleanupTimeout membatasi operasi pembersihan yang dijalankan SETELAH
+// konteks utama dibatalkan (Ctrl+C). Operasi itu wajib memakai konteks
+// tersendiri: memakai konteks yang sudah dibatalkan membuat pembersihan ikut
+// gagal, sehingga dokumen tertinggal berstatus 'processing' selamanya.
+const cleanupTimeout = 10 * time.Second
+
+// cleanupCtx mengembalikan konteks segar berbatas waktu untuk pembersihan.
+func cleanupCtx() (context.Context, context.CancelFunc) {
+	return context.WithTimeout(context.Background(), cleanupTimeout)
+}
 
 type Store struct{ pool *pgxpool.Pool }
 
@@ -72,11 +84,11 @@ func (s *Store) ListSources(ctx context.Context) ([]SourceRow, error) {
 // RegisterURL mendaftarkan satu tautan unduh. download_url UNIK: tautan yang
 // sudah pernah didaftarkan — dari sumber mana pun — diabaikan diam-diam.
 // Mengembalikan true bila baris benar-benar baru.
-func (s *Store) RegisterURL(ctx context.Context, sourceID, downloadURL string) (bool, error) {
+func (s *Store) RegisterURL(ctx context.Context, sourceID, downloadURL string, sortTahun, sortNomor *int) (bool, error) {
 	tag, err := s.pool.Exec(ctx, `
-		INSERT INTO documents (download_url, first_source_id, status)
-		VALUES ($1, $2, 'pending')
-		ON CONFLICT (download_url) DO NOTHING`, downloadURL, sourceID)
+		INSERT INTO documents (download_url, first_source_id, sort_tahun, sort_nomor, status)
+		VALUES ($1, $2, $3, $4, 'pending')
+		ON CONFLICT (download_url) DO NOTHING`, downloadURL, sourceID, sortTahun, sortNomor)
 	if err != nil {
 		return false, err
 	}
@@ -97,8 +109,21 @@ func (s *Store) ClaimForDownload(ctx context.Context) (DownloadJob, error) {
 	err := s.pool.QueryRow(ctx, `
 		UPDATE documents SET status = 'downloading', updated_at = now()
 		WHERE id = (
-			SELECT id FROM documents WHERE status = 'pending'
-			ORDER BY created_at LIMIT 1 FOR UPDATE SKIP LOCKED
+			-- URUTAN PENGERJAAN: sumber berprioritas kecil diselesaikan lebih
+			-- dulu, lalu dokumen terbaru (tahun & nomor menurun). Dokumen
+			-- tanpa tahun/nomor dari sumber dikerjakan paling belakang
+			-- (NULLS LAST). created_at hanya pemutus seri agar urutannya
+			-- tetap pasti. FOR UPDATE OF d wajib: LEFT JOIN membuat sisi
+			-- sources bisa NULL, dan Postgres menolak mengunci sisi itu.
+			SELECT d.id FROM documents d
+			LEFT JOIN sources s ON s.id = d.first_source_id
+			WHERE d.status IN ('pending', 'downloading')
+			ORDER BY (d.status = 'downloading') DESC,
+			         COALESCE(s.priority, 1000),
+			         d.sort_tahun DESC NULLS LAST,
+			         d.sort_nomor DESC NULLS LAST,
+			         d.created_at
+			LIMIT 1 FOR UPDATE OF d SKIP LOCKED
 		)
 		RETURNING id::text, download_url, first_source_id::text`,
 	).Scan(&j.ID, &j.DownloadURL, &srcID)
@@ -153,6 +178,25 @@ func (s *Store) MarkDownloadFailed(ctx context.Context, id, errMsg string, maxAt
 	return err
 }
 
+// RequeueDocument mengembalikan dokumen ke status semula TANPA menambah
+// penghitung kegagalan. Dipakai ketika pekerjaan dihentikan bukan karena
+// datanya bermasalah — pembatalan (Ctrl+C), model gagal dimuat, database
+// sesaat tak terjangkau.
+//
+// Membedakan ini dari kegagalan sungguhan itu penting: menghitungnya sebagai
+// kegagalan berarti beberapa kali Ctrl+C saja sudah cukup membuat dokumen
+// yang sehat berstatus 'failed' dan tidak pernah diproses lagi.
+//
+// Memakai konteksnya sendiri karena biasanya dipanggil setelah konteks utama
+// dibatalkan.
+func (s *Store) RequeueDocument(id, status string) error {
+	ctx, cancel := cleanupCtx()
+	defer cancel()
+	_, err := s.pool.Exec(ctx, `
+		UPDATE documents SET status = $2, updated_at = now() WHERE id = $1`, id, status)
+	return err
+}
+
 // ---- Tahap 2: OCR + perbaikan + klasifikasi ----
 
 type OCRJob struct {
@@ -166,8 +210,22 @@ func (s *Store) ClaimForOCR(ctx context.Context) (OCRJob, error) {
 	err := s.pool.QueryRow(ctx, `
 		UPDATE documents SET status = 'processing', updated_at = now()
 		WHERE id = (
-			SELECT id FROM documents WHERE status = 'downloaded'
-			ORDER BY created_at LIMIT 1 FOR UPDATE SKIP LOCKED
+			-- 'processing' ikut diambil: itu dokumen yang terhenti di tengah
+			-- jalan (mis. Ctrl+C). Tanpa ini dokumen tersebut tidak akan
+			-- pernah tersentuh lagi dan tertinggal selamanya.
+			--
+			-- Dokumen yang terhenti DIDAHULUKAN daripada dokumen mana pun,
+			-- termasuk yang lebih baru: menyelesaikan yang sudah separuh
+			-- jalan lebih berharga daripada memulai yang baru.
+			SELECT d.id FROM documents d
+			LEFT JOIN sources s ON s.id = d.first_source_id
+			WHERE d.status IN ('downloaded', 'processing')
+			ORDER BY (d.status = 'processing') DESC,
+			         COALESCE(s.priority, 1000),
+			         d.sort_tahun DESC NULLS LAST,
+			         d.sort_nomor DESC NULLS LAST,
+			         d.created_at
+			LIMIT 1 FOR UPDATE OF d SKIP LOCKED
 		)
 		RETURNING id::text, pdf_path`,
 	).Scan(&j.ID, &j.PDFPath)
@@ -223,6 +281,82 @@ func (s *Store) HasPage(ctx context.Context, documentID string, page int) (bool,
 		SELECT EXISTS(SELECT 1 FROM document_pages WHERE document_id = $1 AND page_number = $2)`,
 		documentID, page).Scan(&ok)
 	return ok, err
+}
+
+// PageNeedingFix adalah halaman yang teks OCR-nya sudah ada tetapi belum
+// diperbaiki model teks.
+type PageNeedingFix struct {
+	PageNumber int
+	OCRText    string
+}
+
+// ListPagesNeedingFix mengembalikan halaman yang sudah di-OCR namun
+// fixed_text-nya masih kosong — misalnya karena proses dihentikan di antara
+// kedua langkah itu. Tanpa daftar ini, halaman tersebut tidak akan pernah
+// diperbaiki: pemeriksaan "halaman sudah ada" membuatnya dilewati selamanya.
+func (s *Store) ListPagesNeedingFix(ctx context.Context, documentID string) ([]PageNeedingFix, error) {
+	rows, err := s.pool.Query(ctx, `
+		SELECT page_number, ocr_text FROM document_pages
+		WHERE document_id = $1 AND fixed_text IS NULL AND is_empty = false
+		      AND ocr_text <> ''
+		ORDER BY page_number`, documentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []PageNeedingFix
+	for rows.Next() {
+		var p PageNeedingFix
+		if err := rows.Scan(&p.PageNumber, &p.OCRText); err != nil {
+			return nil, err
+		}
+		out = append(out, p)
+	}
+	return out, rows.Err()
+}
+
+// FirstNonEmptyPage mengembalikan halaman BERISI pertama beserta teksnya.
+//
+// Klasifikasi memakai ini, bukan selalu halaman 1: halaman pertama bisa saja
+// kosong karena artefak pindaian (lembar sampul terpindai polos, halaman
+// tergeser). Memaksakan halaman 1 pada kasus itu berarti model diberi teks
+// kosong, dan dokumen yang sebenarnya sah ikut tertolak.
+func (s *Store) FirstNonEmptyPage(ctx context.Context, documentID string) (page int, text string, ok bool, err error) {
+	err = s.pool.QueryRow(ctx, `
+		SELECT page_number, COALESCE(edited_text, fixed_text, ocr_text)
+		FROM document_pages
+		WHERE document_id = $1 AND is_empty = false
+		      AND COALESCE(edited_text, fixed_text, ocr_text) <> ''
+		ORDER BY page_number LIMIT 1`, documentID).Scan(&page, &text)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return 0, "", false, nil
+	}
+	if err != nil {
+		return 0, "", false, err
+	}
+	return page, text, true, nil
+}
+
+// CountPagesDone melaporkan berapa halaman yang sudah di-OCR dan berapa yang
+// sudah diperbaiki. Dipakai saat melanjutkan dokumen supaya baris kemajuan
+// meneruskan hitungan sebelumnya, bukan mulai dari nol seolah belum ada
+// pekerjaan yang selesai.
+func (s *Store) CountPagesDone(ctx context.Context, documentID string) (ocred, fixed int, err error) {
+	err = s.pool.QueryRow(ctx, `
+		SELECT
+			COUNT(*),
+			COUNT(*) FILTER (WHERE fixed_text IS NOT NULL OR is_empty)
+		FROM document_pages WHERE document_id = $1`, documentID).Scan(&ocred, &fixed)
+	return ocred, fixed, err
+}
+
+// IsClassified melaporkan apakah metadata halaman 1 sudah pernah dibaca,
+// sehingga dokumen yang dilanjutkan tidak diklasifikasi ulang percuma.
+func (s *Store) IsClassified(ctx context.Context, documentID string) (bool, error) {
+	var done bool
+	err := s.pool.QueryRow(ctx, `
+		SELECT classified_at IS NOT NULL FROM documents WHERE id = $1`, documentID).Scan(&done)
+	return done, err
 }
 
 // GetPageText mengembalikan teks yang berlaku untuk satu halaman:
@@ -340,8 +474,14 @@ func (s *Store) ClaimForParse(ctx context.Context) (ParseJob, error) {
 	err := s.pool.QueryRow(ctx, `
 		UPDATE documents SET status = 'parsing', updated_at = now()
 		WHERE id = (
-			SELECT id FROM documents WHERE status = 'ocr_done'
-			ORDER BY ocr_completed_at LIMIT 1 FOR UPDATE SKIP LOCKED
+			SELECT d.id FROM documents d
+			LEFT JOIN sources s ON s.id = d.first_source_id
+			WHERE d.status = 'ocr_done'
+			ORDER BY COALESCE(s.priority, 1000),
+			         d.sort_tahun DESC NULLS LAST,
+			         d.sort_nomor DESC NULLS LAST,
+			         d.ocr_completed_at
+			LIMIT 1 FOR UPDATE OF d SKIP LOCKED
 		)
 		RETURNING id::text,
 			(SELECT COUNT(*) FROM document_pages WHERE document_id = documents.id)`,

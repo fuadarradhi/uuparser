@@ -39,6 +39,9 @@ type Deps struct {
 	Prompts prompts.Set
 	DataDir string
 	DPI     int
+
+	// LowMemory: jalankan kedua model bergantian, bukan berdampingan.
+	LowMemory bool
 }
 
 func Run(ctx context.Context, deps Deps) {

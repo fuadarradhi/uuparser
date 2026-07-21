@@ -17,6 +17,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 	"sync"
 
@@ -52,10 +53,18 @@ const (
 
 	nBatch        = 2048
 	chatBufferLen = 8192
+
+	// fallbackChatTemplate dipakai bila model tidak menyertakan chat template
+	// sendiri. "chatml" adalah format yang selalu dikenali llama.cpp; ini
+	// mengikuti contoh resmi yzma.
+	fallbackChatTemplate = "chatml"
 )
 
 // Config hanya memuat hal yang memang berbeda di tiap mesin.
 type Config struct {
+	// ChatTemplate menimpa deteksi otomatis (kosong = pakai milik model).
+	ChatTemplate string
+
 	ModelPath  string // berkas model GGUF
 	MMProjPath string // berkas proyektor multimodal (mmproj)
 	LibPath    string // folder berisi libllama/libmtmd (kosong = jalur sistem)
@@ -137,20 +146,92 @@ func (c *Client) Loaded() bool {
 // teks, karena satu halaman peraturan beserta prompt sistem dengan mudah
 // melewati ukuran buffer awal.
 func applyChatTemplate(template string, messages []llama.ChatMessage) (string, error) {
+	// Coba template milik model dulu; bila ditolak llama.cpp (nilai balik
+	// negatif), jatuh ke "chatml" yang selalu dikenali. Model GGUF tidak
+	// selalu menyertakan chat template — atau menyertakannya dalam bentuk
+	// yang belum dikenali versi llama.cpp yang terpasang — dan tanpa
+	// cadangan ini seluruh dokumen gagal pada langkah pertama.
+	candidates := []string{template}
+	if template != fallbackChatTemplate {
+		candidates = append(candidates, fallbackChatTemplate)
+	}
+
+	var lastErr error
+	for _, tmpl := range candidates {
+		if strings.TrimSpace(tmpl) == "" {
+			continue
+		}
+		out, err := applyOneTemplate(tmpl, messages)
+		if err == nil {
+			return out, nil
+		}
+		lastErr = err
+	}
+	if lastErr == nil {
+		lastErr = fmt.Errorf("tidak ada chat template yang dapat dipakai")
+	}
+	return "", fmt.Errorf("menerapkan chat template (dicoba: %v): %w",
+		nonEmpty(candidates), lastErr)
+}
+
+// applyOneTemplate menerapkan SATU template, memperbesar buffer bila perlu.
+func applyOneTemplate(template string, messages []llama.ChatMessage) (string, error) {
 	size := chatBufferLen
 	for attempt := 0; attempt < 4; attempt++ {
 		buf := make([]byte, size)
 		n := llama.ChatApplyTemplate(template, messages, true, buf)
 		switch {
-		case n <= 0:
-			return "", fmt.Errorf("gagal menerapkan chat template")
+		case n < 0:
+			return "", fmt.Errorf("template %q tidak dikenali llama.cpp", template)
+		case n == 0:
+			return "", fmt.Errorf("template %q menghasilkan keluaran kosong", template)
 		case int(n) <= len(buf):
 			return string(buf[:n]), nil
 		default:
-			size = int(n) + 1024 // llama.cpp memberi tahu ukuran yang diperlukan
+			// llama.cpp memberi tahu ukuran yang diperlukan; perbesar & ulang.
+			size = int(n) + 1024
 		}
 	}
-	return "", fmt.Errorf("chat template tidak muat setelah beberapa kali perbesaran buffer")
+	return "", fmt.Errorf("template %q tidak muat setelah beberapa kali perbesaran buffer", template)
+}
+
+func nonEmpty(in []string) []string {
+	out := make([]string, 0, len(in))
+	for _, v := range in {
+		if strings.TrimSpace(v) != "" {
+			out = append(out, v)
+		}
+	}
+	if len(out) == 0 {
+		return []string{"(kosong)"}
+	}
+	return out
+}
+
+// resolveChatTemplate mengambil chat template bawaan model, dengan cadangan
+// "chatml" bila model tidak menyertakannya — mengikuti contoh resmi yzma.
+func resolveChatTemplate(model llama.Model, override, what string) string {
+	if o := strings.TrimSpace(override); o != "" {
+		logx.Info("%s: chat template dipaksa ke %q lewat CHAT_TEMPLATE", what, o)
+		return o
+	}
+	if tmpl := llama.ModelChatTemplate(model, ""); strings.TrimSpace(tmpl) != "" {
+		return tmpl
+	}
+	logx.Warn("%s tidak menyertakan chat template — memakai %q. "+
+		"Bila mutu jawaban buruk, setel CHAT_TEMPLATE di .env (mis. gemma, llama3)",
+		what, fallbackChatTemplate)
+	return fallbackChatTemplate
+}
+
+// sizeHint melaporkan ukuran berkas model agar kebutuhan memori terlihat
+// sebelum pemuatan dimulai. Mengembalikan string kosong bila tidak terbaca.
+func sizeHint(path string) string {
+	fi, err := os.Stat(path)
+	if err != nil {
+		return ""
+	}
+	return fmt.Sprintf(" (%.1f GB)", float64(fi.Size())/(1<<30))
 }
 
 // loadLibs memuat pustaka bersama (llama + mtmd) TEPAT SEKALI seumur proses.
@@ -190,6 +271,8 @@ func (c *Client) ensureLoaded() error {
 
 	llama.Init()
 
+	logx.Info("memuat model OCR: %s%s", c.cfg.ModelPath, sizeHint(c.cfg.ModelPath))
+
 	model, err := llama.ModelLoadFromFile(c.cfg.ModelPath, llama.ModelDefaultParams())
 	if err != nil {
 		return fmt.Errorf("memuat model %s: %w", c.cfg.ModelPath, err)
@@ -222,7 +305,7 @@ func (c *Client) ensureLoaded() error {
 	c.mctx = mctx
 	c.vocab = llama.ModelGetVocab(model)
 	c.sampler = llama.NewSampler(model, llama.DefaultSamplers, sp)
-	c.template = llama.ModelChatTemplate(model, "")
+	c.template = resolveChatTemplate(model, c.cfg.ChatTemplate, "model OCR")
 	c.marker = mtmd.DefaultMarker()
 	c.loaded = true
 
@@ -264,6 +347,22 @@ func newContext(model llama.Model, nCtx uint32) (llama.Context, error) {
 // Release melepaskan model dari memori. Dipanggil ketika tidak ada lagi yang
 // perlu di-OCR, agar service tidak menahan memori selama menunggu siklus
 // berikutnya. Model dimuat ulang sendiri ketika kembali dibutuhkan.
+// Warmup memuat model SEKARANG, bukan menunggu permintaan pertama.
+//
+// Dipanggil sekali saat aplikasi mulai supaya seluruh waktu tunggu pemuatan
+// terjadi di awal, ketika pemakai memang sedang menunggu — bukan mendadak di
+// tengah pekerjaan, yang membuat proses tampak berhenti tanpa sebab.
+// Sekaligus memastikan berkas model memang dapat dipakai sebelum satu
+// dokumen pun tersentuh.
+func (c *Client) Warmup() error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if err := c.ensureLoaded(); err != nil {
+		return &LoadError{Err: err}
+	}
+	return nil
+}
+
 func (c *Client) Release() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -298,6 +397,12 @@ func (c *Client) Vision(ctx context.Context, prompt string, png []byte, p Params
 
 	c.mu.Lock()
 	defer c.mu.Unlock()
+
+	// Sama seperti pada jalur teks: umumkan pemuatan SEBELUM dimulai,
+	// supaya baris kemajuan tidak membeku tanpa penjelasan.
+	if !c.loaded && p.OnStage != nil {
+		p.OnStage("memuat model OCR" + sizeHint(c.cfg.ModelPath))
+	}
 	if err := c.ensureLoaded(); err != nil {
 		return Result{}, &LoadError{Err: err}
 	}

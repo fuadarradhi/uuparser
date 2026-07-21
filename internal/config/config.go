@@ -38,6 +38,24 @@ type Config struct {
 	// tanpa membangun ulang binari).
 	PromptDir string
 
+	// LowMemory membuat kedua model BERGANTIAN menempati memori alih-alih
+	// hidup berdampingan: model visi dilepas sebelum model teks dipakai, dan
+	// sebaliknya. Perlu bila jumlah kedua model melebihi RAM yang tersedia —
+	// gejalanya proses berhenti mendadak tanpa pesan apa pun saat model
+	// kedua dimuat (dihentikan paksa oleh sistem karena kehabisan memori).
+	//
+	// Harganya nyata: tiap halaman memuat ulang model, menambah puluhan
+	// detik per halaman. Matikan begitu RAM mencukupi.
+	LowMemory bool
+
+	// ChatTemplate menimpa deteksi otomatis format percakapan. Biarkan
+	// kosong pada keadaan normal — model GGUF biasanya menyertakan
+	// templatnya sendiri. Isi hanya bila log memberi peringatan bahwa
+	// template model tidak dikenali (mis. "gemma", "llama3", "chatml"),
+	// karena memakai format yang salah menurunkan mutu jawaban tanpa
+	// menimbulkan galat.
+	ChatTemplate string
+
 	// DPI render halaman sebelum OCR. Satu-satunya parameter render yang
 	// dapat diubah: nilai terbaiknya bergantung mutu pindaian korpus Anda
 	// dan hanya bisa ditentukan dengan mengukur (lihat CATATAN-MIGRASI.md).
@@ -86,7 +104,9 @@ func Load(path string) (Config, error) {
 		LibPath:      get("LIB_PATH", filepath.Join(cwd, "libs")),
 		Verbose:      boolean(get("VERBOSE", "false")),
 
-		PromptDir: get("PROMPT_DIR", filepath.Join(cwd, "prompts")),
+		PromptDir:    get("PROMPT_DIR", filepath.Join(cwd, "prompts")),
+		ChatTemplate: get("CHAT_TEMPLATE", ""),
+		LowMemory:    boolean(get("LOW_MEMORY", "false")),
 		DPI:       num(get("DPI", "200"), 200),
 
 		LogDir: get("LOG_DIR", filepath.Join(cwd, "log")),

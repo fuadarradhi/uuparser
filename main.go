@@ -27,6 +27,28 @@ import (
 
 func main() { os.Exit(run()) }
 
+// warmup memuat kedua model di muka dan melaporkannya ke konsol.
+func warmup(cfg config.Config, vision *localllm.Client, text *localllm.TextClient) error {
+	logx.Banner("memuat model OCR  : %s", cfg.ModelPath)
+	if err := vision.Warmup(); err != nil {
+		return fmt.Errorf("memuat model OCR: %w", err)
+	}
+	if cfg.LowMemory {
+		vision.Release()
+	}
+
+	logx.Banner("memuat model teks : %s", cfg.ThinkingPath)
+	if err := text.Warmup(); err != nil {
+		return fmt.Errorf("memuat model teks: %w", err)
+	}
+	if cfg.LowMemory {
+		text.Release()
+	}
+
+	logx.Banner("kedua model siap.")
+	return nil
+}
+
 func run() int {
 	cfg, err := config.Load(".env")
 	if err != nil {
@@ -38,7 +60,6 @@ func run() int {
 		return 1
 	}
 	defer logx.Close()
-	logx.Info("log galat: %s", logx.ErrorLogPath())
 
 	// Prompt dibaca dari disk saat start supaya dapat disunting tanpa
 	// membangun ulang binari; sidik jarinya ikut disimpan per halaman.
@@ -50,12 +71,29 @@ func run() int {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+	// Sinyal berhenti: yang PERTAMA meminta berhenti dengan tertib, yang
+	// KEDUA keluar seketika.
+	//
+	// Keluar seketika perlu karena inferensi model adalah satu panggilan
+	// panjang yang tidak dapat disela di tengah jalan: penyandian gambar
+	// halaman besar bisa memakan beberapa menit, dan selama itu pembatalan
+	// konteks belum berpengaruh. Tanpa jalan keluar kedua, Ctrl+C terasa
+	// tidak berfungsi. Progres tetap aman karena setiap halaman disimpan ke
+	// basis data begitu selesai.
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-sig
-		logx.Info("sinyal berhenti diterima — progres di database aman")
+		logx.FinishProgress()
+		fmt.Fprintln(os.Stderr, "berhenti… menunggu pekerjaan berjalan selesai "+
+			"(tekan Ctrl+C sekali lagi untuk keluar seketika)")
 		cancel()
+
+		<-sig
+		logx.FinishProgress()
+		fmt.Fprintln(os.Stderr, "keluar paksa — progres tersimpan sampai halaman terakhir yang selesai")
+		logx.Close()
+		os.Exit(130) // 128 + SIGINT, lazimnya untuk penghentian oleh sinyal
 	}()
 
 	st, err := store.Open(ctx, cfg.DatabaseURL)
@@ -68,29 +106,44 @@ func run() int {
 	vision, err := localllm.New(localllm.Config{
 		ModelPath: cfg.ModelPath, MMProjPath: cfg.MMProjPath,
 		LibPath: cfg.LibPath, Verbose: cfg.Verbose,
+		ChatTemplate: cfg.ChatTemplate,
 	})
 	if err != nil {
 		logx.Fatal("", "menyiapkan model OCR: %v", err)
 		return 1
 	}
-	defer vision.Release()
+	// TIDAK ada defer Release di sini dengan sengaja: Release menunggu kunci
+	// yang sedang dipegang inferensi yang berjalan, sehingga proses tertahan
+	// sampai inferensi selesai — persis yang membuat Ctrl+C tampak mati.
+	// Pada saat proses berakhir, sistem operasi yang membebaskan memorinya.
 
 	text, err := localllm.NewText(localllm.TextConfig{
 		ModelPath: cfg.ThinkingPath, LibPath: cfg.LibPath, Verbose: cfg.Verbose,
+		ChatTemplate: cfg.ChatTemplate,
 	})
 	if err != nil {
 		logx.Fatal("", "menyiapkan model teks: %v", err)
 		return 1
 	}
-	defer text.Release()
+	// Sama seperti model OCR: tidak dilepas di sini (lihat catatan di atas).
 
-	// Backend llama.cpp dipakai bersama kedua model, jadi hanya dibebaskan
-	// di sini — setelah kedua Release di atas dijalankan.
-	defer localllm.Shutdown()
+	// Muat KEDUA model sekarang, sebelum pekerjaan dimulai. Seluruh waktu
+	// tunggu terjadi di awal — saat pemakai memang sedang menunggu — bukan
+	// mendadak di tengah pekerjaan yang membuat prosesnya tampak berhenti.
+	//
+	// Pada mode hemat memori keduanya tidak boleh menempati memori
+	// bersamaan, jadi masing-masing dimuat lalu dilepas: pemuatan awal ini
+	// tetap berguna sebagai pemeriksaan bahwa kedua berkas model memang
+	// dapat dipakai, sebelum satu dokumen pun tersentuh.
+	if err := warmup(cfg, vision, text); err != nil {
+		logx.Fatal("", "%v", err)
+		return 1
+	}
 
 	pipeline.Run(ctx, pipeline.Deps{
 		Store: st, Vision: vision, Text: text,
 		Prompts: pset, DataDir: cfg.DataDir, DPI: cfg.DPI,
+		LowMemory: cfg.LowMemory,
 	})
 	return 0
 }

@@ -1,13 +1,21 @@
-// Package logx menangani dua keluaran yang berbeda kebutuhannya.
+// Package logx memisahkan dua hal yang selama ini bercampur dan saling
+// merusak: KEMAJUAN yang ditimpa di tempat, dan CATATAN yang harus tersimpan.
 //
-// Konsol: ringkas, berwarna, dan menunjukkan kemajuan — untuk dipantau manusia.
-// Warna dimatikan sendiri ketika keluaran bukan terminal (mis. ditangkap
-// journald oleh systemd), sehingga berkas log tidak dipenuhi kode escape.
+// Aturannya tegas:
 //
-// Berkas galat: setiap kegagalan dicatat permanen ke log/error.log beserta
-// waktu dan konteksnya. Ini penting bagi service systemd — keluaran konsol dapat
-// hilang tergulung, sementara kegagalan pemrosesan dokumen perlu dapat ditelusuri
-// kemudian.
+//	Konsol  -> HANYA baris kemajuan (ditimpa di tempat memakai \r).
+//	Berkas  -> semua catatan lain: info.log dan error.log.
+//
+// Alasannya: baris kemajuan hidup di satu baris yang terus ditimpa. Begitu ada
+// keluaran lain ke konsol, baris itu harus dihapus dulu — sehingga kemajuan
+// terus-menerus lenyap dan konsol menjadi campur aduk antara kemajuan dan
+// catatan. Memisahkan keduanya membuat konsol selalu menampilkan SATU baris
+// kemajuan yang stabil, sementara catatan tetap lengkap dan dapat ditelusuri
+// di berkas.
+//
+// Pengecualian tunggal: Fatal dan Banner tetap tampil di konsol. Kegagalan
+// yang menghentikan aplikasi harus terlihat — kalau tidak, aplikasi seolah
+// diam tanpa sebab.
 package logx
 
 import (
@@ -19,26 +27,25 @@ import (
 	"time"
 )
 
-// kode warna ANSI
 const (
-	cReset  = "\033[0m"
-	cBold   = "\033[1m"
-	cDim    = "\033[90m"
-	cRed    = "\033[31m"
-	cGreen  = "\033[32m"
-	cYellow = "\033[33m"
-	cBlue   = "\033[34m"
-	cCyan   = "\033[36m"
+	maxLogSz = 5 << 20 // 5 MB, lalu digulung dengan nama bercap waktu
+
+	cReset = "\033[0m"
+	cDim   = "\033[2m"
+	cCyan  = "\033[36m"
+	cRed   = "\033[31m"
 )
 
 var (
 	mu       sync.Mutex
-	colorOn  bool
 	errFile  *os.File
+	infoFile *os.File
 	errPath  string
-	inProg   bool // sedang menampilkan baris kemajuan yang ditimpa
-	isTTY    bool
-	maxLogSz int64 = 5 << 20 // 5 MB sebelum digulung
+	infoPath string
+
+	isTTY   bool
+	colorOn bool
+	inProg  bool
 )
 
 func init() {
@@ -54,7 +61,7 @@ func detectTTY() bool {
 	return fi.Mode()&os.ModeCharDevice != 0
 }
 
-// Init menyiapkan berkas log galat di dalam dir. Aman dipanggil sekali di awal.
+// Init membuka kedua berkas catatan.
 func Init(dir string) error {
 	mu.Lock()
 	defer mu.Unlock()
@@ -64,37 +71,84 @@ func Init(dir string) error {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return fmt.Errorf("menyiapkan folder log: %w", err)
 	}
+
+	var err error
 	errPath = filepath.Join(dir, "error.log")
-	rotateIfLarge()
-	f, err := os.OpenFile(errPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
-	if err != nil {
-		return fmt.Errorf("membuka %s: %w", errPath, err)
+	if errFile, err = openLog(errPath); err != nil {
+		return err
 	}
-	errFile = f
+	infoPath = filepath.Join(dir, "info.log")
+	if infoFile, err = openLog(infoPath); err != nil {
+		return err
+	}
 	return nil
 }
 
-// Close menutup berkas log galat.
-func Close() {
-	mu.Lock()
-	defer mu.Unlock()
-	if errFile != nil {
-		errFile.Close()
-		errFile = nil
+func openLog(path string) (*os.File, error) {
+	rotateIfLarge(path)
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+	if err != nil {
+		return nil, fmt.Errorf("membuka %s: %w", path, err)
 	}
+	return f, nil
 }
 
-// ErrorLogPath mengembalikan lokasi berkas log galat.
-func ErrorLogPath() string { return errPath }
-
-// rotateIfLarge menggulung berkas log bila sudah besar, agar tidak tumbuh tanpa batas.
-func rotateIfLarge() {
-	fi, err := os.Stat(errPath)
+// rotateIfLarge menggulung berkas memakai CAP WAKTU, bukan akhiran ".1" tetap
+// yang menimpa catatan sebelumnya — justru catatan yang paling dibutuhkan
+// saat menelusuri kegagalan beruntun.
+func rotateIfLarge(path string) {
+	fi, err := os.Stat(path)
 	if err != nil || fi.Size() < maxLogSz {
 		return
 	}
-	_ = os.Rename(errPath, errPath+".1")
+	_ = os.Rename(path, fmt.Sprintf("%s.%s", path, time.Now().Format("20060102-150405")))
 }
+
+func Close() {
+	FinishProgress()
+	mu.Lock()
+	defer mu.Unlock()
+	for _, f := range []**os.File{&errFile, &infoFile} {
+		if *f != nil {
+			(*f).Close()
+			*f = nil
+		}
+	}
+}
+
+func ErrorLogPath() string { return errPath }
+func InfoLogPath() string  { return infoPath }
+
+// ---- berkas ----
+
+// write menulis satu baris bercap waktu, lalu MEMAKSA-SIMPAN ke disk.
+// Pemaksaan itu perlu karena service dapat berhenti kapan saja; catatan yang
+// masih mengambang di penyangga akan hilang persis pada saat paling
+// dibutuhkan.
+func write(f *os.File, level, msg string) {
+	if f == nil {
+		return
+	}
+	line := fmt.Sprintf("%s  %-5s  %s\n", time.Now().Format("2006-01-02 15:04:05"), level, msg)
+	_, _ = f.WriteString(line)
+	_ = f.Sync()
+}
+
+func toInfo(level, format string, args ...any) {
+	mu.Lock()
+	defer mu.Unlock()
+	write(infoFile, level, fmt.Sprintf(format, args...))
+}
+
+func toError(level, format string, args ...any) {
+	mu.Lock()
+	defer mu.Unlock()
+	msg := fmt.Sprintf(format, args...)
+	write(errFile, level, msg)
+	write(infoFile, level, msg) // info.log memuat runtutan lengkap
+}
+
+// ---- konsol ----
 
 func paint(color, s string) string {
 	if !colorOn {
@@ -103,69 +157,19 @@ func paint(color, s string) string {
 	return color + s + cReset
 }
 
-// clearProgress menghapus baris kemajuan yang sedang ditimpa, agar baris
-// berikutnya tidak menempel pada sisa teks sebelumnya.
-func clearProgress() {
-	if inProg && isTTY {
-		fmt.Print("\r\033[K")
-		inProg = false
-	}
-}
-
-func out(s string) {
-	clearProgress()
-	fmt.Println(s)
-}
-
-// ---- keluaran tingkat tinggi ----
-
-// Cycle menandai awal satu siklus.
-func Cycle(n int, sources int) {
-	mu.Lock()
-	defer mu.Unlock()
-	out("")
-	out(paint(cBold+cCyan, fmt.Sprintf("═══ Siklus #%d — %s — %d sumber",
-		n, time.Now().Format("2006-01-02 15:04:05"), sources)))
-}
-
-// Source menandai awal pemrosesan satu sumber JDIH.
-func Source(code, endpoint string) {
-	mu.Lock()
-	defer mu.Unlock()
-	out("")
-	out(paint(cBold, "▸ "+code) + paint(cDim, "  "+endpoint))
-}
-
-// Doc menandai awal pemrosesan satu dokumen: [12/128] nama-dokumen
-func Doc(i, total int, slug string) {
-	mu.Lock()
-	defer mu.Unlock()
-	counter := fmt.Sprintf("[%d/%d]", i, total)
-	out(paint(cBlue, counter) + " " + slug)
-}
-
-// Step mencetak satu langkah yang sedang berjalan, mis. "unduh" atau "parse".
-func Step(name, format string, args ...any) {
-	mu.Lock()
-	defer mu.Unlock()
-	out("   " + paint(cDim, pad(name)) + fmt.Sprintf(format, args...))
-}
-
-// Progress mencetak kemajuan yang menimpa dirinya sendiri di terminal, dan
-// menjadi baris biasa bila keluaran bukan terminal (mis. journald).
+// Progress adalah SATU-SATUNYA keluaran rutin ke konsol.
 //
-// Format: [diperbaiki/di-OCR/total] keterangan… persen
+// Format: [sudah diperbaiki / sudah di-OCR / total halaman] keterangan  persen
 //
-//	[0/1/12] 1029x1945 px · dipotong -48% · 12s     8%
+//	[0/1/12] hal 1 · perbaikan: 128 token   8%
 //
-// Angka pertama sengaja diletakkan lebih dulu karena perbaikan selalu
-// TERTINGGAL satu langkah di belakang OCR (halaman di-OCR dulu, baru
-// diperbaiki), sehingga selisih keduanya langsung terlihat: bila angka
-// pertama berhenti bergerak sementara angka kedua terus naik, berarti
-// tahap perbaikan yang bermasalah, bukan OCR-nya.
+// Angka pertama memang tertinggal satu langkah dari angka kedua: halaman
+// di-OCR dulu, baru diperbaiki. Bila angka pertama berhenti bergerak
+// sementara angka kedua terus naik, yang bermasalah tahap perbaikan.
 func Progress(fixed, ocred, total int, format string, args ...any) {
 	mu.Lock()
 	defer mu.Unlock()
+
 	detail := fmt.Sprintf(format, args...)
 	pct := 0
 	if total > 0 {
@@ -175,93 +179,79 @@ func Progress(fixed, ocred, total int, format string, args ...any) {
 		paint(cCyan, fmt.Sprintf("[%d/%d/%d]", fixed, ocred, total)),
 		paint(cDim, detail),
 		paint(cCyan, fmt.Sprintf("%d%%", pct)))
+
 	if isTTY {
 		fmt.Print("\r\033[K" + line)
 		inProg = true
 		return
 	}
+	// Bukan terminal (mis. journald): tulis sebagai baris biasa.
 	fmt.Println(line)
 }
 
-// OK mencetak keberhasilan.
-func OK(format string, args ...any) {
+// FinishProgress mengakhiri baris kemajuan dengan baris baru agar tidak
+// tertimpa prompt shell saat program berhenti.
+func FinishProgress() {
 	mu.Lock()
 	defer mu.Unlock()
-	out("   " + paint(cGreen, "✓ ") + fmt.Sprintf(format, args...))
+	if inProg && isTTY {
+		fmt.Println()
+		inProg = false
+	}
 }
 
-// Warn mencetak peringatan: pemrosesan berhasil tetapi ada yang perlu ditinjau.
-func Warn(format string, args ...any) {
+// Banner mencetak keterangan singkat ke konsol. Dipakai HANYA saat mulai
+// (mis. memberi tahu lokasi berkas catatan), bukan di dalam perulangan kerja.
+func Banner(format string, args ...any) {
 	mu.Lock()
-	defer mu.Unlock()
-	out("   " + paint(cYellow, "! ") + fmt.Sprintf(format, args...))
+	line := fmt.Sprintf(format, args...)
+	if inProg && isTTY {
+		fmt.Print("\r\033[K")
+		inProg = false
+	}
+	fmt.Println(paint(cDim, line))
+	write(infoFile, "INFO", line)
+	mu.Unlock()
 }
 
-// Skip mencetak langkah yang dilewati.
-func Skip(format string, args ...any) {
-	mu.Lock()
-	defer mu.Unlock()
-	out("   " + paint(cDim, "· "+fmt.Sprintf(format, args...)))
+// ---- catatan (berkas saja) ----
+
+// Info, Step, OK, Skip: keterangan biasa. TIDAK tampil di konsol supaya baris
+// kemajuan tetap utuh; semuanya tersimpan di info.log.
+func Info(format string, args ...any) { toInfo("INFO", format, args...) }
+func OK(format string, args ...any)   { toInfo("OK", format, args...) }
+func Skip(format string, args ...any) { toInfo("SKIP", format, args...) }
+
+func Step(name, format string, args ...any) {
+	toInfo("STEP", name+": "+fmt.Sprintf(format, args...))
 }
 
-// Info mencetak keterangan biasa.
-func Info(format string, args ...any) {
-	mu.Lock()
-	defer mu.Unlock()
-	out(paint(cDim, fmt.Sprintf(format, args...)))
-}
+// Warn: sesuatu yang perlu ditinjau tetapi tidak menghentikan pekerjaan.
+func Warn(format string, args ...any) { toError("WARN", format, args...) }
 
-// Fail mencetak kegagalan ke konsol DAN mencatatnya ke berkas log galat.
-// Argumen ctx berisi konteks singkat (mis. sumber dan nama dokumen) agar catatan
-// di berkas dapat dipahami tanpa membaca keluaran konsol.
+// Fail: satu pekerjaan gagal. Pekerjaan lain tetap berjalan.
 func Fail(ctx, format string, args ...any) {
 	msg := fmt.Sprintf(format, args...)
-	mu.Lock()
-	defer mu.Unlock()
-	out("   " + paint(cRed, "✗ ") + msg)
-	writeErrLog(ctx, msg)
+	if ctx != "" {
+		msg = "[" + ctx + "] " + msg
+	}
+	toError("FAIL", "%s", msg)
 }
 
-// Fatal mencetak galat yang menghentikan proses dan mencatatnya.
+// Fatal: kegagalan yang menghentikan aplikasi — SATU-SATUNYA catatan galat
+// yang juga tampil di konsol. Tanpa ini aplikasi seolah berhenti tanpa sebab.
 func Fatal(ctx, format string, args ...any) {
 	msg := fmt.Sprintf(format, args...)
+	if ctx != "" {
+		msg = "[" + ctx + "] " + msg
+	}
+	toError("FATAL", "%s", msg)
+
 	mu.Lock()
 	defer mu.Unlock()
-	out(paint(cRed+cBold, "GAGAL: ") + msg)
-	writeErrLog(ctx, msg)
-}
-
-// Summary mencetak ringkasan akhir siklus, warnanya mengikuti ada tidaknya kegagalan.
-func Summary(line string, hasFail bool) {
-	mu.Lock()
-	defer mu.Unlock()
-	out("")
-	if hasFail {
-		out(paint(cYellow, "── "+line))
-		return
+	if inProg && isTTY {
+		fmt.Print("\r\033[K")
+		inProg = false
 	}
-	out(paint(cGreen, "── "+line))
-}
-
-// writeErrLog menulis satu baris ke berkas log galat. Pemanggil sudah memegang kunci.
-func writeErrLog(ctx, msg string) {
-	if errFile == nil {
-		return
-	}
-	stamp := time.Now().Format("2006-01-02 15:04:05")
-	if strings.TrimSpace(ctx) != "" {
-		fmt.Fprintf(errFile, "%s  [%s] %s\n", stamp, ctx, msg)
-	} else {
-		fmt.Fprintf(errFile, "%s  %s\n", stamp, msg)
-	}
-	_ = errFile.Sync() // service bisa mati sewaktu-waktu; jangan tunda ke buffer
-}
-
-// pad menyeragamkan lebar nama langkah agar kolom keluaran sejajar.
-func pad(s string) string {
-	const w = 9
-	if len(s) >= w {
-		return s + " "
-	}
-	return s + strings.Repeat(" ", w-len(s))
+	fmt.Fprintln(os.Stderr, paint(cRed, "✗ "+msg))
 }
