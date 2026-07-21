@@ -5,28 +5,34 @@ import (
 	"strings"
 )
 
-// stitch.go menggabung array halaman OCR menjadi satu daftar baris bersih:
+// stitch.go menggabung array halaman OCR menjadi satu daftar baris bersih,
+// TIAP BARIS MEMBAWA NOMOR HALAMAN ASALNYA (Line.Page):
 //   - buang baris nomor halaman & garis pemisah,
 //   - buang header/footer yang berulang identik di banyak halaman,
 //   - jalankan fixOCRLine pada tiap baris.
 //
-// Output: []string baris-baris ter-normalisasi, siap disegmentasi.
+// Output: []Line ter-normalisasi, siap disegmentasi.
 
 var (
 	rePageNum   = regexp.MustCompile(`^[-–—\s]*\d{1,4}[-–—\s]*$`)           // "- 5 -", "12"
 	rePageLabel = regexp.MustCompile(`(?i)^(halaman|hlm|page)\s*\.?\s*\d+`) // "Halaman 5"
 	reRuleLine  = regexp.MustCompile(`^[-_=.·•\s]{3,}$`)                    // garis pemisah
+	// reWatermark menangkap baris yang HANYA berisi watermark/URL situs JDIH
+	// (mis. "www.jdih.acehprov.go.id") — pola furniture halaman yang sama
+	// sekali bukan bagian isi peraturan, sama seperti nomor halaman.
+	reWatermark = regexp.MustCompile(`(?i)^\s*(https?://|www\.)?[a-z0-9.-]*\.(go\.id|ac\.id|co\.id|or\.id)\S*\s*$`)
 )
 
-func stitch(pages []string) []string {
-	// 1) pecah tiap halaman jadi baris & normalisasi awal.
-	perPage := make([][]string, 0, len(pages))
-	for _, p := range pages {
+func stitch(pages []string) []Line {
+	// 1) pecah tiap halaman jadi baris & normalisasi awal, tandai nomor halaman (1-indexed).
+	perPage := make([][]Line, 0, len(pages))
+	for pi, p := range pages {
 		raw := strings.Split(p, "\n")
-		lines := make([]string, 0, len(raw))
+		lines := make([]Line, 0, len(raw))
 		for _, ln := range raw {
 			f := fixOCRLine(ln)
-			lines = append(lines, f) // simpan termasuk kosong dulu, untuk deteksi header/footer posisi
+			f = fuzzyFixAnchorLine(f)
+			lines = append(lines, Line{Text: f, Page: pi + 1}) // simpan termasuk kosong dulu, untuk deteksi header/footer posisi
 		}
 		perPage = append(perPage, lines)
 	}
@@ -38,7 +44,7 @@ func stitch(pages []string) []string {
 		for _, lines := range perPage {
 			seen := map[string]bool{}
 			for _, ln := range lines {
-				t := strings.TrimSpace(ln)
+				t := strings.TrimSpace(ln.Text)
 				if t == "" || seen[t] {
 					continue
 				}
@@ -56,7 +62,7 @@ func stitch(pages []string) []string {
 		for pi := range perPage {
 			kept := perPage[pi][:0]
 			for _, ln := range perPage[pi] {
-				if boiler[strings.TrimSpace(ln)] {
+				if boiler[strings.TrimSpace(ln.Text)] {
 					continue
 				}
 				kept = append(kept, ln)
@@ -66,19 +72,19 @@ func stitch(pages []string) []string {
 	}
 
 	// 3) gabung semua halaman, buang nomor halaman/garis, rapikan blank berlebih.
-	out := make([]string, 0, 1024)
+	out := make([]Line, 0, 1024)
 	prevBlank := false
 	for _, lines := range perPage {
 		for _, ln := range lines {
-			t := strings.TrimSpace(ln)
+			t := strings.TrimSpace(ln.Text)
 			if t == "" {
 				if !prevBlank {
-					out = append(out, "")
+					out = append(out, Line{Text: "", Page: ln.Page})
 					prevBlank = true
 				}
 				continue
 			}
-			if rePageNum.MatchString(t) || rePageLabel.MatchString(t) || reRuleLine.MatchString(t) {
+			if rePageNum.MatchString(t) || rePageLabel.MatchString(t) || reRuleLine.MatchString(t) || reWatermark.MatchString(t) {
 				continue
 			}
 			out = append(out, ln)
@@ -86,8 +92,38 @@ func stitch(pages []string) []string {
 		}
 	}
 	// buang blank di ujung.
-	for len(out) > 0 && strings.TrimSpace(out[len(out)-1]) == "" {
+	for len(out) > 0 && strings.TrimSpace(out[len(out)-1].Text) == "" {
 		out = out[:len(out)-1]
+	}
+	return dedupPageBoundaries(out)
+}
+
+// dedupPageBoundaries menangani satu gejala scan lama: baris terakhir suatu
+// halaman terpotong ("...pada dasarnya") lalu halaman berikutnya mengulang
+// balik dari situ dengan versi yang lebih lengkap ("pada dasarnya kita
+// memahami..."). Ini SENGAJA hanya menangani kasus AMAN — baris pemotong
+// adalah PREFIKS PERSIS (case-insensitive, setelah TrimSpace) dari baris
+// pembuka halaman berikutnya — dan BUKAN baris struktural (BAB/Pasal/dst).
+// Overlap yang tidak persis (mis. parafrase, typo beda) SENGAJA TIDAK
+// disentuh — menebak di sini berisiko menghapus isi asli yang sebetulnya
+// bukan duplikat, dan proyek ini sudah punya sikap tegas soal itu (lihat
+// alasan penolakan LLM text-fix).
+func dedupPageBoundaries(lines []Line) []Line {
+	if len(lines) < 2 {
+		return lines
+	}
+	const minOverlapLen = 6 // hindari baris pendek kebetulan jadi prefiks (mis. "BAB I")
+	out := make([]Line, 0, len(lines))
+	for i := 0; i < len(lines); i++ {
+		if i+1 < len(lines) && lines[i].Page != lines[i+1].Page {
+			a := strings.TrimSpace(lines[i].Text)
+			b := strings.TrimSpace(lines[i+1].Text)
+			if len(a) >= minOverlapLen && !looksStructural(a) &&
+				strings.HasPrefix(strings.ToLower(b), strings.ToLower(a)) {
+				continue // lewati baris[i]: duplikat terpotong, versi lengkap ada di baris[i+1]
+			}
+		}
+		out = append(out, lines[i])
 	}
 	return out
 }

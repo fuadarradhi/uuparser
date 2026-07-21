@@ -6,8 +6,9 @@ import (
 )
 
 // parse_batangtubuh.go: state machine penuh untuk section batang_tubuh.
-// Hierarki: Bab -> Bagian -> Paragraf -> Pasal -> Ayat -> Huruf -> Angka.
-// Huruf dapat berada langsung di bawah Pasal (bila belum ada Ayat) ATAU di bawah Ayat.
+// Hierarki: Bab -> Bagian -> Paragraf -> Pasal -> Ayat. Huruf dan Angka TIDAK
+// lagi jadi node sendiri (2026-07-20) — teksnya dilipat ke Ayat aktif (atau
+// Pasal bila belum ada Ayat) lewat builder.foldHuruf/foldAngka.
 
 // Penanda penutup: setelah ini, konten adalah pengesahan/tempat-tanggal/tanda tangan,
 // bukan bagian struktur pasal.
@@ -15,15 +16,16 @@ import (
 // sebagai sarana pengundangan resmi yang setara dengan Lembaran Negara/Daerah.
 var reClosing = regexp.MustCompile(`(?i)^(ditetapkan\s+di|diundangkan\s+di|agar\s+setiap\s+orang|lembaran\s+(negara|daerah)\b|tambahan\s+lembaran|berita\s+(negara|daerah)\b|tambahan\s+berita)`)
 
-func parseBatangTubuh(lines []string) *builder {
+func parseBatangTubuh(lines []Line) *builder {
 	b := newBuilder(SectionBatangTubuh)
 	inClosing := false
 
 	for _, raw := range lines {
-		line := strings.TrimSpace(raw)
+		line := strings.TrimSpace(raw.Text)
 		if line == "" {
 			continue
 		}
+		b.curLinePage = raw.Page
 
 		if !inClosing && reClosing.MatchString(line) {
 			inClosing = true
@@ -51,14 +53,14 @@ func parseBatangTubuh(lines []string) *builder {
 			if b.curPasal == "" {
 				b.appendText(line)
 			} else {
-				b.openHuruf(m.label, m.text)
+				b.foldHuruf(m.label, m.text)
 			}
 		case mkAngka:
 			// angka sub-huruf hanya valid bila ada Huruf aktif; jika tidak, lanjutan.
 			if b.curPasal == "" || b.curHuruf == "" {
 				b.appendText(line)
 			} else {
-				b.openAngka(m.label, m.text)
+				b.foldAngka(m.label, m.text)
 			}
 		default:
 			b.appendText(line)
@@ -81,6 +83,8 @@ func (b *builder) emitPenutup(text string) {
 		OrderIndex: b.oiPasal,
 		DocOrder:   b.nextDoc(),
 		Text:       text,
+		StartPage:  b.curLinePage,
+		EndPage:    b.curLinePage,
 	}
 	b.nodes = append(b.nodes, n)
 	b.activeIdx = len(b.nodes) - 1

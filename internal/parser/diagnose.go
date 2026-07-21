@@ -34,8 +34,6 @@ type Stats struct {
 	Paragraf      int `json:"paragraf"`
 	Pasal         int `json:"pasal"`
 	Ayat          int `json:"ayat"`
-	Huruf         int `json:"huruf"`
-	Angka         int `json:"angka"`
 	ItemPreamble  int `json:"item_preamble"`
 	NodeWarnings  int `json:"node_warnings"`
 	TotalNodes    int `json:"total_nodes"`
@@ -89,9 +87,11 @@ func Diagnose(res Result) Report {
 	// --- cek celah penomoran Pasal (batang tubuh) ---
 	issues = append(issues, checkPasalSequence(res)...)
 
-	// --- cek celah ayat per pasal & huruf per induk ---
+	// --- cek celah ayat per pasal ---
+	// (HURUF_GAP dihapus 2026-07-20: huruf tak lagi jadi node terpisah, lihat
+	// builder.foldHuruf — urutan huruf tetap ada sebagai teks di dalam Ayat,
+	// tapi tak lagi dicek otomatis di level ini.)
 	issues = append(issues, checkAyatSequence(res)...)
-	issues = append(issues, checkHurufSequence(res)...)
 
 	// --- cek pasal Penjelasan yang tak ada di batang tubuh ---
 	issues = append(issues, checkPenjelasanRefs(res)...)
@@ -138,10 +138,6 @@ func computeStats(res Result) Stats {
 			if n.Section == SectionBatangTubuh {
 				s.Ayat++
 			}
-		case NodeHuruf:
-			s.Huruf++
-		case NodeAngka:
-			s.Angka++
 		case NodeItem:
 			s.ItemPreamble++
 		}
@@ -211,34 +207,6 @@ func checkAyatSequence(res Result) []Issue {
 	return issues
 }
 
-// checkHurufSequence: cek urutan huruf a,b,c per induk (pasal atau ayat).
-func checkHurufSequence(res Result) []Issue {
-	byParent := map[string][]string{}
-	var order []string
-	for _, n := range res.Nodes {
-		if n.NodeType == NodeHuruf && n.Huruf != nil && n.Section == SectionBatangTubuh {
-			key := deref(n.Pasal) + "|" + deref(n.Ayat)
-			if _, ok := byParent[key]; !ok {
-				order = append(order, key)
-			}
-			byParent[key] = append(byParent[key], *n.Huruf)
-		}
-	}
-	var issues []Issue
-	for _, key := range order {
-		if gap := hurufGap(byParent[key]); gap != "" {
-			parts := strings.SplitN(key, "|", 2)
-			loc := "Pasal " + parts[0]
-			if len(parts) == 2 && parts[1] != "" {
-				loc += " ayat (" + parts[1] + ")"
-			}
-			issues = append(issues, Issue{SeverityNeedsReview, "HURUF_GAP",
-				fmt.Sprintf("%s: urutan huruf tidak runtut (%s)", loc, gap)})
-		}
-	}
-	return issues
-}
-
 // checkPenjelasanRefs: pasal di penjelasan yang tak ada padanan di batang tubuh.
 func checkPenjelasanRefs(res Result) []Issue {
 	bt := map[string]bool{}
@@ -285,7 +253,7 @@ func checkEmptyPasal(res Result) []Issue {
 				m[*n.Pasal].hasText = true
 			}
 		}
-		if (n.NodeType == NodeAyat || n.NodeType == NodeHuruf) && n.Pasal != nil {
+		if n.NodeType == NodeAyat && n.Pasal != nil {
 			if inf, ok := m[*n.Pasal]; ok {
 				inf.hasChild = true
 			}
@@ -325,29 +293,6 @@ func gapIssues(seq []int, code, label string) []Issue {
 		fmt.Sprintf("%s tidak berurutan, kemungkinan hilang: %s", label, intsToStr(missing))}}
 }
 
-// hurufGap mengecek urutan huruf; kembalikan deskripsi bila tak runtut.
-func hurufGap(hs []string) string {
-	if len(hs) < 2 {
-		return ""
-	}
-	var prev rune
-	for i, h := range hs {
-		if len(h) != 1 {
-			continue // lewati huruf ganda (aa, ab) untuk kesederhanaan
-		}
-		r := rune(h[0])
-		if i == 0 {
-			prev = r
-			continue
-		}
-		if r != prev+1 {
-			return fmt.Sprintf("dari '%c' ke '%c'", prev, r)
-		}
-		prev = r
-	}
-	return ""
-}
-
 func intsToStr(v []int) string {
 	parts := make([]string, len(v))
 	for i, x := range v {
@@ -356,9 +301,3 @@ func intsToStr(v []int) string {
 	return strings.Join(parts, ", ")
 }
 
-func deref(s *string) string {
-	if s == nil {
-		return ""
-	}
-	return *s
-}

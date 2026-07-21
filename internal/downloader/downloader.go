@@ -1,6 +1,8 @@
-// Package downloader menangani tahap 1: menarik metadata dari endpoint JDIH
-// /integrasi dan mengunduh tiap PDF ke folder pdf/. "Sudah selesai" ditentukan
-// semata dari keberadaan file (jika pdf/<slug>.pdf ada, tidak diunduh ulang).
+// Package downloader menyediakan building block untuk menarik metadata &
+// mengunduh PDF dari situs JDIH. Orkestrasi tingkat-dokumen (retry, status,
+// "sudah selesai atau belum") sekarang di DB lewat internal/store — lihat
+// source.go untuk interface Source dan integrasi_source.go untuk implementasi
+// /integrasi standar.
 package downloader
 
 import (
@@ -11,16 +13,10 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
-
-	"github.com/fuadarradhi/uuparser/internal/fsutil"
-	"github.com/fuadarradhi/uuparser/internal/logx"
-	"github.com/fuadarradhi/uuparser/internal/state"
 )
 
 // Record adalah satu entri metadata dari /integrasi (field mengikuti endpoint).
@@ -38,20 +34,12 @@ type Record struct {
 	URLDetailPeraturan string `json:"urlDetailPeraturan"`
 }
 
-// Config untuk downloader.
+// Config untuk operasi HTTP downloader (dipakai oleh implementasi Source).
 type Config struct {
 	Endpoint    string
-	PDFDir      string // folder tujuan PDF (mis. data/pdf)
-	MetaPath    string // tempat menyimpan integrasi.json mentah (mis. data/integrasi.json)
 	Delay       time.Duration
 	MaxRetries  int
 	HTTPTimeout time.Duration
-
-	Limit  int      // 0 = semua; >0 = N record pertama (mode uji)
-	OnlyID []string // bila diisi, hanya idData ini
-
-	FailDir     string // folder catatan kegagalan (mis. data/<sumber>/failed)
-	MaxAttempts int    // batas percobaan sebelum dokumen dilewati (0 = tanpa batas)
 }
 
 var (
@@ -63,7 +51,6 @@ var (
 )
 
 // Slug mengembalikan identitas stabil & aman untuk sebuah record: stem fileDownload.
-// Dipakai konsisten oleh semua tahap (nama folder ocr/json).
 func Slug(r Record) string {
 	name := strings.TrimSpace(r.FileDownload)
 	if name == "" {
@@ -74,18 +61,15 @@ func Slug(r Record) string {
 }
 
 // SourceCode menurunkan kode sumber ringkas dari URL endpoint, dipakai sebagai
-// nama folder agar data tiap situs JDIH terpisah:
+// nilai default `sources.code` saat mendaftarkan sumber baru:
 //
 //	http://jdih.acehprov.go.id/integrasi        -> acehprov
 //	http://jdih.acehbesarkab.go.id/integrasi    -> acehbesarkab
-//	http://jdih.bandaacehkota.go.id/integrasi   -> bandaacehkota
 func SourceCode(endpoint string) string {
 	host := endpoint
 	port := ""
 	if u, err := url.Parse(endpoint); err == nil && u.Hostname() != "" {
 		host = u.Hostname()
-		// sertakan port non-standar agar dua endpoint pada host sama tidak
-		// berbagi folder yang sama.
 		if p := u.Port(); p != "" && p != "80" && p != "443" {
 			port = "_" + p
 		}
@@ -120,11 +104,10 @@ func sanitize(s string) string {
 	return s
 }
 
-// PDFPath mengembalikan path PDF untuk sebuah record.
-func (c Config) PDFPath(r Record) string { return filepath.Join(c.PDFDir, Slug(r)+".pdf") }
-
-// Fetch menarik dan mengurai daftar record dari endpoint, sekaligus menyimpan mentahnya.
-func Fetch(ctx context.Context, c Config) ([]Record, error) {
+// FetchIntegrasi menarik & mengurai daftar record dari endpoint /integrasi.
+// Dipanggil oleh IntegrasiSource.ListDocuments (source.go). TIDAK menyimpan
+// mentahnya ke disk — hasil sudah langsung didaftarkan ke DB oleh pemanggil.
+func FetchIntegrasi(ctx context.Context, c Config) ([]Record, error) {
 	body, _, err := httpGet(ctx, c, c.Endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("fetch integrasi: %w", err)
@@ -133,105 +116,41 @@ func Fetch(ctx context.Context, c Config) ([]Record, error) {
 	if err := json.Unmarshal(body, &records); err != nil {
 		return nil, fmt.Errorf("parse integrasi (%d byte): %w", len(body), err)
 	}
-	if c.MetaPath != "" {
-		_ = os.MkdirAll(filepath.Dir(c.MetaPath), 0o755)
-		_ = fsutil.WriteFileAtomic(c.MetaPath, body, 0o644)
-	}
 	return records, nil
 }
 
-// Select memfilter record sesuai Limit / OnlyID (terurut idData numerik).
-func Select(records []Record, c Config) []Record {
-	sortByID(records)
-	only := map[string]bool{}
-	for _, id := range c.OnlyID {
-		only[id] = true
+// DownloadPDF mengunduh isi PDF untuk satu URL, mengikuti tautan HTML->PDF
+// bila server mengembalikan halaman viewer, bukan PDF langsung.
+func DownloadPDF(ctx context.Context, c Config, downloadURL string) ([]byte, error) {
+	u := strings.TrimSpace(downloadURL)
+	if u == "" {
+		return nil, fmt.Errorf("urlDownload kosong")
 	}
-	var out []Record
-	for _, r := range records {
-		if len(only) > 0 && !only[r.IDData] {
-			continue
-		}
-		out = append(out, r)
-		if c.Limit > 0 && len(only) == 0 && len(out) >= c.Limit {
-			break
-		}
-	}
-	return out
-}
-
-// DownloadAll mengunduh PDF untuk record terpilih; melewati yang filenya sudah ada.
-// Mengembalikan jumlah terunduh & jumlah dilewati.
-func DownloadAll(ctx context.Context, c Config, records []Record) (downloaded, skipped, failed int, err error) {
-	if err := os.MkdirAll(c.PDFDir, 0o755); err != nil {
-		return 0, 0, 0, err
-	}
-	for _, r := range records {
-		if err := ctx.Err(); err != nil {
-			return downloaded, skipped, failed, err
-		}
-		slug := Slug(r)
-		dest := c.PDFPath(r)
-		if isValidPDF(dest) {
-			skipped++
-			continue
-		}
-		// dokumen yang berulang kali gagal tidak dicoba lagi tiap siklus.
-		if c.FailDir != "" && state.ShouldSkip(c.FailDir, slug, c.MaxAttempts) {
-			skipped++
-			continue
-		}
-		if e := downloadOne(ctx, c, r, dest); e != nil {
-			failed++
-			n := 0
-			if c.FailDir != "" {
-				n = state.Record(c.FailDir, slug, "download", e)
-			}
-			logx.Fail(slug, "unduh gagal (percobaan %d): %v", n, e)
-			continue
-		}
-		if c.FailDir != "" {
-			state.Clear(c.FailDir, slug)
-		}
-		downloaded++
-		logx.Step("unduh", "%s", slug)
-		if c.Delay > 0 {
-			time.Sleep(c.Delay)
-		}
-	}
-	return downloaded, skipped, failed, nil
-}
-
-func downloadOne(ctx context.Context, c Config, r Record, dest string) error {
-	url := strings.TrimSpace(r.URLDownload)
-	if url == "" {
-		return fmt.Errorf("urlDownload kosong")
-	}
-	body, ctype, err := httpGet(ctx, c, url)
+	body, ctype, err := httpGet(ctx, c, u)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if isPDF(ctype, body) {
-		return fsutil.WriteFileAtomic(dest, body, 0o644)
+		return body, nil
 	}
 	// fallback: server mengembalikan HTML viewer -> cari tautan .pdf.
 	if looksHTML(ctype, body) {
-		if link := findPDFLink(body, url); link != "" {
+		if link := findPDFLink(body, u); link != "" {
 			body2, ctype2, err := httpGet(ctx, c, link)
 			if err != nil {
-				return fmt.Errorf("mengikuti tautan PDF: %w", err)
+				return nil, fmt.Errorf("mengikuti tautan PDF: %w", err)
 			}
 			if isPDF(ctype2, body2) {
-				return fsutil.WriteFileAtomic(dest, body2, 0o644)
+				return body2, nil
 			}
-			return fmt.Errorf("tautan %s bukan PDF (ctype=%s)", link, ctype2)
+			return nil, fmt.Errorf("tautan %s bukan PDF (ctype=%s)", link, ctype2)
 		}
-		return fmt.Errorf("HTML tanpa tautan .pdf (ctype=%s)", ctype)
+		return nil, fmt.Errorf("HTML tanpa tautan .pdf (ctype=%s)", ctype)
 	}
 	if bytes.HasPrefix(bytes.TrimSpace(body), pdfMagic) {
-		return fsutil.WriteFileAtomic(dest, body, 0o644)
+		return body, nil
 	}
-	return fmt.Errorf("bukan PDF (ctype=%s, %d byte)", ctype, len(body))
+	return nil, fmt.Errorf("bukan PDF (ctype=%s, %d byte)", ctype, len(body))
 }
 
 // ---- http & deteksi konten ----
@@ -259,7 +178,7 @@ func httpGet(ctx context.Context, c Config, url string) ([]byte, string, error) 
 		if err != nil {
 			return nil, "", err
 		}
-		req.Header.Set("User-Agent", "uuparser-downloader/0.1")
+		req.Header.Set("User-Agent", "uuparser-downloader/0.2")
 		resp, err := cl.Do(req)
 		if err != nil {
 			lastErr = err
@@ -321,68 +240,4 @@ func findPDFLink(html []byte, base string) string {
 		return origin + link
 	}
 	return origin + "/" + link
-}
-
-func isValidPDF(path string) bool {
-	f, err := os.Open(path)
-	if err != nil {
-		return false
-	}
-	defer f.Close()
-	buf := make([]byte, 8)
-	n, _ := f.Read(buf)
-	return n >= 4 && bytes.HasPrefix(bytes.TrimSpace(buf[:n]), pdfMagic)
-}
-
-func sortByID(records []Record) {
-	sortSlice(records, func(a, b Record) bool {
-		ai, ae := strconv.Atoi(a.IDData)
-		bi, be := strconv.Atoi(b.IDData)
-		if ae == nil && be == nil {
-			return ai < bi
-		}
-		return a.IDData < b.IDData
-	})
-}
-
-// sortSlice adalah sort.Slice sederhana tanpa import tambahan di call-site.
-func sortSlice(records []Record, less func(a, b Record) bool) {
-	for i := 1; i < len(records); i++ {
-		for j := i; j > 0 && less(records[j], records[j-1]); j-- {
-			records[j], records[j-1] = records[j-1], records[j]
-		}
-	}
-}
-
-// Ensure memastikan PDF untuk satu record tersedia di disk, mengunduhnya bila
-// belum ada. Dipakai pada alur per-dokumen (unduh → OCR → parse satu per satu),
-// sehingga hasil pertama muncul tanpa menunggu seluruh unduhan selesai.
-//
-// Mengembalikan path PDF dan apakah unduhan baru saja dilakukan.
-func Ensure(ctx context.Context, c Config, r Record) (path string, downloaded bool, err error) {
-	slug := Slug(r)
-	dest := c.PDFPath(r)
-	if isValidPDF(dest) {
-		return dest, false, nil
-	}
-	if c.FailDir != "" && state.ShouldSkip(c.FailDir, slug, c.MaxAttempts) {
-		return "", false, fmt.Errorf("dilewati: sudah melewati batas percobaan")
-	}
-	if err := os.MkdirAll(c.PDFDir, 0o755); err != nil {
-		return "", false, err
-	}
-	if err := downloadOne(ctx, c, r, dest); err != nil {
-		if c.FailDir != "" {
-			n := state.Record(c.FailDir, slug, "download", err)
-			return "", false, fmt.Errorf("percobaan %d: %w", n, err)
-		}
-		return "", false, err
-	}
-	if c.FailDir != "" {
-		state.Clear(c.FailDir, slug)
-	}
-	if c.Delay > 0 {
-		time.Sleep(c.Delay) // sopan terhadap server JDIH
-	}
-	return dest, true, nil
 }

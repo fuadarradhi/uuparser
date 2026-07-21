@@ -1,13 +1,12 @@
-// Package config memuat seluruh pengaturan aplikasi dari berkas .env.
+// Package config memuat pengaturan yang BENAR-BENAR berbeda antar instalasi:
+// lokasi database, lokasi berkas model, dan folder data/log. Parameter yang
+// sudah punya jawaban jelas (prompt OCR, DPI, ambang halaman-kosong, jeda
+// sopan ke server JDIH, batas percobaan) SENGAJA dijadikan konstanta di kode
+// (lihat internal/extractor dan main.go), bukan kunci .env — permintaan
+// eksplisit user (2026-07-20): tombol yang jawabannya sudah pasti hanya
+// menambah risiko salah-ubah tanpa manfaat.
 //
 // Urutan prioritas: variabel lingkungan proses > isi .env > nilai baku.
-// Dengan begitu .env dipakai sehari-hari, sementara variabel lingkungan berguna
-// untuk menimpa sekali jalan (mis. di systemd atau kontainer) tanpa menyunting
-// berkas.
-//
-// Pengaturan sengaja dibatasi pada hal yang memang berbeda antar mesin atau
-// antar sumber data. Parameter inferensi seperti suhu, top-k, dan ukuran
-// konteks bersifat tetap di dalam kode.
 package config
 
 import (
@@ -15,26 +14,17 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
-	"time"
 )
 
-// Config adalah seluruh pengaturan aplikasi.
+// Config adalah seluruh pengaturan aplikasi — HANYA hal yang berbeda per mesin.
 type Config struct {
-	// ---- sumber & jadwal ----
-	Endpoints     []string
-	DataDir       string
-	Interval      time.Duration
-	DelayMS       time.Duration
-	MaxAttempts   int
-	DownloadFirst bool
+	// DatabaseURL: connection string Postgres PRODUKSI (lihat schema.sql).
+	DatabaseURL string
 
-	// Limit & OnlyID diisi dari flag baris perintah, bukan .env: keduanya alat
-	// uji sesaat. Bila disimpan di .env, nilai uji coba mudah tertinggal dan
-	// membuat service produksi diam-diam hanya memproses sebagian dokumen.
-	Limit  int
-	OnlyID []string
+	// DataDir: folder tempat PDF disimpan (satu-satunya berkas yang masih
+	// hidup di disk selain log — lihat CATATAN-MIGRASI.md).
+	DataDir string
 
 	// ---- model (yzma / llama.cpp, di dalam proses) ----
 	ModelPath  string
@@ -44,17 +34,6 @@ type Config struct {
 
 	// ---- log ----
 	LogDir string
-
-	// ---- prompt ----
-	OCRPrompt    string
-	OCRMaxTokens int
-
-	// ---- render halaman ----
-	DPI        int
-	AutoCrop   bool
-	ProbePages int
-	BlankInk   float64
-	SavePNG    bool
 }
 
 // Load membaca berkas .env (bila ada) lalu menyusun Config.
@@ -83,12 +62,8 @@ func Load(path string) (Config, error) {
 	}
 
 	c := Config{
-		Endpoints:     splitList(get("ENDPOINTS", "http://jdih.acehprov.go.id/integrasi")),
-		DataDir:       get("DATA_DIR", "data"),
-		Interval:      dur(get("INTERVAL", "60m"), 60*time.Minute),
-		DelayMS:       time.Duration(num(get("DELAY_MS", "1500"), 1500)) * time.Millisecond,
-		MaxAttempts:   num(get("MAX_ATTEMPTS", "3"), 3),
-		DownloadFirst: boolean(get("DOWNLOAD_FIRST", "false")),
+		DatabaseURL: get("DATABASE_URL", ""),
+		DataDir:     get("DATA_DIR", "data"),
 
 		// Bawaan mengikuti tata letak yang lazim: berkas berada di sebelah
 		// binari, sehingga service dapat dijalankan tanpa menyunting apa pun.
@@ -98,19 +73,12 @@ func Load(path string) (Config, error) {
 		Verbose:    boolean(get("VERBOSE", "false")),
 
 		LogDir: get("LOG_DIR", filepath.Join(cwd, "log")),
-
-		OCRPrompt:    get("OCR_PROMPT", "Text Recognition:"),
-		OCRMaxTokens: num(get("OCR_MAX_TOKENS", "2048"), 2048),
-
-		DPI:        num(get("DPI", "200"), 200),
-		AutoCrop:   boolean(get("AUTO_CROP", "true")),
-		ProbePages: num(get("PROBE_PAGES", "5"), 5),
-		BlankInk:   flt(get("BLANK_INK", "0.0004"), 0.0004),
-		SavePNG:    boolean(get("SAVE_PNG", "false")),
 	}
 
-	if len(c.Endpoints) == 0 {
-		return c, fmt.Errorf("ENDPOINTS kosong")
+	if strings.TrimSpace(c.DatabaseURL) == "" {
+		return c, fmt.Errorf("DATABASE_URL kosong — isi connection string Postgres " +
+			"(mis. postgres://user:pass@localhost:5432/uuparser); jalankan schema.sql " +
+			"terlebih dahulu bila database masih kosong")
 	}
 	if err := mustExist("MODEL_PATH", c.ModelPath, "berkas model GGUF"); err != nil {
 		return c, err
@@ -149,8 +117,6 @@ func parseEnvFile(path string) (map[string]string, error) {
 		}
 		key = strings.TrimSpace(key)
 		val = strings.TrimSpace(val)
-		// Buang tanda kutip pembungkus bila ada; isi di dalamnya dipertahankan
-		// apa adanya (penting untuk prompt yang mengandung spasi & tanda baca).
 		if len(val) >= 2 {
 			if (val[0] == '"' && val[len(val)-1] == '"') || (val[0] == '\'' && val[len(val)-1] == '\'') {
 				val = val[1 : len(val)-1]
@@ -159,37 +125,6 @@ func parseEnvFile(path string) (map[string]string, error) {
 		vals[key] = val
 	}
 	return vals, sc.Err()
-}
-
-func splitList(s string) []string {
-	var out []string
-	for _, p := range strings.Split(s, ",") {
-		if p = strings.TrimSpace(p); p != "" {
-			out = append(out, p)
-		}
-	}
-	return out
-}
-
-func num(s string, def int) int {
-	if v, err := strconv.Atoi(strings.TrimSpace(s)); err == nil {
-		return v
-	}
-	return def
-}
-
-func flt(s string, def float64) float64 {
-	if v, err := strconv.ParseFloat(strings.TrimSpace(s), 64); err == nil {
-		return v
-	}
-	return def
-}
-
-func dur(s string, def time.Duration) time.Duration {
-	if v, err := time.ParseDuration(strings.TrimSpace(s)); err == nil {
-		return v
-	}
-	return def
 }
 
 func boolean(s string) bool {

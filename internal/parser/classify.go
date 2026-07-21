@@ -22,8 +22,8 @@ type classifyResult struct {
 	pasalCount    int
 }
 
-func classify(lines []string) classifyResult {
-	joined := strings.Join(lines, "\n")
+func classify(lines []Line) classifyResult {
+	joined := joinLineText(lines)
 	var r classifyResult
 
 	r.pasalCount = len(rePasalAnywhere.FindAllString(joined, -1))
@@ -55,8 +55,7 @@ func classify(lines []string) classifyResult {
 // ekstraksi: bila beberapa halaman pertama tidak menunjukkan ciri apa pun, OCR
 // halaman berikutnya bisa dibatalkan (hemat, untuk PDF non-peraturan yang tebal).
 func LooksLegal(pages []string) bool {
-	text := strings.Join(pages, "\n")
-	return classify(strings.Split(text, "\n")).isLegal
+	return classify(stitch(pages)).isLegal
 }
 
 // reJudulPeraturan menangkap baris judul peraturan pada halaman sampul.

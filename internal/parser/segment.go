@@ -2,17 +2,18 @@ package parser
 
 import "strings"
 
-// segment.go memotong daftar baris menjadi beberapa macro-section berdasarkan
-// anchor kata kunci besar. Satu kali scan linear; tidak peduli hierarki Bab/Pasal.
+// segment.go memotong daftar baris (dengan halaman asal masing-masing) menjadi
+// beberapa macro-section berdasarkan anchor kata kunci besar. Satu kali scan
+// linear; tidak peduli hierarki Bab/Pasal.
 
 type segment struct {
 	section Section
-	lines   []string
+	lines   []Line
 }
 
 // segmentize membagi baris menjadi urutan segmen sesuai kemunculan anchor.
 // Juga mengembalikan daftar warning level-dokumen (mis. section standar hilang).
-func segmentize(lines []string, cls classifyResult) ([]segment, []Warning) {
+func segmentize(lines []Line, cls classifyResult) ([]segment, []Warning) {
 	// Tentukan indeks anchor utama.
 	idxMenimbang := findLineIndex(lines, reMenimbang)
 	idxMengingat := findLineIndex(lines, reMengingat)
@@ -95,7 +96,7 @@ func segmentize(lines []string, cls classifyResult) ([]segment, []Warning) {
 }
 
 // splitPenjelasan memisah blok PENJELASAN menjadi penjelasan_umum & penjelasan_pasal.
-func splitPenjelasan(lines []string) []segment {
+func splitPenjelasan(lines []Line) []segment {
 	idxUmum := findLineIndex(lines, reUmumHead)
 	idxPasalDemi := findLineIndex(lines, rePasalDemi)
 
@@ -116,7 +117,7 @@ func splitPenjelasan(lines []string) []segment {
 	default:
 		// Tidak ada sub-header jelas: perlakukan seluruhnya sebagai penjelasan_umum,
 		// namun bila mengandung pola Pasal, arahkan ke penjelasan_pasal.
-		joined := strings.Join(lines, "\n")
+		joined := joinLineText(lines)
 		if rePasalAnywhere.MatchString(joined) {
 			out = append(out, segment{SectionPenjelasanPasal, lines})
 		} else {
@@ -126,18 +127,26 @@ func splitPenjelasan(lines []string) []segment {
 	return out
 }
 
+func joinLineText(lines []Line) string {
+	parts := make([]string, len(lines))
+	for i, l := range lines {
+		parts[i] = l.Text
+	}
+	return strings.Join(parts, "\n")
+}
+
 // ---- util indeks ----
 
-func findLineIndex(lines []string, re interface{ MatchString(string) bool }) int {
+func findLineIndex(lines []Line, re interface{ MatchString(string) bool }) int {
 	return findLineIndexFrom(lines, re, 0)
 }
 
-func findLineIndexFrom(lines []string, re interface{ MatchString(string) bool }, from int) int {
+func findLineIndexFrom(lines []Line, re interface{ MatchString(string) bool }, from int) int {
 	if from < 0 {
 		from = 0
 	}
 	for i := from; i < len(lines); i++ {
-		if re.MatchString(lines[i]) {
+		if re.MatchString(lines[i].Text) {
 			return i
 		}
 	}
@@ -145,9 +154,9 @@ func findLineIndexFrom(lines []string, re interface{ MatchString(string) bool },
 }
 
 // firstStructuralIndex mencari baris struktural pertama (BAB atau Pasal).
-func firstStructuralIndex(lines []string) int {
+func firstStructuralIndex(lines []Line) int {
 	for i, ln := range lines {
-		m := detectStructural(ln)
+		m := detectStructural(ln.Text)
 		if m.kind == mkBab || m.kind == mkPasal {
 			return i
 		}
@@ -155,7 +164,7 @@ func firstStructuralIndex(lines []string) int {
 	return -1
 }
 
-func sliceLines(lines []string, a, b int) []string {
+func sliceLines(lines []Line, a, b int) []Line {
 	if a < 0 {
 		a = 0
 	}
@@ -165,7 +174,7 @@ func sliceLines(lines []string, a, b int) []string {
 	if a >= b {
 		return nil
 	}
-	cp := make([]string, b-a)
+	cp := make([]Line, b-a)
 	copy(cp, lines[a:b])
 	return cp
 }
@@ -183,8 +192,6 @@ func minPositive(vals ...int) int {
 // minPositiveAfter: nilai positif terkecil yang > after, di antara vals.
 // Bila tidak ada, kembalikan fallback.
 func minPositiveAfter(fallback int, vals ...int) int {
-	// vals[0] adalah titik acuan "after"? Tidak — untuk menjaga kejelasan,
-	// panggilan memberi urutan (after implicit = vals[0]).
 	after := vals[0]
 	best := -1
 	for _, v := range vals[1:] {

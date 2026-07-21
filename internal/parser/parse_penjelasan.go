@@ -8,7 +8,8 @@ import (
 // parse_penjelasan.go: parser terpisah untuk penjelasan_umum & penjelasan_pasal.
 // Sengaja dipisah dari parse_batangtubuh.go meski pola dasar mirip, agar kekhususan
 // penjelasan (mis. "Cukup jelas.", ayat berprefiks kata "Ayat (1)") bisa ditangani
-// tanpa berisiko merusak parsing batang tubuh. Keduanya berbagi helper patterns.go.
+// tanpa berisiko merusak parsing batang tubuh. Keduanya berbagi helper patterns.go
+// dan sama-sama melipat huruf/angka ke node aktif (bukan node sendiri).
 
 // Di penjelasan, ayat sering ditulis dengan prefiks kata: "Ayat (1)".
 var reAyatWord = regexp.MustCompile(`^(?i:ayat)\s*\(\s*([0-9]+\s*[a-zA-Z]?)\s*\)\s*(.*)$`)
@@ -16,13 +17,15 @@ var reAyatWord = regexp.MustCompile(`^(?i:ayat)\s*\(\s*([0-9]+\s*[a-zA-Z]?)\s*\)
 // Header romawi/angka pada Penjelasan Umum, mis. "1." atau "A." sebagai sub-bab naratif.
 var rePenjHead = regexp.MustCompile(`^([IVXLCDM]+|[A-Z])\.\s+(.+)$`)
 
-func parsePenjelasanUmum(lines []string) *builder {
+func parsePenjelasanUmum(lines []Line) *builder {
 	b := newBuilder(SectionPenjelasanUmum)
 	for _, raw := range lines {
-		line := strings.TrimSpace(raw)
+		line := strings.TrimSpace(raw.Text)
 		if line == "" {
 			continue
 		}
+		b.curLinePage = raw.Page
+
 		// buang baris header "PENJELASAN" / "UMUM" itu sendiri.
 		if rePenjelasan.MatchString(line) || reUmumHead.MatchString(line) {
 			continue
@@ -33,9 +36,6 @@ func parsePenjelasanUmum(lines []string) *builder {
 			continue
 		}
 		// paragraf naratif: baris non-kosong memulai/ melanjutkan paragraf.
-		// Heuristik: baris yang diakhiri tanda titik dianggap akhir paragraf,
-		// tapi untuk kesederhanaan tiap baris kita gabung ke node aktif kecuali
-		// belum ada node -> mulai node baru.
 		if b.activeIdx < 0 || b.nodes[b.activeIdx].Section != SectionPenjelasanUmum {
 			b.emitNarrative(line)
 		} else {
@@ -55,19 +55,23 @@ func (b *builder) emitNarrative(text string) {
 		OrderIndex: b.oiPasal,
 		DocOrder:   b.nextDoc(),
 		Text:       text,
+		StartPage:  b.curLinePage,
+		EndPage:    b.curLinePage,
 	}
 	b.nodes = append(b.nodes, n)
 	b.activeIdx = len(b.nodes) - 1
 }
 
-func parsePenjelasanPasal(lines []string) *builder {
+func parsePenjelasanPasal(lines []Line) *builder {
 	b := newBuilder(SectionPenjelasanPasal)
 
 	for _, raw := range lines {
-		line := strings.TrimSpace(raw)
+		line := strings.TrimSpace(raw.Text)
 		if line == "" {
 			continue
 		}
+		b.curLinePage = raw.Page
+
 		// buang header blok.
 		if rePasalDemi.MatchString(line) {
 			continue
@@ -95,13 +99,13 @@ func parsePenjelasanPasal(lines []string) *builder {
 			if b.curPasal == "" {
 				b.appendText(line)
 			} else {
-				b.openHuruf(m.label, m.text)
+				b.foldHuruf(m.label, m.text)
 			}
 		case mkAngka:
 			if b.curHuruf == "" {
 				b.appendText(line)
 			} else {
-				b.openAngka(m.label, m.text)
+				b.foldAngka(m.label, m.text)
 			}
 		default:
 			// "Cukup jelas." dan penjelasan lain -> teks node aktif (biasanya Pasal/Ayat).

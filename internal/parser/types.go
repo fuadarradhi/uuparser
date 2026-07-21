@@ -38,9 +38,12 @@ const (
 	NodeParagraf    NodeType = "paragraf"
 	NodePasal       NodeType = "pasal"
 	NodeAyat        NodeType = "ayat"
-	NodeHuruf       NodeType = "huruf"
-	NodeAngka       NodeType = "angka"
 	NodeParagrafIsi NodeType = "paragraf_isi" // paragraf naratif tanpa penomoran (mis. Penjelasan Umum)
+	// NodeHuruf/NodeAngka SENGAJA DIHAPUS (2026-07-20): huruf/angka pada batang
+	// tubuh tidak lagi jadi node terpisah — teksnya dilipat ke dalam Node Ayat
+	// (atau Pasal bila belum ada Ayat) oleh builder.foldHuruf/foldAngka, supaya
+	// tidak memutus konteks kalimat pembuka ayat. NodeItem (poin Menimbang/
+	// Mengingat) TIDAK terpengaruh — itu daftar datar yang berbeda konteks.
 )
 
 // Severity tingkat keparahan sebuah warning.
@@ -74,6 +77,11 @@ type Node struct {
 	Ayat     *string `json:"ayat,omitempty"`
 	Huruf    *string `json:"huruf,omitempty"`
 	Angka    *string `json:"angka,omitempty"`
+
+	// StartPage/EndPage = halaman OCR (1-indexed) tempat node ini mulai/berakhir.
+	// StartPage == EndPage bila node tidak melintasi batas halaman.
+	StartPage int `json:"start_page"`
+	EndPage   int `json:"end_page"`
 
 	// OrderIndex = urutan lokal dalam parent langsung.
 	// DocOrder   = urutan baca linear seluruh dokumen (tidak reset).

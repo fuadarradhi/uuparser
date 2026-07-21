@@ -5,7 +5,7 @@ import "strings"
 // Parse adalah satu-satunya entry point publik. Menerima teks OCR per halaman,
 // mengembalikan Result berisi Nodes (siap loop-insert ke DB) dan DocumentWarnings.
 //
-// Alur: stitch -> classify(gate) -> segmentize -> parse per-segmen -> gabung.
+// Alur: stitch (tandai halaman) -> classify(gate) -> segmentize -> parse per-segmen -> gabung.
 func Parse(pages []string) (Result, error) {
 	if len(pages) == 0 {
 		return Result{}, ErrEmptyInput
@@ -70,13 +70,14 @@ func Parse(pages []string) (Result, error) {
 
 // parseJudul memperlakukan blok awal (nama & nomor peraturan, frasa pembuka) sebagai
 // baris-baris judul/pembukaan.
-func parseJudul(lines []string) *builder {
+func parseJudul(lines []Line) *builder {
 	b := newBuilder(SectionJudul)
 	for _, raw := range lines {
-		line := strings.TrimSpace(raw)
+		line := strings.TrimSpace(raw.Text)
 		if line == "" {
 			continue
 		}
+		b.curLinePage = raw.Page
 		nt := NodeJudul
 		up := strings.ToUpper(line)
 		if strings.Contains(up, "RAHMAT TUHAN") ||
@@ -91,6 +92,8 @@ func parseJudul(lines []string) *builder {
 			OrderIndex: b.oiPasal,
 			DocOrder:   b.nextDoc(),
 			Text:       line,
+			StartPage:  raw.Page,
+			EndPage:    raw.Page,
 		})
 		b.activeIdx = len(b.nodes) - 1
 	}
@@ -98,13 +101,14 @@ func parseJudul(lines []string) *builder {
 }
 
 // parsePenetapan menangani blok MEMUTUSKAN / Menetapkan.
-func parsePenetapan(lines []string) *builder {
+func parsePenetapan(lines []Line) *builder {
 	b := newBuilder(SectionPenetapan)
 	for _, raw := range lines {
-		line := strings.TrimSpace(raw)
+		line := strings.TrimSpace(raw.Text)
 		if line == "" {
 			continue
 		}
+		b.curLinePage = raw.Page
 		if reMemutuskan.MatchString(line) {
 			b.emitPenetapan(line)
 			continue
@@ -131,6 +135,8 @@ func (b *builder) emitPenetapan(text string) {
 		OrderIndex: b.oiPasal,
 		DocOrder:   b.nextDoc(),
 		Text:       text,
+		StartPage:  b.curLinePage,
+		EndPage:    b.curLinePage,
 	})
 	b.activeIdx = len(b.nodes) - 1
 }

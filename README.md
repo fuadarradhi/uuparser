@@ -1,5 +1,13 @@
 # uuparser
 
+> **⚠️ Baca `CATATAN-MIGRASI.md` dulu.** Proyek ini baru saja migrasi total ke
+> Postgres (2026-07-20): tidak ada lagi file perantara, tidak ada flag CLI,
+> arsitektur jadi tiga worker independen. Sebagian isi README di bawah ini
+> (tata letak folder, flag CLI, output JSON) menjelaskan desain LAMA dan
+> **sudah tidak berlaku** — dibiarkan di sini karena bagian mekanisme
+> OCR/crop/GLM-OCR-nya masih akurat dan berguna. `CATATAN-MIGRASI.md` adalah
+> sumber kebenaran untuk arsitektur saat ini.
+
 Service yang menjaga agar setiap peraturan baru pada endpoint JDIH `/integrasi`
 otomatis terunduh, di-OCR, dirapikan, lalu di-parse menjadi JSON terstruktur
 (Pasal/ayat/huruf) yang tinggal disimpan ke database.
@@ -18,6 +26,7 @@ data/
   _last_run.json                       ringkasan siklus terakhir
   acehprov/
     integrasi.json                     metadata mentah
+
     pdf/<slug>.pdf                     ada berkas   = selesai
     ocr/<slug>/pageN.txt               OCR, per halaman
     json/<slug>.json                   ada json     = selesai

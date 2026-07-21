@@ -5,9 +5,11 @@ import "strings"
 // parse_flat.go menangani Menimbang & Mengingat: daftar poin datar (huruf a.b.c.
 // untuk Menimbang, angka 1.2.3. untuk Mengingat), tanpa hierarki Bab/Pasal.
 // Semua poin menjadi NodeItem (dengan label huruf/angka terisi), agar tidak
-// tercampur dengan konteks huruf/angka batang tubuh.
+// tercampur dengan konteks huruf/angka batang tubuh. TIDAK terpengaruh oleh
+// keputusan fold-huruf-ke-Ayat (itu spesifik batang tubuh) — poin di sini
+// tetap satu node per poin karena memang bukan bagian struktur Pasal/Ayat.
 
-func parseFlat(section Section, lines []string) *builder {
+func parseFlat(section Section, lines []Line) *builder {
 	b := newBuilder(section)
 
 	handleItem := func(m lineMatch) bool {
@@ -23,10 +25,12 @@ func parseFlat(section Section, lines []string) *builder {
 	}
 
 	for _, raw := range lines {
-		line := strings.TrimSpace(raw)
+		line := strings.TrimSpace(raw.Text)
 		if line == "" {
 			continue
 		}
+		b.curLinePage = raw.Page
+
 		// Baris header ("Menimbang :", "Mengingat :"): buang kata kunci, tangkap sisa.
 		if reMenimbang.MatchString(line) || reMengingat.MatchString(line) {
 			if i := strings.Index(line, ":"); i >= 0 {
@@ -58,6 +62,8 @@ func (b *builder) emitItem(huruf, angka, text string) {
 		Huruf:      ptr(huruf),
 		Angka:      ptr(angka),
 		Text:       text,
+		StartPage:  b.curLinePage,
+		EndPage:    b.curLinePage,
 	}
 	b.nodes = append(b.nodes, n)
 	b.activeIdx = len(b.nodes) - 1
