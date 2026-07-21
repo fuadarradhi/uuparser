@@ -2,6 +2,7 @@ package pipeline
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/fuadarradhi/uuparser/internal/config"
@@ -94,9 +95,15 @@ func processOneOCR(ctx context.Context, st *store.Store, model *localllm.Client,
 	ex := extractor.New(exCfg, pages)
 	err := ex.Document(ctx, job.PDFPath)
 
-	if applyErr := st.ApplyHeaderResult(ctx, job.ID, headerIsRegulation, headerRejectReason,
-		headerStructureType, headerExtractedInstansi, headerPreUU122011); applyErr != nil {
-		logx.Warn("ocr: simpan header check %s: %v", job.ID, applyErr)
+	// Hasil header HANYA ditulis bila gate benar-benar sempat berjalan
+	// (sukses atau ditolak gate). Pada kegagalan OCR transien (disk/model),
+	// headerIsRegulation masih zero-value false — menulisnya akan MENOLAK
+	// dokumen secara keliru dan permanen. (Temuan review eksternal, valid.)
+	if err == nil || errors.Is(err, extractor.ErrRejected) {
+		if applyErr := st.ApplyHeaderResult(ctx, job.ID, headerIsRegulation, headerRejectReason,
+			headerStructureType, headerExtractedInstansi, headerPreUU122011); applyErr != nil {
+			logx.Warn("ocr: simpan header check %s: %v", job.ID, applyErr)
+		}
 	}
 
 	switch {
@@ -104,7 +111,7 @@ func processOneOCR(ctx context.Context, st *store.Store, model *localllm.Client,
 		logx.Info("ocr: %s ditolak gate (%s)", job.ID, headerRejectReason)
 	case err != nil:
 		logx.Fail(job.ID, "OCR gagal: %v", err)
-		_ = st.MarkOCRFailed(ctx, job.ID, err.Error(), downloaderMaxAttempts)
+		_ = st.MarkOCRFailed(ctx, job.ID, err.Error(), maxAttempts)
 	default:
 		if err := st.MarkOCRDone(ctx, job.ID); err != nil {
 			logx.Warn("ocr: tandai selesai %s: %v", job.ID, err)

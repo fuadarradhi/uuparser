@@ -10,6 +10,10 @@
 // Arsitektur tiga-worker (downloader/OCR/parser independen, berkoordinasi
 // lewat Postgres) ada di internal/pipeline; main.go hanya menyiapkan
 // dependency (config, log, DB, model) lalu memanggil pipeline.Run.
+//
+// Pola main() -> run() int dipakai supaya SEMUA defer tetap dijalankan
+// sebelum proses keluar — os.Exit langsung di tengah main melewati defer
+// (pool DB tidak tertutup bersih). (Temuan review eksternal, valid.)
 package main
 
 import (
@@ -27,14 +31,18 @@ import (
 )
 
 func main() {
+	os.Exit(run())
+}
+
+func run() int {
 	cfg, err := config.Load(".env")
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "error konfigurasi:", err)
-		os.Exit(1)
+		return 1
 	}
 	if err := logx.Init(cfg.LogDir); err != nil {
 		fmt.Fprintln(os.Stderr, "error log:", err)
-		os.Exit(1)
+		return 1
 	}
 	defer logx.Close()
 	logx.Info("log galat: %s", logx.ErrorLogPath())
@@ -52,7 +60,7 @@ func main() {
 	st, err := store.Open(ctx, cfg.DatabaseURL)
 	if err != nil {
 		logx.Fatal("", "membuka database: %v", err)
-		os.Exit(1)
+		return 1
 	}
 	defer st.Close()
 
@@ -62,9 +70,10 @@ func main() {
 	})
 	if err != nil {
 		logx.Fatal("", "menyiapkan model: %v", err)
-		os.Exit(1)
+		return 1
 	}
 	defer model.Release()
 
 	pipeline.Run(ctx, cfg, st, model)
+	return 0
 }

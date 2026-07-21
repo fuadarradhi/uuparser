@@ -146,6 +146,60 @@ WHERE status IN ('failed', 'rejected') ORDER BY updated_at DESC LIMIT 20;
   menempel Postgres (SQL-nya sendiri sudah diuji verbatim, lihat tabel di
   atas) — sumber galat pertama paling mungkin saat kamu jalankan.
 
+## Tanggapan review eksternal (20 poin — diperiksa satu per satu terhadap kode)
+
+**Diperbaiki (valid):**
+- **#2** ApplyHeaderResult kini HANYA dipanggil bila gate benar-benar berjalan
+  (sukses/ditolak) — kegagalan OCR transien tidak lagi bisa menolak dokumen
+  secara keliru. Ini temuan paling penting dari review.
+- **#4** `SourceConfigRaw` kini ikut diteruskan di `processOneDownload`.
+- **#5** `inkRatio`/`croppedPct`/`durationMS` kini mengalir lewat interface
+  `PageStore` sampai tersimpan di `document_pages` (sebelumnya dihitung lalu
+  dibuang) — teruji di suite integrasi.
+- **#6** `main()` → `run() int` supaya semua `defer` (tutup pool DB, log)
+  tetap dijalankan sebelum keluar.
+- **#7** Cek `ctx.Err()` sebelum percobaan-ulang OCR (shutdown lebih sigap).
+- **#8** `reHuruf` kini menerima SATU huruf kapital ("A." hasil OCR
+  semua-kapital), dinormalisasi ke kecil; dua-huruf-kapital sengaja ditolak
+  agar angka Romawi ("IV.") tidak salah tangkap — modifikasi dari usulan review.
+- **#9** `reHrefPDF` diketatkan: `.pdf` harus di akhir path (boleh diikuti
+  query), bukan "file.pdf.html".
+- **#11** Nilai env variable dipangkas whitespace-nya.
+- **#12** Konstanta percobaan diganti nama jadi `maxAttempts` dengan komentar
+  cakupan (unduh + OCR).
+- **#15** Komentar yatim `PagePNGMax`/downscaling (sisa era MAX_PX) dihapus.
+- **#16** `pipeline.Run` kini menunggu worker maksimal 30 detik saat shutdown,
+  lalu keluar eksplisit dengan log (bukan menggantung menunggu SIGKILL).
+- **#17** Komentar "BELUM DIUJI" di `mapNodesToInserts` diperbarui — sudah
+  teruji integrasi sejak sesi tes bertahap.
+- **#19** Kata `berlaku` berdiri-sendiri dihapus dari `reTentangTail` — judul
+  sah "…Masa Berlaku Izin…" tidak lagi terpotong (ada test regresinya).
+
+**Tidak diubah (tidak valid / tidak diambil, dengan alasan):**
+- **#1** `llama.Close()` di yzma BUKAN unload pustaka — diverifikasi langsung
+  dari sumber yzma v1.19.0 (`pkg/llama/loader.go`): `Close()` = `BackendFree()`
+  + unload backend GGML, dan `ensureLoaded()` selalu memanggil `llama.Init()`
+  lagi (yang me-reload backend) sebelum tiap load model. Pasangan Init/Close
+  simetris per-load; `libsOnce` hanya menjaga dlopen yang memang tak pernah
+  di-unload. Klaim "menghancurkan load berikutnya" keliru.
+- **#3** `sources.instansi_name` adalah `NOT NULL` dan `documents.source_id`
+  ber-FK ke `sources` — subselect tidak bisa menghasilkan NULL. COALESCE tidak
+  diperlukan.
+- **#10** `reWatermark` hanya cocok pada baris SATU token (tanpa spasi) —
+  kedua contoh review ("Lembaran Negara go.id", "UU No. 5 …, lihat www…")
+  mengandung spasi dan TIDAK cocok. Usulan perbaikannya justru mewajibkan
+  prefiks `www.`/`https://` sehingga watermark domain telanjang
+  ("jdih.acehprov.go.id") lolos — regresi.
+- **#13** Batch insert node: pemetaan parent butuh `RETURNING id` berurutan
+  (anak menunjuk id parent yang baru terbit); jumlah node per dokumen kecil
+  (ratusan), transaksi lokal — belum layak kompleksitasnya.
+- **#14** Konfigurasi pool pgx: default pgxpool memadai untuk 3 worker; sejalan
+  sikap proyek "jangan bikin tombol yang jawabannya sudah pasti".
+- **#18** Rotasi log 1 backup cukup — jejak audit yang sesungguhnya ada di
+  Postgres, `error.log` murni operasional.
+- **#20** Endpoint health: di luar cakupan binari ini; UI web mendatang (atau
+  `systemd` journal + status DB) yang jadi tempat pemantauan.
+
 ## Berkas yang DIHAPUS sejak sesi ini — hapus juga di tempatmu
 
 - `internal/state/` (seluruh folder, `state.go`) — retry sepenuhnya di kolom

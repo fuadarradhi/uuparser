@@ -170,7 +170,10 @@ func trimQuote(s string) string {
 
 // reTentangTail memotong judul peraturan pada kata kerja/klausa lanjutan yang
 // bukan bagian judul (mis. "... tentang Izin Gangguan dicabut dan dinyatakan ...").
-var reTentangTail = regexp.MustCompile(`(?i)\s+(dicabut|diubah|dinyatakan|sebagaimana|menjadi|dihapus|berlaku|mulai berlaku|dan dinyatakan|sebagai berikut)\b.*$`)
+// "berlaku" berdiri sendiri SENGAJA dihapus dari daftar: judul sah seperti
+// "tentang Perpanjangan Masa Berlaku Izin..." ikut terpotong. "mulai berlaku"
+// (frasa penutup baku) tetap dipertahankan. (Temuan review eksternal, valid.)
+var reTentangTail = regexp.MustCompile(`(?i)\s+(dicabut|diubah|dinyatakan|sebagaimana|menjadi|dihapus|mulai berlaku|dan dinyatakan|sebagai berikut)\b.*$`)
 
 // trimTentang membersihkan judul hasil tangkapan regex.
 func trimTentang(s string) string {

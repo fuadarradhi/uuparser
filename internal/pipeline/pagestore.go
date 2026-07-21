@@ -18,8 +18,8 @@ func (d dbPageStore) HasPage(ctx context.Context, page int) (bool, error) {
 	return d.st.HasPage(ctx, d.documentID, page)
 }
 
-func (d dbPageStore) SavePage(ctx context.Context, page int, text string, isEmpty, isTruncated bool, notes []string) error {
-	return d.st.SavePage(ctx, d.documentID, page, text, isEmpty, isTruncated, 0, 0, notes, 0)
+func (d dbPageStore) SavePage(ctx context.Context, page int, text string, isEmpty, isTruncated bool, inkRatio, croppedPct float64, durationMS int, notes []string) error {
+	return d.st.SavePage(ctx, d.documentID, page, text, isEmpty, isTruncated, inkRatio, croppedPct, notes, durationMS)
 }
 
 func (d dbPageStore) ReadPages(ctx context.Context, a, b int) ([]string, error) {

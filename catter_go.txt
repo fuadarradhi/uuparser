@@ -1,0 +1,5335 @@
+internal/config/config.go
+// Package config memuat pengaturan yang BENAR-BENAR berbeda antar instalasi:
+// lokasi database, lokasi berkas model, dan folder data/log. Parameter yang
+// sudah punya jawaban jelas (prompt OCR, DPI, ambang halaman-kosong, jeda
+// sopan ke server JDIH, batas percobaan) SENGAJA dijadikan konstanta di kode
+// (lihat internal/extractor dan main.go), bukan kunci .env — permintaan
+// eksplisit user (2026-07-20): tombol yang jawabannya sudah pasti hanya
+// menambah risiko salah-ubah tanpa manfaat.
+//
+// Urutan prioritas: variabel lingkungan proses > isi .env > nilai baku.
+package config
+
+import (
+	"bufio"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+)
+
+// Config adalah seluruh pengaturan aplikasi — HANYA hal yang berbeda per mesin.
+type Config struct {
+	// DatabaseURL: connection string Postgres PRODUKSI (lihat schema.sql).
+	DatabaseURL string
+
+	// DataDir: folder tempat PDF disimpan (satu-satunya berkas yang masih
+	// hidup di disk selain log — lihat CATATAN-MIGRASI.md).
+	DataDir string
+
+	// ---- model (yzma / llama.cpp, di dalam proses) ----
+	ModelPath  string
+	MMProjPath string
+	LibPath    string
+	Verbose    bool
+
+	// ---- log ----
+	LogDir string
+}
+
+// Load membaca berkas .env (bila ada) lalu menyusun Config.
+// path kosong berarti ".env" di direktori kerja.
+func Load(path string) (Config, error) {
+	if path == "" {
+		path = ".env"
+	}
+	fileVals, err := parseEnvFile(path)
+	if err != nil {
+		return Config{}, err
+	}
+	cwd, err := os.Getwd()
+	if err != nil {
+		cwd = "."
+	}
+
+	get := func(key, def string) string {
+		if v, ok := os.LookupEnv(key); ok && strings.TrimSpace(v) != "" {
+			return v // variabel lingkungan menimpa .env
+		}
+		if v, ok := fileVals[key]; ok && strings.TrimSpace(v) != "" {
+			return v
+		}
+		return def
+	}
+
+	c := Config{
+		DatabaseURL: get("DATABASE_URL", ""),
+		DataDir:     get("DATA_DIR", "data"),
+
+		// Bawaan mengikuti tata letak yang lazim: berkas berada di sebelah
+		// binari, sehingga service dapat dijalankan tanpa menyunting apa pun.
+		ModelPath:  get("MODEL_PATH", filepath.Join(cwd, "models", "ocr.gguf")),
+		MMProjPath: get("MMPROJ_PATH", filepath.Join(cwd, "models", "ocr.mmproj.gguf")),
+		LibPath:    get("LIB_PATH", filepath.Join(cwd, "libs")),
+		Verbose:    boolean(get("VERBOSE", "false")),
+
+		LogDir: get("LOG_DIR", filepath.Join(cwd, "log")),
+	}
+
+	if strings.TrimSpace(c.DatabaseURL) == "" {
+		return c, fmt.Errorf("DATABASE_URL kosong — isi connection string Postgres " +
+			"(mis. postgres://user:pass@localhost:5432/uuparser); jalankan schema.sql " +
+			"terlebih dahulu bila database masih kosong")
+	}
+	if err := mustExist("MODEL_PATH", c.ModelPath, "berkas model GGUF"); err != nil {
+		return c, err
+	}
+	if err := mustExist("MMPROJ_PATH", c.MMProjPath,
+		"berkas proyektor multimodal (mmproj); tanpa ini gambar tidak dapat diproses"); err != nil {
+		return c, err
+	}
+	return c, nil
+}
+
+// parseEnvFile membaca berkas bergaya .env. Berkas yang tidak ada bukan galat —
+// seluruh nilai baku tetap berlaku.
+func parseEnvFile(path string) (map[string]string, error) {
+	f, err := os.Open(path)
+	if os.IsNotExist(err) {
+		return map[string]string{}, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	vals := map[string]string{}
+	sc := bufio.NewScanner(f)
+	sc.Buffer(make([]byte, 0, 64*1024), 1024*1024)
+	for sc.Scan() {
+		line := strings.TrimSpace(sc.Text())
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		line = strings.TrimPrefix(line, "export ")
+		key, val, ok := strings.Cut(line, "=")
+		if !ok {
+			continue
+		}
+		key = strings.TrimSpace(key)
+		val = strings.TrimSpace(val)
+		if len(val) >= 2 {
+			if (val[0] == '"' && val[len(val)-1] == '"') || (val[0] == '\'' && val[len(val)-1] == '\'') {
+				val = val[1 : len(val)-1]
+			}
+		}
+		vals[key] = val
+	}
+	return vals, sc.Err()
+}
+
+func boolean(s string) bool {
+	switch strings.ToLower(strings.TrimSpace(s)) {
+	case "1", "true", "yes", "y", "on":
+		return true
+	}
+	return false
+}
+
+// mustExist memberi pesan yang menyebut kunci, jalur yang dicari, dan apa yang
+// seharusnya ada di sana — supaya kesalahan pemasangan langsung jelas.
+func mustExist(key, path, what string) error {
+	if strings.TrimSpace(path) == "" {
+		return fmt.Errorf("%s kosong — isi jalur %s", key, what)
+	}
+	if _, err := os.Stat(path); err != nil {
+		return fmt.Errorf("%s tidak ditemukan di %s — letakkan %s di sana, "+
+			"atau tunjuk lokasinya lewat %s", key, path, what, key)
+	}
+	return nil
+}
+
+
+
+internal/downloader/downloader.go
+// Package downloader menyediakan building block untuk menarik metadata &
+// mengunduh PDF dari situs JDIH. Orkestrasi tingkat-dokumen (retry, status,
+// "sudah selesai atau belum") sekarang di DB lewat internal/store — lihat
+// source.go untuk interface Source dan integrasi_source.go untuk implementasi
+// /integrasi standar.
+package downloader
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"path/filepath"
+	"regexp"
+	"strings"
+	"time"
+)
+
+// Record adalah satu entri metadata dari /integrasi (field mengikuti endpoint).
+type Record struct {
+	IDData             string `json:"idData"`
+	Judul              string `json:"judul"`
+	Jenis              string `json:"jenis"`
+	NoPeraturan        string `json:"noPeraturan"`
+	TeuBadan           string `json:"teuBadan"`
+	TahunPengundangan  string `json:"tahun_pengundangan"`
+	Status             string `json:"status"`
+	Bahasa             string `json:"bahasa"`
+	FileDownload       string `json:"fileDownload"`
+	URLDownload        string `json:"urlDownload"`
+	URLDetailPeraturan string `json:"urlDetailPeraturan"`
+}
+
+// Config untuk operasi HTTP downloader (dipakai oleh implementasi Source).
+type Config struct {
+	Endpoint    string
+	Delay       time.Duration
+	MaxRetries  int
+	HTTPTimeout time.Duration
+}
+
+var (
+	reUnsafe   = regexp.MustCompile(`[^\p{L}\p{N}._-]+`)
+	reMultiUnd = regexp.MustCompile(`_{2,}`)
+	reEdge     = regexp.MustCompile(`(^[._-]+)|([._-]+$)`)
+	pdfMagic   = []byte("%PDF")
+	reHrefPDF  = regexp.MustCompile(`(?i)href="([^"]+\.pdf[^"]*)"`)
+)
+
+// Slug mengembalikan identitas stabil & aman untuk sebuah record: stem fileDownload.
+func Slug(r Record) string {
+	name := strings.TrimSpace(r.FileDownload)
+	if name == "" {
+		return "doc_" + sanitize(r.IDData)
+	}
+	stem := strings.TrimSuffix(name, filepath.Ext(name))
+	return sanitize(stem)
+}
+
+// SourceCode menurunkan kode sumber ringkas dari URL endpoint, dipakai sebagai
+// nilai default `sources.code` saat mendaftarkan sumber baru:
+//
+//	http://jdih.acehprov.go.id/integrasi        -> acehprov
+//	http://jdih.acehbesarkab.go.id/integrasi    -> acehbesarkab
+func SourceCode(endpoint string) string {
+	host := endpoint
+	port := ""
+	if u, err := url.Parse(endpoint); err == nil && u.Hostname() != "" {
+		host = u.Hostname()
+		if p := u.Port(); p != "" && p != "80" && p != "443" {
+			port = "_" + p
+		}
+	}
+	host = strings.ToLower(host)
+	host = strings.TrimPrefix(host, "www.")
+	host = strings.TrimPrefix(host, "jdih.")
+	for _, suf := range []string{".go.id", ".ac.id", ".co.id", ".or.id", ".id", ".com", ".net", ".org"} {
+		if strings.HasSuffix(host, suf) {
+			host = strings.TrimSuffix(host, suf)
+			break
+		}
+	}
+	host = strings.ReplaceAll(host, ".", "_")
+	if strings.TrimSpace(host) == "" {
+		host = "sumber"
+	}
+	return sanitize(host + port)
+}
+
+func sanitize(s string) string {
+	s = strings.TrimSpace(s)
+	s = reUnsafe.ReplaceAllString(s, "_")
+	s = reMultiUnd.ReplaceAllString(s, "_")
+	s = reEdge.ReplaceAllString(s, "")
+	if len(s) > 120 {
+		s = reEdge.ReplaceAllString(s[:120], "")
+	}
+	if s == "" {
+		s = "dokumen"
+	}
+	return s
+}
+
+// FetchIntegrasi menarik & mengurai daftar record dari endpoint /integrasi.
+// Dipanggil oleh IntegrasiSource.ListDocuments (source.go). TIDAK menyimpan
+// mentahnya ke disk — hasil sudah langsung didaftarkan ke DB oleh pemanggil.
+func FetchIntegrasi(ctx context.Context, c Config) ([]Record, error) {
+	body, _, err := httpGet(ctx, c, c.Endpoint)
+	if err != nil {
+		return nil, fmt.Errorf("fetch integrasi: %w", err)
+	}
+	var records []Record
+	if err := json.Unmarshal(body, &records); err != nil {
+		return nil, fmt.Errorf("parse integrasi (%d byte): %w", len(body), err)
+	}
+	return records, nil
+}
+
+// DownloadPDF mengunduh isi PDF untuk satu URL, mengikuti tautan HTML->PDF
+// bila server mengembalikan halaman viewer, bukan PDF langsung.
+func DownloadPDF(ctx context.Context, c Config, downloadURL string) ([]byte, error) {
+	u := strings.TrimSpace(downloadURL)
+	if u == "" {
+		return nil, fmt.Errorf("urlDownload kosong")
+	}
+	body, ctype, err := httpGet(ctx, c, u)
+	if err != nil {
+		return nil, err
+	}
+	if isPDF(ctype, body) {
+		return body, nil
+	}
+	// fallback: server mengembalikan HTML viewer -> cari tautan .pdf.
+	if looksHTML(ctype, body) {
+		if link := findPDFLink(body, u); link != "" {
+			body2, ctype2, err := httpGet(ctx, c, link)
+			if err != nil {
+				return nil, fmt.Errorf("mengikuti tautan PDF: %w", err)
+			}
+			if isPDF(ctype2, body2) {
+				return body2, nil
+			}
+			return nil, fmt.Errorf("tautan %s bukan PDF (ctype=%s)", link, ctype2)
+		}
+		return nil, fmt.Errorf("HTML tanpa tautan .pdf (ctype=%s)", ctype)
+	}
+	if bytes.HasPrefix(bytes.TrimSpace(body), pdfMagic) {
+		return body, nil
+	}
+	return nil, fmt.Errorf("bukan PDF (ctype=%s, %d byte)", ctype, len(body))
+}
+
+// ---- http & deteksi konten ----
+
+func httpGet(ctx context.Context, c Config, url string) ([]byte, string, error) {
+	timeout := c.HTTPTimeout
+	if timeout == 0 {
+		timeout = 120 * time.Second
+	}
+	cl := &http.Client{Timeout: timeout}
+	retries := c.MaxRetries
+	if retries < 0 {
+		retries = 0
+	}
+	var lastErr error
+	for attempt := 0; attempt <= retries; attempt++ {
+		if attempt > 0 {
+			select {
+			case <-ctx.Done():
+				return nil, "", ctx.Err()
+			case <-time.After(c.Delay * time.Duration(attempt)):
+			}
+		}
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+		if err != nil {
+			return nil, "", err
+		}
+		req.Header.Set("User-Agent", "uuparser-downloader/0.2")
+		resp, err := cl.Do(req)
+		if err != nil {
+			lastErr = err
+			continue
+		}
+		body, rerr := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		if rerr != nil {
+			lastErr = rerr
+			continue
+		}
+		if resp.StatusCode >= 500 || resp.StatusCode == 429 {
+			lastErr = fmt.Errorf("status %d", resp.StatusCode)
+			continue
+		}
+		if resp.StatusCode >= 400 {
+			return nil, "", fmt.Errorf("status %d", resp.StatusCode)
+		}
+		return body, resp.Header.Get("Content-Type"), nil
+	}
+	return nil, "", fmt.Errorf("gagal setelah %d percobaan: %w", retries+1, lastErr)
+}
+
+func isPDF(ctype string, body []byte) bool {
+	if strings.Contains(strings.ToLower(ctype), "application/pdf") {
+		return true
+	}
+	return bytes.HasPrefix(bytes.TrimSpace(body), pdfMagic)
+}
+
+func looksHTML(ctype string, body []byte) bool {
+	if strings.Contains(strings.ToLower(ctype), "text/html") {
+		return true
+	}
+	h := bytes.ToLower(bytes.TrimSpace(body))
+	return bytes.HasPrefix(h, []byte("<!doctype html")) || bytes.HasPrefix(h, []byte("<html"))
+}
+
+func findPDFLink(html []byte, base string) string {
+	m := reHrefPDF.FindSubmatch(html)
+	if m == nil {
+		return ""
+	}
+	link := string(m[1])
+	if strings.HasPrefix(link, "http://") || strings.HasPrefix(link, "https://") {
+		return link
+	}
+	i := strings.Index(base, "://")
+	if i < 0 {
+		return link
+	}
+	rest := base[i+3:]
+	host := rest
+	if j := strings.Index(rest, "/"); j >= 0 {
+		host = rest[:j]
+	}
+	origin := base[:i+3] + host
+	if strings.HasPrefix(link, "/") {
+		return origin + link
+	}
+	return origin + "/" + link
+}
+
+
+
+internal/downloader/integrasi_source.go
+package downloader
+
+import "context"
+
+// integrasi_source.go: implementasi Source untuk endpoint JDIH standar
+// (/integrasi mengembalikan seluruh dataset sebagai satu array JSON).
+// Ini SATU-SATUNYA implementasi bawaan — sumber lain (API custom, scraping)
+// dapat file implementasi masing-masing dan didaftarkan di source.go's
+// NewSource.
+
+type IntegrasiSource struct {
+	code string
+	cfg  Config
+}
+
+// NewIntegrasiSource membuat Source untuk endpoint /integrasi standar.
+func NewIntegrasiSource(row SourceRow, cfg Config) *IntegrasiSource {
+	cfg.Endpoint = row.EndpointURL
+	return &IntegrasiSource{code: row.Code, cfg: cfg}
+}
+
+func (s *IntegrasiSource) Code() string { return s.code }
+
+func (s *IntegrasiSource) ListDocuments(ctx context.Context) ([]RemoteDoc, error) {
+	records, err := FetchIntegrasi(ctx, s.cfg)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]RemoteDoc, 0, len(records))
+	for _, r := range records {
+		out = append(out, RemoteDoc{
+			IDData:  r.IDData,
+			Judul:   r.Judul,
+			FileURL: r.URLDownload,
+			Meta: map[string]string{
+				"jenis":              r.Jenis,
+				"no_peraturan":       r.NoPeraturan,
+				"tahun_pengundangan": r.TahunPengundangan,
+				"file_download":      r.FileDownload,
+			},
+		})
+	}
+	return out, nil
+}
+
+func (s *IntegrasiSource) FetchPDF(ctx context.Context, doc RemoteDoc) ([]byte, error) {
+	return DownloadPDF(ctx, s.cfg, doc.FileURL)
+}
+
+
+
+internal/downloader/source.go
+package downloader
+
+import "context"
+
+// source.go: interface Source memisahkan "cara mendapat daftar dokumen & PDF
+// dari satu situs JDIH" dari orkestrasi pipeline. Ditambahkan 2026-07-20
+// karena tidak semua JDIH pakai /integrasi — sebagian punya API custom,
+// sebagian tidak punya API sama sekali (perlu scraping).
+//
+// Nambah sumber baru = tulis satu implementasi baru yang memenuhi interface
+// ini + insert baris di tabel `sources` (kolom source_type menentukan
+// implementasi mana yang dipakai lewat NewSource) — TIDAK menyentuh kode
+// pipeline (main.go, internal/store) sama sekali.
+//
+// SENGAJA tidak ada "generic scraper": tiap situs yang butuh scraping
+// mestinya dapat implementasi bespoke sendiri (struktur HTML tiap situs
+// pemerintah biasanya berbeda dan gampang berubah) — jangan dipaksakan lewat
+// satu scraper generik yang rapuh.
+
+// RemoteDoc adalah satu entri dokumen dari sebuah Source, sudah dinormalisasi
+// lintas jenis sumber (integrasi API, API custom, atau hasil scrape).
+type RemoteDoc struct {
+	IDData  string            // identitas asli dari sumber (idData / ID lain)
+	Judul   string
+	FileURL string            // URL PDF langsung, atau URL yang mengarah ke PDF
+	Meta    map[string]string // field tambahan spesifik sumber (opsional)
+}
+
+// Source adalah satu sumber JDIH. Implementasinya BEBAS bagaimana cara
+// mendapatkannya (HTTP JSON API, API custom, atau scraping HTML) — pipeline
+// hanya bicara lewat dua method ini.
+type Source interface {
+	// Code adalah slug sumber ini, sama dengan sources.code di DB.
+	Code() string
+	// ListDocuments mengambil daftar dokumen TERKINI dari sumber.
+	ListDocuments(ctx context.Context) ([]RemoteDoc, error)
+	// FetchPDF mengunduh isi PDF untuk satu RemoteDoc.
+	FetchPDF(ctx context.Context, doc RemoteDoc) ([]byte, error)
+}
+
+// SourceRow adalah baris `sources` yang relevan untuk factory NewSource —
+// dipetakan dari internal/store, diteruskan di sini supaya package downloader
+// tidak perlu import internal/store (hindari dependency siklik).
+type SourceRow struct {
+	Code            string
+	EndpointURL     string
+	SourceType      string
+	SourceConfigRaw []byte // JSON mentah dari kolom source_config jsonb
+}
+
+// NewSource adalah factory: pilih implementasi Source berdasarkan
+// SourceRow.SourceType. Tambah case baru di sini setiap kali ada
+// source_type baru (mis. "scrape_<nama_situs>").
+func NewSource(row SourceRow, cfg Config) (Source, error) {
+	switch row.SourceType {
+	case "", "integrasi":
+		return NewIntegrasiSource(row, cfg), nil
+	default:
+		// Tempat menambah scraper/API-custom bespoke per situs, mis.:
+		//   case "scrape_contoh_jdih":
+		//       return NewContohJDIHScraper(row, cfg), nil
+		return nil, &unknownSourceTypeError{sourceType: row.SourceType, code: row.Code}
+	}
+}
+
+type unknownSourceTypeError struct {
+	sourceType string
+	code       string
+}
+
+func (e *unknownSourceTypeError) Error() string {
+	return "downloader: source_type '" + e.sourceType + "' untuk source '" + e.code +
+		"' belum ada implementasinya — tambahkan case di downloader.NewSource"
+}
+
+
+
+internal/extractor/degenerate.go
+package extractor
+
+import (
+	"strings"
+)
+
+// degenerate.go menangani keluaran model yang "macet mengulang".
+//
+// Model visi kecil kerap masuk pengulangan tanpa henti pada halaman yang sebagian
+// besar kosong — misalnya halaman berisi dua baris teks lalu menghasilkan
+// "1 1 1 1 1 ..." sampai batas token. Batas num_predict memutus panjangnya, tetapi
+// teks sampah itu tetap tidak boleh masuk ke korpus: bila dibiarkan, parser akan
+// melihat ratusan baris tak dikenal dan hasil akhirnya menyesatkan.
+//
+// Karena itu keluaran diperiksa; bagian yang jelas berulang dipangkas, dan bila
+// isinya didominasi pengulangan, halaman ditandai untuk ditinjau manusia.
+
+const (
+	// batas pengulangan berturut-turut yang masih dianggap wajar.
+	maxRepeatLines  = 3
+	maxRepeatTokens = 4
+)
+
+// cleanupResult hasil pemeriksaan keluaran OCR satu halaman.
+type cleanupResult struct {
+	Text       string // teks setelah pemangkasan
+	Degenerate bool   // true bila keluaran didominasi pengulangan
+	Removed    int    // jumlah baris yang dipangkas
+}
+
+// cleanOCRText memangkas pengulangan berlebihan dan melaporkan apakah keluaran
+// tampak degeneratif.
+func cleanOCRText(raw string) cleanupResult {
+	if strings.TrimSpace(raw) == "" {
+		return cleanupResult{Text: raw}
+	}
+
+	lines := strings.Split(raw, "\n")
+	out := make([]string, 0, len(lines))
+	removed := 0
+
+	var prev string
+	repeat := 0
+	for _, ln := range lines {
+		cleaned := collapseRepeatedTokens(ln)
+		key := strings.TrimSpace(cleaned)
+
+		if key != "" && key == prev {
+			repeat++
+			if repeat >= maxRepeatLines {
+				removed++
+				continue // lewati pengulangan berlebih
+			}
+		} else {
+			repeat = 0
+			prev = key
+		}
+		out = append(out, cleaned)
+	}
+
+	text := strings.Join(out, "\n")
+	return cleanupResult{
+		Text:       text,
+		Degenerate: looksDegenerate(raw),
+		Removed:    removed,
+	}
+}
+
+// collapseRepeatedTokens memangkas token identik yang berulang dalam satu baris,
+// mis. "1 1 1 1 1 1 1 1" menjadi "1 1 1 1".
+func collapseRepeatedTokens(line string) string {
+	fields := strings.Fields(line)
+	if len(fields) <= maxRepeatTokens {
+		return line
+	}
+	out := make([]string, 0, len(fields))
+	var prev string
+	run := 0
+	for _, f := range fields {
+		if f == prev {
+			run++
+			if run >= maxRepeatTokens {
+				continue
+			}
+		} else {
+			prev = f
+			run = 0
+		}
+		out = append(out, f)
+	}
+	if len(out) == len(fields) {
+		return line // tidak ada yang dipangkas: pertahankan spasi asli
+	}
+	return strings.Join(out, " ")
+}
+
+// looksDegenerate menilai apakah keluaran didominasi pengulangan sehingga tidak
+// layak dipercaya sebagai hasil OCR.
+func looksDegenerate(raw string) bool {
+	fields := strings.Fields(raw)
+	if len(fields) < 40 {
+		return false // terlalu pendek untuk dinilai
+	}
+
+	// 1) satu token mendominasi seluruh keluaran.
+	freq := map[string]int{}
+	for _, f := range fields {
+		freq[f]++
+	}
+	top := 0
+	for _, c := range freq {
+		if c > top {
+			top = c
+		}
+	}
+	if float64(top)/float64(len(fields)) > 0.5 {
+		return true
+	}
+
+	// 2) keragaman token sangat rendah (banyak kata, sedikit kata unik).
+	if float64(len(freq))/float64(len(fields)) < 0.05 {
+		return true
+	}
+
+	// 3) satu baris identik berulang sangat banyak.
+	lines := strings.Split(raw, "\n")
+	if len(lines) >= 20 {
+		lineFreq := map[string]int{}
+		for _, ln := range lines {
+			if t := strings.TrimSpace(ln); t != "" {
+				lineFreq[t]++
+			}
+		}
+		for _, c := range lineFreq {
+			if c > 15 {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+
+
+internal/extractor/extractor.go
+// Package extractor mengubah PDF menjadi teks per halaman: tiap halaman
+// dirasterisasi lalu di-OCR, hasilnya diserahkan ke PageStore pemanggil
+// (Postgres, lihat internal/store) — TIDAK ADA file perantara di disk sama
+// sekali (kecuali PDF sumbernya sendiri, yang tetap berguna untuk pratinjau).
+//
+// Tidak ada tahap "perbaikan typo" oleh model bahasa. Model bahasa tidak dapat
+// membedakan salah ketik dari istilah yang tidak dikenalnya — pada korpus hukum
+// yang penuh ejaan lama, istilah daerah (Qanun, Reusam, Keuchik), dan nomenklatur
+// lama, "perbaikan" semacam itu justru mengubah isi secara diam-diam. Kesalahan
+// OCR yang benar-benar merusak struktur ditangani secara deterministik dan dapat
+// diaudit di internal/parser/ocrfix.go dan internal/parser/fuzzyfix.go.
+//
+// Deteksi "sudah selesai" dilakukan PER HALAMAN lewat PageStore.HasPage (bukan
+// file-existence): bila OCR baru sampai halaman 4, menjalankan ulang akan
+// meneruskan dari halaman 5.
+//
+// GATE: HANYA halaman 1 yang diperiksa (bukan beberapa halaman seperti versi
+// lama) — identitas peraturan wajib ada di halaman 1 per Lampiran II UU
+// 12/2011, lihat internal/parser/header.go. Bila gagal gate, sisa halaman
+// TIDAK di-OCR sama sekali.
+package extractor
+
+import (
+	"context"
+	"fmt"
+	"strings"
+	"time"
+
+	"github.com/fuadarradhi/uuparser/internal/localllm"
+	"github.com/fuadarradhi/uuparser/internal/logx"
+	"github.com/fuadarradhi/uuparser/internal/raster"
+)
+
+// PageStore adalah satu-satunya jembatan extractor ke penyimpanan permanen.
+// Diimplementasikan oleh pemanggil (main.go, membungkus internal/store) —
+// package ini sendiri TIDAK tahu dan tidak peduli itu Postgres atau apa pun,
+// supaya tetap bisa diuji dengan implementasi in-memory tanpa DB sungguhan.
+type PageStore interface {
+	// HasPage melapor apakah halaman ini sudah punya hasil OCR tersimpan
+	// (dasar resume per-halaman, menggantikan cek file-existence lama).
+	HasPage(ctx context.Context, page int) (bool, error)
+	// SavePage menyimpan hasil satu halaman. notes adalah catatan tinjauan
+	// (halaman kosong, keluaran terpotong, dst) — disimpan sebagai daftar,
+	// bisa lebih dari satu per halaman.
+	SavePage(ctx context.Context, page int, text string, isEmpty, isTruncated bool, notes []string) error
+	// ReadPages membaca halaman [a,b] (inklusif, 1-based) yang SUDAH
+	// tersimpan; halaman yang belum ada dilewati begitu saja (bukan error).
+	ReadPages(ctx context.Context, a, b int) ([]string, error)
+}
+
+// Config berisi parameter yang BENAR-BENAR perlu diubah pemanggil. Nilai yang
+// sudah punya jawaban jelas (prompt OCR, ambang halaman-kosong) adalah
+// KONSTANTA di bawah, bukan field — supaya tidak ada tombol yang bisa
+// "diutak-atik jadi rusak" tanpa alasan (permintaan eksplisit user 2026-07-20).
+type Config struct {
+	AutoCrop bool
+	DPI      int
+
+	OCRClient    *localllm.Client
+	OCRMaxTokens int
+
+	// GateFunc memutuskan apakah dokumen ini layak diteruskan berdasarkan
+	// teks HALAMAN 1 SAJA. WAJIB diisi pemanggil — lihat
+	// internal/parser/header.go untuk pemeriksaan jenis/instansi/nomor/
+	// tahun + kecocokan jurisdiksi yang dipakai main.go.
+	GateFunc func(page1Text string) (accept bool, reason string)
+}
+
+// DefaultOCRPrompt adalah SATU-SATUNYA prompt yang didukung GLM-OCR untuk teks
+// biasa. Model ini hanya dilatih untuk beberapa prompt tertentu — kalimat
+// instruksi bebas membuat keluarannya tak terduga — jadi ini konstanta, bukan
+// pengaturan.
+const DefaultOCRPrompt = "Text Recognition:"
+
+// blankInkRatio: halaman dengan proporsi tinta di bawah ini dianggap kosong
+// dan TIDAK dikirim ke model — menghemat waktu sekaligus menghindari
+// pengulangan degeneratif pada halaman hampa. Nilai ini hasil pengujian
+// (lihat riwayat proyek), bukan sesuatu yang perlu di-tuning per instalasi.
+const blankInkRatio = 0.0004
+
+// ErrRejected dikembalikan bila dokumen ditolak gate kelayakan (bukan peraturan
+// atau bukan produk jurisdiksi sumber ini).
+var ErrRejected = fmt.Errorf("dokumen ditolak gate kelayakan")
+
+// Extractor memproses SATU dokumen memakai klien inferensi yang sudah
+// disiapkan pemanggil dan PageStore tujuan penyimpanan.
+type Extractor struct {
+	cfg   Config
+	pages PageStore
+}
+
+func New(cfg Config, pages PageStore) *Extractor {
+	return &Extractor{cfg: cfg, pages: pages}
+}
+
+// Document meng-OCR satu dokumen: halaman 1 dulu (lalu gate), baru sisanya
+// bila lolos. Idempoten per halaman (PageStore.HasPage) — aman dipanggil
+// berulang bila proses terhenti di tengah jalan.
+func (e *Extractor) Document(ctx context.Context, pdfPath string) error {
+	doc, err := raster.Open(pdfPath)
+	if err != nil {
+		return err
+	}
+	defer doc.Close()
+	n := doc.NumPages()
+	if n == 0 {
+		return fmt.Errorf("pdf tanpa halaman")
+	}
+
+	has1, err := e.pages.HasPage(ctx, 1)
+	if err != nil {
+		return err
+	}
+	if !has1 {
+		if err := e.ocrPage(ctx, doc, 1, n); err != nil {
+			return fmt.Errorf("ocr halaman 1: %w", err)
+		}
+	}
+
+	page1, err := e.pages.ReadPages(ctx, 1, 1)
+	if err != nil {
+		return err
+	}
+	var page1Text string
+	if len(page1) > 0 {
+		page1Text = page1[0]
+	}
+	if accept, _ := e.cfg.GateFunc(page1Text); !accept {
+		return ErrRejected
+	}
+
+	for i := 2; i <= n; i++ {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		has, err := e.pages.HasPage(ctx, i)
+		if err != nil {
+			return err
+		}
+		if has {
+			continue
+		}
+		if err := e.ocrPage(ctx, doc, i, n); err != nil {
+			return fmt.Errorf("ocr lanjut hal %d: %w", i, err)
+		}
+	}
+	return nil
+}
+
+// ocrPage merender lalu meng-OCR SATU halaman, menyimpan hasilnya lewat
+// PageStore. Menyertakan penanganan halaman-kosong, keluaran-terpotong,
+// pengulangan-degeneratif, dan satu percobaan ulang bila hasil kosong —
+// semua perilaku ini sama seperti versi berbasis-file sebelumnya, hanya
+// tujuan penyimpanannya yang berubah.
+func (e *Extractor) ocrPage(ctx context.Context, doc *raster.Doc, pageNum, total int) error {
+	c := e.cfg
+	dpi := c.DPI
+	if dpi == 0 {
+		dpi = 200
+	}
+
+	pg, err := doc.Render(pageNum, raster.Opts{DPI: dpi, AutoCrop: c.AutoCrop})
+	if err != nil {
+		return fmt.Errorf("rasterisasi: %w", err)
+	}
+
+	if pg.InkRatio < blankInkRatio {
+		logx.Skip("hal %d/%d — kosong, dilewati", pageNum, total)
+		return e.pages.SavePage(ctx, pageNum, "", true, false,
+			[]string{"halaman kosong (tanpa teks) — OCR dilewati"})
+	}
+
+	started := time.Now()
+	res, err := c.OCRClient.Vision(ctx, DefaultOCRPrompt, pg.PNG, localllm.Params{MaxTokens: c.OCRMaxTokens})
+	if err != nil {
+		return fmt.Errorf("OCR: %w", err)
+	}
+	text := res.Text
+	truncated := res.Truncated
+	var notes []string
+	if truncated {
+		notes = append(notes, "keluaran OCR terpotong (batas token atau pembatalan) — teks halaman mungkin tidak lengkap")
+		logx.Warn("hal %d/%d — keluaran terpotong", pageNum, total)
+	}
+
+	saved := ""
+	if pg.CroppedFrom > 0 {
+		cut := 100 - float64(pg.W*pg.H)*100/float64(pg.CroppedFrom)
+		if cut >= 1 {
+			saved = fmt.Sprintf(" (-%.1f%% piksel)", cut)
+		}
+	}
+	logx.Progress("OCR", pageNum, total, "%dx%d px%s · %s",
+		pg.W, pg.H, saved, time.Since(started).Round(time.Second))
+
+	if cr := cleanOCRText(text); cr.Removed > 0 || cr.Degenerate {
+		text = cr.Text
+		if cr.Degenerate {
+			notes = append(notes, "keluaran OCR didominasi pengulangan — kemungkinan model macet; perlu ditinjau")
+			logx.Warn("hal %d/%d — keluaran berulang, dipangkas", pageNum, total)
+		}
+	}
+
+	if strings.TrimSpace(text) == "" {
+		retry, rerr := c.OCRClient.Vision(ctx, DefaultOCRPrompt, pg.PNG, localllm.Params{MaxTokens: c.OCRMaxTokens})
+		if rerr != nil {
+			return fmt.Errorf("OCR (ulang): %w", rerr)
+		}
+		text = retry.Text
+		if retry.Truncated {
+			truncated = true
+			notes = append(notes, "keluaran OCR terpotong pada percobaan kedua")
+			logx.Warn("hal %d/%d — keluaran terpotong (percobaan 2)", pageNum, total)
+		}
+		if cr := cleanOCRText(text); cr.Removed > 0 || cr.Degenerate {
+			text = cr.Text
+			if cr.Degenerate {
+				notes = append(notes, "keluaran OCR didominasi pengulangan (percobaan 2)")
+				logx.Warn("hal %d/%d — keluaran berulang, dipangkas (percobaan 2)", pageNum, total)
+			}
+		}
+		if strings.TrimSpace(text) == "" {
+			notes = append(notes, "OCR menghasilkan teks kosong (2 percobaan)")
+		}
+	}
+
+	return e.pages.SavePage(ctx, pageNum, text, false, truncated, notes)
+}
+
+
+
+internal/fsutil/fsutil.go
+// Package fsutil berisi bantuan berkas yang dipakai semua tahap.
+//
+// Penulisan atomik penting justru KARENA deteksi "sudah selesai" pada aplikasi ini
+// berbasis keberadaan berkas: bila service mati saat menulis pageN.txt, berkas
+// separuh akan dikira selesai dan kerusakan itu permanen. Menulis ke berkas
+// sementara lalu rename membuat berkas hanya muncul ketika isinya sudah utuh.
+package fsutil
+
+import (
+	"os"
+	"path/filepath"
+)
+
+// WriteFileAtomic menulis data ke path secara atomik (tulis .tmp lalu rename).
+func WriteFileAtomic(path string, data []byte, perm os.FileMode) error {
+	dir := filepath.Dir(path)
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return err
+	}
+	tmp, err := os.CreateTemp(dir, ".tmp-*")
+	if err != nil {
+		return err
+	}
+	tmpName := tmp.Name()
+	defer os.Remove(tmpName) // tak berpengaruh bila rename berhasil
+
+	if _, err := tmp.Write(data); err != nil {
+		tmp.Close()
+		return err
+	}
+	// Sync agar isi benar-benar sampai ke disk sebelum rename.
+	if err := tmp.Sync(); err != nil {
+		tmp.Close()
+		return err
+	}
+	if err := tmp.Close(); err != nil {
+		return err
+	}
+	if err := os.Chmod(tmpName, perm); err != nil {
+		return err
+	}
+	return os.Rename(tmpName, path)
+}
+
+// Exists melaporkan apakah path ada.
+func Exists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
+}
+
+
+
+internal/localllm/localllm.go
+// Package localllm menjalankan model langsung di dalam proses lewat yzma
+// (pengikat Go untuk llama.cpp). Tidak ada server inferensi dan tidak ada
+// permintaan keluar — satu-satunya lalu lintas jaringan aplikasi ini adalah
+// pengunduhan PDF.
+//
+// Model dimuat SEKALI lalu dipakai untuk seluruh dokumen dan seluruh halaman;
+// tidak ada buka-tutup per dokumen. Pemuatan bersifat malas (baru terjadi saat
+// halaman pertama benar-benar perlu di-OCR), dan Release dapat dipanggil ketika
+// tidak ada lagi pekerjaan agar memori tidak tertahan selama service menunggu
+// siklus berikutnya.
+//
+// Yang dibutuhkan: pustaka llama.cpp (libllama, libmtmd), berkas model GGUF,
+// dan berkas proyektor multimodal (mmproj).
+package localllm
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"strings"
+	"sync"
+
+	"github.com/fuadarradhi/uuparser/internal/logx"
+	"github.com/hybridgroup/yzma/pkg/llama"
+	"github.com/hybridgroup/yzma/pkg/mtmd"
+)
+
+// Nilai-nilai berikut sengaja tetap, bukan pengaturan.
+//
+// Suhu 0 berarti pengambilan token greedy: keluaran OCR dapat diulang persis,
+// dan TopK/TopP/MinP tidak berpengaruh sama sekali sehingga tidak ada gunanya
+// disediakan sebagai konfigurasi. Sampler DRY dibiarkan nonaktif (bawaan
+// llama.cpp) karena pengulangan tak berujung yang pernah ditemui berasal dari
+// Ollama, bukan dari llama.cpp.
+const (
+	samplerTemp = 0.0
+
+	// initialCtx dipilih dengan perhitungan, bukan angka bawaan.
+	//
+	// Satu halaman A4 pada 200 DPI menjadi kira-kira 4100 token visi. Jendela
+	// konteks harus memuat token gambar DAN seluruh keluaran (OCR_MAX_TOKENS,
+	// baku 2048) sekaligus, sehingga 4096 pasti kurang — inilah galat
+	// "exceeds the available context size" yang khas. 8192 memberi ruang untuk
+	// halaman penuh beserta keluarannya.
+	//
+	// Biayanya kecil: KV cache model sekelas GLM-OCR (0,9B) pada 8192 token
+	// hanya beberapa megabita.
+	initialCtx = 8192
+
+	// maxCtx membatasi pertumbuhan otomatis (lihat growContext).
+	maxCtx = 32768
+
+	nBatch        = 2048
+	chatBufferLen = 8192
+)
+
+// Config hanya memuat hal yang memang berbeda di tiap mesin.
+type Config struct {
+	ModelPath  string // berkas model GGUF
+	MMProjPath string // berkas proyektor multimodal (mmproj)
+	LibPath    string // folder berisi libllama/libmtmd (kosong = jalur sistem)
+	Verbose    bool   // tampilkan log llama.cpp
+}
+
+// Client memegang model yang sudah dimuat. Aman dipakai berulang; pemakaian
+// diserialkan karena satu konteks llama.cpp tidak boleh dipakai bersamaan.
+type Client struct {
+	cfg Config
+
+	mu     sync.Mutex
+	loaded bool
+
+	model    llama.Model
+	lctx     llama.Context
+	curCtx   uint32 // ukuran jendela konteks yang sedang dipakai
+	mctx     mtmd.Context
+	vocab    llama.Vocab
+	sampler  llama.Sampler
+	template string
+	marker   string
+}
+
+// libsOnce menjaga agar pustaka bersama hanya dimuat sekali seumur proses,
+// meski model dilepas lalu dimuat ulang di antara siklus.
+var (
+	libsOnce sync.Once
+	libsErr  error
+)
+
+// LoadError menandai kegagalan menyiapkan model: pustaka tidak ditemukan, berkas
+// model tidak terbaca, dan sejenisnya.
+//
+// Kegagalan seperti ini bersifat lingkungan, bukan milik satu dokumen. Pemanggil
+// sebaiknya menghentikan siklus alih-alih menandai tiap dokumen gagal — bila
+// tidak, satu pustaka yang belum terpasang akan menghabiskan jatah percobaan
+// semua dokumen.
+type LoadError struct{ Err error }
+
+func (e *LoadError) Error() string { return e.Err.Error() }
+func (e *LoadError) Unwrap() error { return e.Err }
+
+// IsLoadError melaporkan apakah galat berasal dari penyiapan model.
+func IsLoadError(err error) bool {
+	var le *LoadError
+	return errors.As(err, &le)
+}
+
+// New menyiapkan klien TANPA memuat model. Model baru dimuat ketika halaman
+// pertama perlu di-OCR, sehingga siklus yang tidak menemukan pekerjaan tidak
+// menyita memori sama sekali.
+func New(c Config) (*Client, error) {
+	if strings.TrimSpace(c.ModelPath) == "" {
+		return nil, fmt.Errorf("MODEL_PATH kosong")
+	}
+	if strings.TrimSpace(c.MMProjPath) == "" {
+		return nil, fmt.Errorf("MMPROJ_PATH kosong — model visi memerlukan berkas proyektor multimodal (mmproj)")
+	}
+	return &Client{cfg: c}, nil
+}
+
+// Model mengembalikan path model, untuk keperluan log.
+func (c *Client) Model() string { return c.cfg.ModelPath }
+
+// Loaded melaporkan apakah model sedang berada di memori.
+func (c *Client) Loaded() bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.loaded
+}
+
+// ensureLoaded memuat model bila belum termuat. Pemanggil sudah memegang kunci.
+func (c *Client) ensureLoaded() error {
+	if c.loaded {
+		return nil
+	}
+
+	libsOnce.Do(func() {
+		if err := llama.Load(c.cfg.LibPath); err != nil {
+			libsErr = fmt.Errorf("memuat pustaka llama: %w", err)
+			return
+		}
+		if err := mtmd.Load(c.cfg.LibPath); err != nil {
+			libsErr = fmt.Errorf("memuat pustaka mtmd: %w", err)
+			return
+		}
+		if !c.cfg.Verbose {
+			llama.LogSet(llama.LogSilent())
+			mtmd.LogSet(llama.LogSilent())
+		}
+	})
+	if libsErr != nil {
+		return libsErr
+	}
+
+	llama.Init()
+
+	model, err := llama.ModelLoadFromFile(c.cfg.ModelPath, llama.ModelDefaultParams())
+	if err != nil {
+		llama.Close()
+		return fmt.Errorf("memuat model %s: %w", c.cfg.ModelPath, err)
+	}
+	if model == 0 {
+		llama.Close()
+		return fmt.Errorf("gagal memuat model dari %s", c.cfg.ModelPath)
+	}
+
+	if c.curCtx == 0 {
+		c.curCtx = initialCtx
+	}
+	lctx, err := newContext(model, c.curCtx)
+	if err != nil {
+		llama.ModelFree(model)
+		llama.Close()
+		return err
+	}
+
+	mctx, err := mtmd.InitFromFile(c.cfg.MMProjPath, model, mtmd.ContextParamsDefault())
+	if err != nil {
+		llama.Free(lctx)
+		llama.ModelFree(model)
+		llama.Close()
+		return fmt.Errorf("memuat proyektor multimodal %s: %w", c.cfg.MMProjPath, err)
+	}
+
+	sp := llama.DefaultSamplerParams()
+	sp.Temp = samplerTemp
+
+	c.model = model
+	c.lctx = lctx
+	c.mctx = mctx
+	c.vocab = llama.ModelGetVocab(model)
+	c.sampler = llama.NewSampler(model, llama.DefaultSamplers, sp)
+	c.template = llama.ModelChatTemplate(model, "")
+	c.marker = mtmd.DefaultMarker()
+	c.loaded = true
+
+	logx.Info("model dimuat: %s (konteks %d token)", c.cfg.ModelPath, c.curCtx)
+	return nil
+}
+
+// growContext menggandakan jendela konteks tanpa memuat ulang model. Model tetap
+// di memori; hanya konteks (KV cache) yang dibuat ulang, sehingga jauh lebih
+// murah daripada memuat ulang seluruh model.
+func (c *Client) growContext() error {
+	next := c.curCtx * 2
+	if next > maxCtx {
+		next = maxCtx
+	}
+	lctx, err := newContext(c.model, next)
+	if err != nil {
+		return err
+	}
+	llama.Free(c.lctx)
+	c.lctx = lctx
+	c.curCtx = next
+	logx.Info("konteks diperbesar menjadi %d token", next)
+	return nil
+}
+
+// newContext membuat konteks llama dengan ukuran jendela tertentu.
+func newContext(model llama.Model, nCtx uint32) (llama.Context, error) {
+	p := llama.ContextDefaultParams()
+	p.NCtx = nCtx
+	p.NBatch = nBatch
+	lctx, err := llama.InitFromModel(model, p)
+	if err != nil {
+		return 0, fmt.Errorf("menyiapkan konteks %d token: %w", nCtx, err)
+	}
+	return lctx, nil
+}
+
+// Release melepaskan model dari memori. Dipanggil ketika tidak ada lagi yang
+// perlu di-OCR, agar service tidak menahan memori selama menunggu siklus
+// berikutnya. Model dimuat ulang sendiri ketika kembali dibutuhkan.
+func (c *Client) Release() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if !c.loaded {
+		return
+	}
+	llama.SamplerFree(c.sampler)
+	mtmd.Free(c.mctx)
+	llama.Free(c.lctx)
+	llama.ModelFree(c.model)
+	llama.Close()
+	c.loaded = false
+	logx.Info("model dilepas dari memori")
+}
+
+// Vision menjalankan OCR atas satu gambar PNG.
+func (c *Client) Vision(ctx context.Context, prompt string, png []byte, p Params) (Result, error) {
+	if len(png) == 0 {
+		return Result{}, fmt.Errorf("gambar kosong")
+	}
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if err := c.ensureLoaded(); err != nil {
+		return Result{}, &LoadError{Err: err}
+	}
+
+	// Bersihkan sisa halaman sebelumnya. Tanpa ini konteks halaman lama ikut
+	// terbawa dan model dapat melanjutkan teks dari halaman yang keliru.
+	if mem, err := llama.GetMemory(c.lctx); err == nil {
+		_ = llama.MemoryClear(mem, true)
+	}
+	llama.SamplerReset(c.sampler)
+
+	messages := []llama.ChatMessage{
+		llama.NewChatMessage("user", c.marker+prompt),
+	}
+	buf := make([]byte, chatBufferLen)
+	n := llama.ChatApplyTemplate(c.template, messages, true, buf)
+	if n <= 0 {
+		return Result{}, fmt.Errorf("gagal menerapkan chat template")
+	}
+
+	chunks := mtmd.InputChunksInit()
+	defer mtmd.InputChunksFree(chunks)
+
+	// Gambar diserahkan langsung dari memori, tanpa berkas sementara.
+	bw := mtmd.BitmapInitFromBuf(c.mctx, &png[0], uint64(len(png)), false)
+	if bw.Bitmap == 0 {
+		return Result{}, fmt.Errorf("gagal membaca gambar (%d byte)", len(png))
+	}
+	defer mtmd.BitmapFree(bw.Bitmap)
+
+	input := mtmd.NewInputText(string(buf[:n]), true, true)
+	if rc := mtmd.Tokenize(c.mctx, chunks, input, []mtmd.Bitmap{bw.Bitmap}); rc != 0 {
+		return Result{}, fmt.Errorf("tokenisasi gagal (kode %d)", rc)
+	}
+
+	var pos llama.Pos
+	if rc := mtmd.HelperEvalChunks(c.mctx, c.lctx, chunks, 0, 0, nBatch, true, &pos); rc != 0 {
+		// Penyebab tersering: jendela konteks tidak cukup menampung token gambar.
+		// Perbesar lalu ulangi sekali; ukuran baru dipakai untuk halaman
+		// berikutnya sehingga kegagalan yang sama tidak berulang.
+		if c.curCtx >= maxCtx {
+			return Result{}, fmt.Errorf("evaluasi gambar gagal (kode %d) pada konteks %d — "+
+				"halaman terlalu besar; kecilkan DPI atau pastikan AUTO_CROP aktif", rc, c.curCtx)
+		}
+		if err := c.growContext(); err != nil {
+			return Result{}, err
+		}
+		pos = 0
+		if rc := mtmd.HelperEvalChunks(c.mctx, c.lctx, chunks, 0, 0, nBatch, true, &pos); rc != 0 {
+			return Result{}, fmt.Errorf("evaluasi gambar gagal (kode %d) pada konteks %d — "+
+				"kecilkan DPI atau pastikan AUTO_CROP aktif", rc, c.curCtx)
+		}
+	}
+
+	maxTokens := p.MaxTokens
+	if maxTokens <= 0 {
+		maxTokens = 2048
+	}
+
+	var sb strings.Builder
+	piece := make([]byte, 256)
+	truncated := true // menjadi false bila model berhenti sendiri (EOG)
+
+	for i := 0; i < maxTokens; i++ {
+		if err := ctx.Err(); err != nil {
+			return Result{Text: sb.String(), Truncated: true}, err
+		}
+		token := llama.SamplerSample(c.sampler, c.lctx, -1)
+		if llama.VocabIsEOG(c.vocab, token) {
+			truncated = false
+			break
+		}
+		if l := llama.TokenToPiece(c.vocab, token, piece, 0, true); l > 0 {
+			sb.Write(piece[:l])
+		}
+
+		batch := llama.BatchGetOne([]llama.Token{token})
+		batch.Pos = &pos
+		if _, err := llama.Decode(c.lctx, batch); err != nil {
+			return Result{Text: sb.String(), Truncated: true}, fmt.Errorf("dekode token: %w", err)
+		}
+		pos++
+	}
+
+	return Result{Text: sb.String(), Truncated: truncated}, nil
+}
+
+
+
+internal/localllm/types.go
+package localllm
+
+// Params mengatur satu permintaan OCR.
+type Params struct {
+	// MaxTokens membatasi panjang keluaran satu halaman. Ini pengaman terakhir
+	// bila model tidak berhenti sendiri.
+	MaxTokens int
+}
+
+// Result adalah hasil satu permintaan.
+type Result struct {
+	Text string
+	// Truncated: model berhenti karena batas token, bukan karena selesai sendiri.
+	// Teks halaman kemungkinan tidak lengkap, jadi selalu ditandai.
+	Truncated bool
+}
+
+
+
+internal/logx/logx.go
+// Package logx menangani dua keluaran yang berbeda kebutuhannya.
+//
+// Konsol: ringkas, berwarna, dan menunjukkan kemajuan — untuk dipantau manusia.
+// Warna dimatikan sendiri ketika keluaran bukan terminal (mis. ditangkap
+// journald oleh systemd), sehingga berkas log tidak dipenuhi kode escape.
+//
+// Berkas galat: setiap kegagalan dicatat permanen ke log/error.log beserta
+// waktu dan konteksnya. Ini penting bagi service systemd — keluaran konsol dapat
+// hilang tergulung, sementara kegagalan pemrosesan dokumen perlu dapat ditelusuri
+// kemudian.
+package logx
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+	"sync"
+	"time"
+)
+
+// kode warna ANSI
+const (
+	cReset  = "\033[0m"
+	cBold   = "\033[1m"
+	cDim    = "\033[90m"
+	cRed    = "\033[31m"
+	cGreen  = "\033[32m"
+	cYellow = "\033[33m"
+	cBlue   = "\033[34m"
+	cCyan   = "\033[36m"
+)
+
+var (
+	mu       sync.Mutex
+	colorOn  bool
+	errFile  *os.File
+	errPath  string
+	inProg   bool // sedang menampilkan baris kemajuan yang ditimpa
+	isTTY    bool
+	maxLogSz int64 = 5 << 20 // 5 MB sebelum digulung
+)
+
+func init() {
+	isTTY = detectTTY()
+	colorOn = isTTY && os.Getenv("NO_COLOR") == ""
+}
+
+func detectTTY() bool {
+	fi, err := os.Stdout.Stat()
+	if err != nil {
+		return false
+	}
+	return fi.Mode()&os.ModeCharDevice != 0
+}
+
+// Init menyiapkan berkas log galat di dalam dir. Aman dipanggil sekali di awal.
+func Init(dir string) error {
+	mu.Lock()
+	defer mu.Unlock()
+	if strings.TrimSpace(dir) == "" {
+		dir = "log"
+	}
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return fmt.Errorf("menyiapkan folder log: %w", err)
+	}
+	errPath = filepath.Join(dir, "error.log")
+	rotateIfLarge()
+	f, err := os.OpenFile(errPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+	if err != nil {
+		return fmt.Errorf("membuka %s: %w", errPath, err)
+	}
+	errFile = f
+	return nil
+}
+
+// Close menutup berkas log galat.
+func Close() {
+	mu.Lock()
+	defer mu.Unlock()
+	if errFile != nil {
+		errFile.Close()
+		errFile = nil
+	}
+}
+
+// ErrorLogPath mengembalikan lokasi berkas log galat.
+func ErrorLogPath() string { return errPath }
+
+// rotateIfLarge menggulung berkas log bila sudah besar, agar tidak tumbuh tanpa batas.
+func rotateIfLarge() {
+	fi, err := os.Stat(errPath)
+	if err != nil || fi.Size() < maxLogSz {
+		return
+	}
+	_ = os.Rename(errPath, errPath+".1")
+}
+
+func paint(color, s string) string {
+	if !colorOn {
+		return s
+	}
+	return color + s + cReset
+}
+
+// clearProgress menghapus baris kemajuan yang sedang ditimpa, agar baris
+// berikutnya tidak menempel pada sisa teks sebelumnya.
+func clearProgress() {
+	if inProg && isTTY {
+		fmt.Print("\r\033[K")
+		inProg = false
+	}
+}
+
+func out(s string) {
+	clearProgress()
+	fmt.Println(s)
+}
+
+// ---- keluaran tingkat tinggi ----
+
+// Cycle menandai awal satu siklus.
+func Cycle(n int, sources int) {
+	mu.Lock()
+	defer mu.Unlock()
+	out("")
+	out(paint(cBold+cCyan, fmt.Sprintf("═══ Siklus #%d — %s — %d sumber",
+		n, time.Now().Format("2006-01-02 15:04:05"), sources)))
+}
+
+// Source menandai awal pemrosesan satu sumber JDIH.
+func Source(code, endpoint string) {
+	mu.Lock()
+	defer mu.Unlock()
+	out("")
+	out(paint(cBold, "▸ "+code) + paint(cDim, "  "+endpoint))
+}
+
+// Doc menandai awal pemrosesan satu dokumen: [12/128] nama-dokumen
+func Doc(i, total int, slug string) {
+	mu.Lock()
+	defer mu.Unlock()
+	counter := fmt.Sprintf("[%d/%d]", i, total)
+	out(paint(cBlue, counter) + " " + slug)
+}
+
+// Step mencetak satu langkah yang sedang berjalan, mis. "unduh" atau "parse".
+func Step(name, format string, args ...any) {
+	mu.Lock()
+	defer mu.Unlock()
+	out("   " + paint(cDim, pad(name)) + fmt.Sprintf(format, args...))
+}
+
+// Progress mencetak kemajuan yang menimpa dirinya sendiri di terminal, dan
+// menjadi baris biasa bila keluaran bukan terminal (mis. journald).
+func Progress(name string, cur, total int, format string, args ...any) {
+	mu.Lock()
+	defer mu.Unlock()
+	detail := fmt.Sprintf(format, args...)
+	pct := 0
+	if total > 0 {
+		pct = cur * 100 / total
+	}
+	line := fmt.Sprintf("   %s%s %s",
+		paint(cDim, pad(name)),
+		paint(cCyan, fmt.Sprintf("%d/%d (%d%%)", cur, total, pct)),
+		paint(cDim, detail))
+	if isTTY {
+		fmt.Print("\r\033[K" + line)
+		inProg = true
+		return
+	}
+	fmt.Println(line)
+}
+
+// OK mencetak keberhasilan.
+func OK(format string, args ...any) {
+	mu.Lock()
+	defer mu.Unlock()
+	out("   " + paint(cGreen, "✓ ") + fmt.Sprintf(format, args...))
+}
+
+// Warn mencetak peringatan: pemrosesan berhasil tetapi ada yang perlu ditinjau.
+func Warn(format string, args ...any) {
+	mu.Lock()
+	defer mu.Unlock()
+	out("   " + paint(cYellow, "! ") + fmt.Sprintf(format, args...))
+}
+
+// Skip mencetak langkah yang dilewati.
+func Skip(format string, args ...any) {
+	mu.Lock()
+	defer mu.Unlock()
+	out("   " + paint(cDim, "· "+fmt.Sprintf(format, args...)))
+}
+
+// Info mencetak keterangan biasa.
+func Info(format string, args ...any) {
+	mu.Lock()
+	defer mu.Unlock()
+	out(paint(cDim, fmt.Sprintf(format, args...)))
+}
+
+// Fail mencetak kegagalan ke konsol DAN mencatatnya ke berkas log galat.
+// Argumen ctx berisi konteks singkat (mis. sumber dan nama dokumen) agar catatan
+// di berkas dapat dipahami tanpa membaca keluaran konsol.
+func Fail(ctx, format string, args ...any) {
+	msg := fmt.Sprintf(format, args...)
+	mu.Lock()
+	defer mu.Unlock()
+	out("   " + paint(cRed, "✗ ") + msg)
+	writeErrLog(ctx, msg)
+}
+
+// Fatal mencetak galat yang menghentikan proses dan mencatatnya.
+func Fatal(ctx, format string, args ...any) {
+	msg := fmt.Sprintf(format, args...)
+	mu.Lock()
+	defer mu.Unlock()
+	out(paint(cRed+cBold, "GAGAL: ") + msg)
+	writeErrLog(ctx, msg)
+}
+
+// Summary mencetak ringkasan akhir siklus, warnanya mengikuti ada tidaknya kegagalan.
+func Summary(line string, hasFail bool) {
+	mu.Lock()
+	defer mu.Unlock()
+	out("")
+	if hasFail {
+		out(paint(cYellow, "── "+line))
+		return
+	}
+	out(paint(cGreen, "── "+line))
+}
+
+// writeErrLog menulis satu baris ke berkas log galat. Pemanggil sudah memegang kunci.
+func writeErrLog(ctx, msg string) {
+	if errFile == nil {
+		return
+	}
+	stamp := time.Now().Format("2006-01-02 15:04:05")
+	if strings.TrimSpace(ctx) != "" {
+		fmt.Fprintf(errFile, "%s  [%s] %s\n", stamp, ctx, msg)
+	} else {
+		fmt.Fprintf(errFile, "%s  %s\n", stamp, msg)
+	}
+	_ = errFile.Sync() // service bisa mati sewaktu-waktu; jangan tunda ke buffer
+}
+
+// pad menyeragamkan lebar nama langkah agar kolom keluaran sejajar.
+func pad(s string) string {
+	const w = 9
+	if len(s) >= w {
+		return s + " "
+	}
+	return s + strings.Repeat(" ", w-len(s))
+}
+
+
+
+internal/parser/builder.go
+package parser
+
+import "strings"
+
+// builder.go menyediakan infrastruktur bersama untuk semua sub-parser:
+//   - menyimpan konteks label ancestor aktif (bab/bagian/paragraf/pasal/ayat/huruf),
+//   - memberi OrderIndex (lokal per parent) & DocOrder (global) yang renggang,
+//   - melacak StartPage/EndPage node aktif dari curLinePage,
+//   - menampung baris lanjutan (continuation) ke node aktif,
+//   - menampung baris yatim (orphan) menjadi Warning pada node tetangga.
+
+const (
+	docStep   = 1000.0 // jarak antar DocOrder
+	orderStep = 1000.0 // jarak antar OrderIndex dalam satu parent
+)
+
+type builder struct {
+	section Section
+	nodes   []Node
+
+	docCursor float64
+
+	// konteks label aktif
+	curBab      string
+	curBagian   string
+	curParagraf string
+	curPasal    string
+	curAyat     string
+	curHuruf    string // bookkeeping saja sejak huruf tak lagi jadi node (lihat foldHuruf)
+
+	// order lokal per level (di-reset saat parent berganti)
+	oiBab, oiBagian, oiParagraf, oiPasal, oiAyat, oiHuruf, oiAngka float64
+
+	// index node aktif (untuk append continuation / attach warning)
+	activeIdx int
+
+	// curLinePage adalah halaman baris yang SEDANG diproses oleh sub-parser
+	// pemanggil, di-set sebelum tiap panggilan emit/append di dalam loop-nya.
+	// Dipakai emit()/extendPage() untuk mengisi StartPage/EndPage node otomatis.
+	curLinePage int
+
+	// buffer orphan yang belum punya node sebelumnya untuk ditempeli
+	pendingOrphan []string
+
+	// leftoverDoc: orphan yang tak punya node sama sekali di segmen ini,
+	// diangkat ke level dokumen oleh caller.
+	leftoverDoc []string
+}
+
+func newBuilder(section Section) *builder {
+	return &builder{section: section, activeIdx: -1}
+}
+
+func (b *builder) nextDoc() float64 {
+	b.docCursor += docStep
+	return b.docCursor
+}
+
+// emit menambahkan node baru dengan konteks label saat ini & order yang diberikan.
+func (b *builder) emit(nt NodeType, oi float64, text string) {
+	n := Node{
+		Section:    b.section,
+		NodeType:   nt,
+		Bab:        ptr(b.curBab),
+		Bagian:     ptr(b.curBagian),
+		Paragraf:   ptr(b.curParagraf),
+		Pasal:      ptr(b.curPasal),
+		Ayat:       ptr(b.curAyat),
+		Huruf:      ptr(b.curHuruf),
+		OrderIndex: oi,
+		DocOrder:   b.nextDoc(),
+		Text:       text,
+		StartPage:  b.curLinePage,
+		EndPage:    b.curLinePage,
+	}
+	b.nodes = append(b.nodes, n)
+	b.activeIdx = len(b.nodes) - 1
+
+	// bila ada orphan tertunda, tempel sebagai warning "before" pada node ini.
+	if len(b.pendingOrphan) > 0 {
+		b.attachOrphan(b.activeIdx, "before", b.pendingOrphan)
+		b.pendingOrphan = nil
+	}
+}
+
+// extendPage memperluas EndPage node aktif ke curLinePage (dipanggil tiap kali
+// teks ditambahkan ke node yang sudah ada, sehingga node yang melintasi
+// beberapa halaman punya EndPage yang benar).
+func (b *builder) extendPage() {
+	if b.activeIdx < 0 || b.curLinePage == 0 {
+		return
+	}
+	n := &b.nodes[b.activeIdx]
+	if n.StartPage == 0 {
+		n.StartPage = b.curLinePage
+	}
+	if b.curLinePage > n.EndPage {
+		n.EndPage = b.curLinePage
+	}
+}
+
+// appendText menambahkan baris lanjutan ke teks node aktif. Bila belum ada node
+// aktif, baris masuk ke buffer orphan.
+func (b *builder) appendText(line string) {
+	t := strings.TrimSpace(line)
+	if t == "" {
+		return
+	}
+	if b.activeIdx < 0 {
+		b.pendingOrphan = append(b.pendingOrphan, t)
+		return
+	}
+	cur := &b.nodes[b.activeIdx]
+	if cur.Text == "" {
+		cur.Text = t
+	} else {
+		cur.Text += " " + t
+	}
+	b.extendPage()
+}
+
+// appendLabeledLine menambah baris berlabel (huruf/angka batang tubuh) sebagai
+// BARIS BARU (dipisah newline, bukan digabung jadi satu kalimat) pada teks node
+// aktif, TANPA membuat node terpisah — lihat foldHuruf/foldAngka. Newline
+// menjaga agar daftar huruf/angka tetap terlihat sebagai daftar saat dibaca
+// atau di-split lagi belakangan, meski disimpan sebagai satu Node.
+func (b *builder) appendLabeledLine(label, text string) {
+	t := strings.TrimSpace(text)
+	line := label
+	if t != "" {
+		line = label + " " + t
+	}
+	if b.activeIdx < 0 {
+		b.pendingOrphan = append(b.pendingOrphan, line)
+		return
+	}
+	cur := &b.nodes[b.activeIdx]
+	if cur.Text == "" {
+		cur.Text = line
+	} else {
+		cur.Text += "\n" + line
+	}
+	b.extendPage()
+}
+
+// attachOrphan menempelkan warning teks-yatim pada node index idx.
+func (b *builder) attachOrphan(idx int, position string, texts []string) {
+	if idx < 0 || idx >= len(b.nodes) {
+		return
+	}
+	joined := strings.Join(texts, "\n")
+	b.nodes[idx].Warnings = append(b.nodes[idx].Warnings, Warning{
+		Severity:   SeverityNeedsReview,
+		Message:    "Teks tidak dikenali struktur; perlu tinjauan / kemungkinan sisip baris",
+		OrphanText: &joined,
+		Position:   position,
+	})
+}
+
+// warnActive menambahkan warning non-orphan ke node aktif.
+func (b *builder) warnActive(sev Severity, msg string) {
+	if b.activeIdx < 0 {
+		return
+	}
+	b.nodes[b.activeIdx].Warnings = append(b.nodes[b.activeIdx].Warnings, Warning{
+		Severity: sev, Message: msg,
+	})
+}
+
+// ---- transisi konteks (dipanggil sub-parser saat menemukan penanda) ----
+
+func (b *builder) openBab(label, title string) {
+	b.curBab = "BAB " + label
+	b.curBagian, b.curParagraf, b.curPasal, b.curAyat, b.curHuruf = "", "", "", "", ""
+	b.oiBab += orderStep
+	b.oiBagian, b.oiParagraf, b.oiPasal, b.oiAyat, b.oiHuruf, b.oiAngka = 0, 0, 0, 0, 0, 0
+	b.emit(NodeBab, b.oiBab, title)
+}
+
+func (b *builder) openBagian(label, title string) {
+	b.curBagian = "Bagian " + label
+	b.curParagraf, b.curPasal, b.curAyat, b.curHuruf = "", "", "", ""
+	b.oiBagian += orderStep
+	b.oiParagraf, b.oiPasal, b.oiAyat, b.oiHuruf, b.oiAngka = 0, 0, 0, 0, 0
+	b.emit(NodeBagian, b.oiBagian, title)
+}
+
+func (b *builder) openParagraf(label, title string) {
+	b.curParagraf = label
+	b.curPasal, b.curAyat, b.curHuruf = "", "", ""
+	b.oiParagraf += orderStep
+	b.oiPasal, b.oiAyat, b.oiHuruf, b.oiAngka = 0, 0, 0, 0
+	b.emit(NodeParagraf, b.oiParagraf, title)
+}
+
+func (b *builder) openPasal(label string) {
+	b.curPasal = label
+	b.curAyat, b.curHuruf = "", ""
+	b.oiPasal += orderStep
+	b.oiAyat, b.oiHuruf, b.oiAngka = 0, 0, 0
+	b.emit(NodePasal, b.oiPasal, "")
+}
+
+func (b *builder) openAyat(label, text string) {
+	b.curAyat = label
+	b.curHuruf = ""
+	b.oiAyat += orderStep
+	b.oiHuruf, b.oiAngka = 0, 0
+	b.emit(NodeAyat, b.oiAyat, text)
+}
+
+// foldHuruf melipat baris huruf (a., b., dst) ke DALAM teks node aktif (Ayat,
+// atau Pasal bila belum ada Ayat) alih-alih membuat node terpisah — keputusan
+// produk 2026-07-20: huruf/angka dianggap granularitas berlebihan untuk unit
+// simpan (memutus konteks kalimat pembuka ayat bila jadi baris DB sendiri).
+// curHuruf tetap di-set (tanpa emit node) supaya deteksi Angka di bawahnya
+// pada parseBatangTubuh/parsePenjelasanPasal tetap berfungsi.
+func (b *builder) foldHuruf(label, text string) {
+	b.curHuruf = label
+	b.appendLabeledLine(label+".", text)
+}
+
+// foldAngka melipat baris angka (1), 2), dst — sub-item di bawah huruf) ke
+// dalam teks node aktif yang sama, dengan alasan yang sama seperti foldHuruf.
+func (b *builder) foldAngka(label, text string) {
+	b.appendLabeledLine("("+label+")", text)
+}
+
+// flushOrphan dipanggil di akhir segmen: bila masih ada orphan tertunda tanpa
+// node berikutnya, tempel ke node terakhir sebagai "after"; jika tak ada node
+// sama sekali, kembalikan true agar caller mengangkatnya ke level dokumen.
+func (b *builder) flushOrphan() (leftover []string, hadNoNode bool) {
+	if len(b.pendingOrphan) == 0 {
+		return nil, false
+	}
+	if len(b.nodes) == 0 {
+		lo := b.pendingOrphan
+		b.pendingOrphan = nil
+		return lo, true
+	}
+	b.attachOrphan(len(b.nodes)-1, "after", b.pendingOrphan)
+	b.pendingOrphan = nil
+	return nil, false
+}
+
+
+
+internal/parser/classify.go
+package parser
+
+import (
+	"regexp"
+	"strings"
+)
+
+// classify.go adalah gerbang (gate): menentukan apakah kumpulan baris ini layak
+// diperlakukan sebagai dokumen hukum. Jika tidak, Parse berhenti lebih awal.
+//
+// Prinsip: butuh minimal satu anchor KUAT. Anchor terkuat adalah adanya pola
+// "Pasal N" (hampir semua level regulasi punya), disusul "BAB <romawi>" dan
+// kata kunci konsiderans.
+
+type classifyResult struct {
+	isLegal       bool
+	hasPasal      bool
+	hasBab        bool
+	hasMenimbang  bool
+	hasMengingat  bool
+	hasMemutuskan bool
+	pasalCount    int
+}
+
+func classify(lines []Line) classifyResult {
+	joined := joinLineText(lines)
+	var r classifyResult
+
+	r.pasalCount = len(rePasalAnywhere.FindAllString(joined, -1))
+	r.hasPasal = r.pasalCount > 0
+	r.hasBab = reBabAnywhere.MatchString(joined)
+	r.hasMenimbang = reMenimbang.MatchString(joined)
+	r.hasMengingat = reMengingat.MatchString(joined)
+	r.hasMemutuskan = reMemutuskan.MatchString(joined)
+
+	// Aturan kelayakan:
+	//  - Ada >=1 "Pasal N": kuat -> legal.
+	//  - Atau: ada BAB romawi DAN salah satu kata kunci konsiderans.
+	//  - Atau: ada Menimbang DAN Mengingat DAN Memutuskan (struktur pembuka lengkap).
+	switch {
+	case r.hasPasal:
+		r.isLegal = true
+	case r.hasBab && (r.hasMenimbang || r.hasMengingat || r.hasMemutuskan):
+		r.isLegal = true
+	case r.hasMenimbang && r.hasMengingat && r.hasMemutuskan:
+		r.isLegal = true
+	default:
+		r.isLegal = false
+	}
+	return r
+}
+
+// LooksLegal melaporkan apakah teks (gabungan beberapa halaman OCR) sudah
+// menunjukkan ciri dokumen perundang-undangan. Dipakai sebagai gate awal saat
+// ekstraksi: bila beberapa halaman pertama tidak menunjukkan ciri apa pun, OCR
+// halaman berikutnya bisa dibatalkan (hemat, untuk PDF non-peraturan yang tebal).
+func LooksLegal(pages []string) bool {
+	return classify(stitch(pages)).isLegal
+}
+
+// reJudulPeraturan menangkap baris judul peraturan pada halaman sampul.
+// [UPDATE UU 13/2022 & UU 15/2019] Menambahkan PERATURAN KEPALA DAERAH, PERATURAN DESA,
+// dan PERATURAN LEMBAGA NEGARA sesuai penyesuaian hierarki dan pengakuan jenis peraturan.
+var reJudulPeraturan = regexp.MustCompile(`(?i)(UNDANG-UNDANG|PERATURAN DAERAH|PERATURAN KEPALA DAERAH|PERATURAN DESA|PERATURAN LEMBAGA NEGARA|PERATURAN PEMERINTAH|PERATURAN PRESIDEN|PERATURAN MENTERI|PERATURAN GUBERNUR|PERATURAN BUPATI|PERATURAN WALI ?KOTA|QANUN)\b[\s\S]{0,80}?\bNOMOR\b`)
+
+// LooksLegalProbe adalah gerbang LONGGAR untuk beberapa halaman pertama saat
+// ekstraksi. Tujuannya hanya menyaring PDF yang jelas-jelas bukan peraturan
+// (mis. buku/laporan ratusan halaman) agar tidak di-OCR seluruhnya.
+//
+// Sengaja jauh lebih longgar daripada classify(): satu sinyal saja sudah cukup
+// untuk melanjutkan. Salah-tolak peraturan asli jauh lebih merugikan daripada
+// meng-OCR beberapa halaman tambahan; keputusan akhir tetap di tangan Parse().
+func LooksLegalProbe(pages []string) bool {
+	text := strings.Join(pages, "\n")
+	switch {
+	case rePasalAnywhere.MatchString(text),
+		reBabAnywhere.MatchString(text),
+		reMenimbang.MatchString(text),
+		reMengingat.MatchString(text),
+		reMemutuskan.MatchString(text),
+		reJudulPeraturan.MatchString(text):
+		return true
+	}
+	return false
+}
+
+
+
+internal/parser/diagnose.go
+package parser
+
+import (
+	"fmt"
+	"regexp"
+	"sort"
+	"strconv"
+	"strings"
+)
+
+// diagnose.go menyediakan pemeriksaan kesehatan (lint) atas hasil Parse:
+// apakah struktur wajar untuk sebuah peraturan, dan apa yang perlu ditinjau.
+// Dipakai oleh test runner, tapi juga bisa dipanggil caller mana pun.
+
+type Status string
+
+const (
+	StatusSuccess Status = "SUCCESS" // tak ada masalah berarti
+	StatusWarning Status = "WARNING" // ada hal yang perlu ditinjau, tapi terparse
+	StatusFail    Status = "FAIL"    // tidak layak/parse gagal
+)
+
+// Issue satu temuan diagnosa.
+type Issue struct {
+	Severity Severity `json:"severity"` // info | needs_review
+	Code     string   `json:"code"`     // kode ringkas, mis "PASAL_GAP"
+	Message  string   `json:"message"`
+}
+
+// Stats ringkasan jumlah node per jenis.
+type Stats struct {
+	Bab           int `json:"bab"`
+	Bagian        int `json:"bagian"`
+	Paragraf      int `json:"paragraf"`
+	Pasal         int `json:"pasal"`
+	Ayat          int `json:"ayat"`
+	ItemPreamble  int `json:"item_preamble"`
+	NodeWarnings  int `json:"node_warnings"`
+	TotalNodes    int `json:"total_nodes"`
+	SectionsFound int `json:"sections_found"`
+}
+
+// Report hasil diagnosa satu dokumen.
+type Report struct {
+	Status Status  `json:"status"`
+	Issues []Issue `json:"issues"`
+	Stats  Stats   `json:"stats"`
+}
+
+// DiagnoseParse menjalankan Parse lalu Diagnose sekaligus. err hanya untuk
+// kegagalan fatal (mis. bukan dokumen hukum / input kosong).
+func DiagnoseParse(pages []string) (Report, Result, error) {
+	res, err := Parse(pages)
+	if err != nil {
+		return Report{
+			Status: StatusFail,
+			Issues: []Issue{{SeverityNeedsReview, "PARSE_ERROR", err.Error()}},
+		}, res, err
+	}
+	return Diagnose(res), res, nil
+}
+
+// Diagnose memeriksa Result dan mengembalikan Report.
+func Diagnose(res Result) Report {
+	var issues []Issue
+	st := computeStats(res)
+
+	// warning level dokumen dari parser diteruskan sebagai issue.
+	for _, w := range res.DocumentWarnings {
+		issues = append(issues, Issue{w.Severity, "DOC_WARNING", w.Message})
+	}
+
+	// kumpulkan node warning (orphan dll) jadi ringkasan.
+	if st.NodeWarnings > 0 {
+		issues = append(issues, Issue{
+			SeverityNeedsReview, "NODE_WARNINGS",
+			fmt.Sprintf("%d node memiliki warning (mis. teks tak terstruktur/orphan)", st.NodeWarnings),
+		})
+	}
+
+	// --- cek keberadaan batang tubuh ---
+	if st.Pasal == 0 {
+		issues = append(issues, Issue{SeverityNeedsReview, "NO_PASAL",
+			"Tidak ada satupun Pasal terdeteksi di batang tubuh"})
+	}
+
+	// --- cek celah penomoran Pasal (batang tubuh) ---
+	issues = append(issues, checkPasalSequence(res)...)
+
+	// --- cek celah ayat per pasal ---
+	// (HURUF_GAP dihapus 2026-07-20: huruf tak lagi jadi node terpisah, lihat
+	// builder.foldHuruf — urutan huruf tetap ada sebagai teks di dalam Ayat,
+	// tapi tak lagi dicek otomatis di level ini.)
+	issues = append(issues, checkAyatSequence(res)...)
+
+	// --- cek pasal Penjelasan yang tak ada di batang tubuh ---
+	issues = append(issues, checkPenjelasanRefs(res)...)
+
+	// --- cek pasal "kosong" (tak punya teks, ayat, maupun huruf) ---
+	issues = append(issues, checkEmptyPasal(res)...)
+
+	// tentukan status akhir.
+	status := StatusSuccess
+	for _, is := range issues {
+		if is.Severity == SeverityNeedsReview {
+			status = StatusWarning
+			break
+		}
+	}
+	if st.Pasal == 0 {
+		status = StatusFail
+	}
+
+	return Report{Status: status, Issues: issues, Stats: st}
+}
+
+func computeStats(res Result) Stats {
+	var s Stats
+	sections := map[Section]bool{}
+	s.TotalNodes = len(res.Nodes)
+	for _, n := range res.Nodes {
+		sections[n.Section] = true
+		if len(n.Warnings) > 0 {
+			s.NodeWarnings += len(n.Warnings)
+		}
+		switch n.NodeType {
+		case NodeBab:
+			s.Bab++
+		case NodeBagian:
+			s.Bagian++
+		case NodeParagraf:
+			s.Paragraf++
+		case NodePasal:
+			if n.Section == SectionBatangTubuh {
+				s.Pasal++
+			}
+		case NodeAyat:
+			if n.Section == SectionBatangTubuh {
+				s.Ayat++
+			}
+		case NodeItem:
+			s.ItemPreamble++
+		}
+	}
+	s.SectionsFound = len(sections)
+	return s
+}
+
+var reNumPart = regexp.MustCompile(`^(\d+)`)
+
+// numPrefix mengambil bagian angka dari label (mis "27A" -> 27, "1a" -> 1).
+func numPrefix(label string) (int, bool) {
+	m := reNumPart.FindStringSubmatch(label)
+	if m == nil {
+		return 0, false
+	}
+	v, err := strconv.Atoi(m[1])
+	if err != nil {
+		return 0, false
+	}
+	return v, true
+}
+
+// checkPasalSequence mendeteksi celah pada penomoran pasal batang tubuh.
+func checkPasalSequence(res Result) []Issue {
+	var seq []int
+	seen := map[int]bool{}
+	for _, n := range res.Nodes {
+		if n.Section == SectionBatangTubuh && n.NodeType == NodePasal && n.Pasal != nil {
+			if v, ok := numPrefix(*n.Pasal); ok && !seen[v] {
+				seen[v] = true
+				seq = append(seq, v)
+			}
+		}
+	}
+	return gapIssues(seq, "PASAL_GAP", "Pasal")
+}
+
+// checkAyatSequence: per pasal, cek celah nomor ayat.
+func checkAyatSequence(res Result) []Issue {
+	byPasal := map[string][]int{}
+	seen := map[string]bool{}
+	var order []string
+	for _, n := range res.Nodes {
+		if n.Section == SectionBatangTubuh && n.NodeType == NodeAyat && n.Pasal != nil && n.Ayat != nil {
+			key := *n.Pasal
+			if v, ok := numPrefix(*n.Ayat); ok {
+				sk := key + "|" + strconv.Itoa(v)
+				if seen[sk] {
+					continue
+				}
+				seen[sk] = true
+				if _, exists := byPasal[key]; !exists {
+					order = append(order, key)
+				}
+				byPasal[key] = append(byPasal[key], v)
+			}
+		}
+	}
+	var issues []Issue
+	for _, key := range order {
+		for _, is := range gapIssues(byPasal[key], "AYAT_GAP", "Ayat") {
+			is.Message = fmt.Sprintf("Pasal %s: %s", key, is.Message)
+			issues = append(issues, is)
+		}
+	}
+	return issues
+}
+
+// checkPenjelasanRefs: pasal di penjelasan yang tak ada padanan di batang tubuh.
+func checkPenjelasanRefs(res Result) []Issue {
+	bt := map[string]bool{}
+	for _, n := range res.Nodes {
+		if n.Section == SectionBatangTubuh && n.NodeType == NodePasal && n.Pasal != nil {
+			bt[*n.Pasal] = true
+		}
+	}
+	if len(bt) == 0 {
+		return nil
+	}
+	var issues []Issue
+	seen := map[string]bool{}
+	for _, n := range res.Nodes {
+		if n.Section == SectionPenjelasanPasal && n.NodeType == NodePasal && n.Pasal != nil {
+			if !bt[*n.Pasal] && !seen[*n.Pasal] {
+				seen[*n.Pasal] = true
+				issues = append(issues, Issue{SeverityNeedsReview, "PENJELASAN_ORPHAN",
+					fmt.Sprintf("Penjelasan menyebut Pasal %s yang tidak ada di batang tubuh", *n.Pasal)})
+			}
+		}
+	}
+	return issues
+}
+
+// checkEmptyPasal: pasal batang tubuh tanpa teks, tanpa ayat, tanpa huruf anak.
+func checkEmptyPasal(res Result) []Issue {
+	// petakan pasal -> apakah punya anak (ayat/huruf) atau teks.
+	type info struct {
+		hasText, hasChild bool
+	}
+	m := map[string]*info{}
+	var order []string
+	for _, n := range res.Nodes {
+		if n.Section != SectionBatangTubuh {
+			continue
+		}
+		if n.NodeType == NodePasal && n.Pasal != nil {
+			if _, ok := m[*n.Pasal]; !ok {
+				m[*n.Pasal] = &info{}
+				order = append(order, *n.Pasal)
+			}
+			if strings.TrimSpace(n.Text) != "" {
+				m[*n.Pasal].hasText = true
+			}
+		}
+		if n.NodeType == NodeAyat && n.Pasal != nil {
+			if inf, ok := m[*n.Pasal]; ok {
+				inf.hasChild = true
+			}
+		}
+	}
+	var issues []Issue
+	for _, k := range order {
+		inf := m[k]
+		if !inf.hasText && !inf.hasChild {
+			issues = append(issues, Issue{SeverityNeedsReview, "EMPTY_PASAL",
+				fmt.Sprintf("Pasal %s tidak memiliki teks, ayat, maupun huruf (kemungkinan gagal parse)", k)})
+		}
+	}
+	return issues
+}
+
+// ---- util deteksi celah ----
+
+// gapIssues mendeteksi celah pada urutan angka menaik.
+func gapIssues(seq []int, code, label string) []Issue {
+	if len(seq) < 2 {
+		return nil
+	}
+	// urutkan salinan untuk deteksi celah (urutan asli bisa saja benar).
+	s := append([]int(nil), seq...)
+	sort.Ints(s)
+	var missing []int
+	for i := 1; i < len(s); i++ {
+		for v := s[i-1] + 1; v < s[i]; v++ {
+			missing = append(missing, v)
+		}
+	}
+	if len(missing) == 0 {
+		return nil
+	}
+	return []Issue{{SeverityNeedsReview, code,
+		fmt.Sprintf("%s tidak berurutan, kemungkinan hilang: %s", label, intsToStr(missing))}}
+}
+
+func intsToStr(v []int) string {
+	parts := make([]string, len(v))
+	for i, x := range v {
+		parts[i] = strconv.Itoa(x)
+	}
+	return strings.Join(parts, ", ")
+}
+
+
+
+
+internal/parser/fuzzyfix.go
+package parser
+
+import "strings"
+
+// fuzzyfix.go: koreksi OCR pada kata kunci ANCHOR STRUKTURAL (Menimbang,
+// Mengingat, Memutuskan, Menetapkan, Penjelasan) yang salah tangkap satu-dua
+// huruf (mis. OCR membaca "Menimbing" padahal aslinya "Menimbang"). Regex di
+// patterns.go/classify.go butuh kecocokan pasti di awal baris — typo satu
+// huruf membuat baris itu TIDAK PERNAH dikenali sebagai anchor, padahal
+// secara visual/posisi jelas itu section header.
+//
+// Deteksi di sini DETERMINISTIK (jarak Levenshtein, BUKAN LLM — sama seperti
+// alasan penolakan LLM text-fix sebelumnya: butuh sesuatu yang bisa diaudit,
+// bukan ditebak). Koreksi HANYA menyentuh kata PERTAMA satu baris yang
+// langsung diikuti ':' atau akhir baris (pola pemakaian anchor yang
+// sebenarnya) — supaya kata yang sama muncul di TENGAH kalimat biasa (mis.
+// "...perlu ditimbing..." — kalau ada) tidak ikut "dikoreksi" secara keliru.
+
+var fuzzyAnchors = []string{
+	"MENIMBANG", "MENGINGAT", "MEMUTUSKAN", "MENETAPKAN", "MEMPERHATIKAN", "PENJELASAN",
+}
+
+// fuzzyFixAnchorLine memeriksa kata pertama satu baris; bila itu salah-eja
+// tipis dari salah satu anchor DAN posisinya cocok pola pemakaian anchor
+// (langsung diikuti ':' atau itu saja isi barisnya), kata itu diganti ke
+// ejaan baku supaya regex hilir bisa mengenalinya. Baris lain tidak disentuh.
+func fuzzyFixAnchorLine(line string) string {
+	trimmed := strings.TrimLeft(line, " \t")
+	leadingSpace := line[:len(line)-len(trimmed)]
+
+	end := 0
+	for end < len(trimmed) && isAsciiLetter(trimmed[end]) {
+		end++
+	}
+	if end < 4 { // terlalu pendek untuk anchor manapun, hindari salah-cocok
+		return line
+	}
+	word := trimmed[:end]
+	rest := trimmed[end:]
+
+	upper := strings.ToUpper(word)
+	if containsStr(fuzzyAnchors, upper) {
+		return line // sudah persis benar
+	}
+
+	restTrim := strings.TrimLeft(rest, " \t")
+	looksLikeAnchorUsage := restTrim == "" || strings.HasPrefix(restTrim, ":")
+	if !looksLikeAnchorUsage {
+		return line
+	}
+
+	best := ""
+	bestDist := 1 << 30
+	for _, cand := range fuzzyAnchors {
+		if d := levenshtein(upper, cand); d < bestDist {
+			bestDist, best = d, cand
+		}
+	}
+	threshold := 1
+	if len(best) >= 10 {
+		threshold = 2
+	}
+	if bestDist == 0 || bestDist > threshold {
+		return line
+	}
+
+	return leadingSpace + best + rest
+}
+
+func isAsciiLetter(b byte) bool {
+	return (b >= 'A' && b <= 'Z') || (b >= 'a' && b <= 'z')
+}
+
+func containsStr(list []string, v string) bool {
+	for _, s := range list {
+		if s == v {
+			return true
+		}
+	}
+	return false
+}
+
+// levenshtein menghitung jarak edit klasik (insert/delete/substitute).
+// Pemanggil sudah menyeragamkan huruf besar sebelum memanggil ini.
+func levenshtein(a, b string) int {
+	la, lb := len(a), len(b)
+	if la == 0 {
+		return lb
+	}
+	if lb == 0 {
+		return la
+	}
+	prev := make([]int, lb+1)
+	curr := make([]int, lb+1)
+	for j := 0; j <= lb; j++ {
+		prev[j] = j
+	}
+	for i := 1; i <= la; i++ {
+		curr[0] = i
+		for j := 1; j <= lb; j++ {
+			cost := 1
+			if a[i-1] == b[j-1] {
+				cost = 0
+			}
+			del := prev[j] + 1
+			ins := curr[j-1] + 1
+			sub := prev[j-1] + cost
+			m := del
+			if ins < m {
+				m = ins
+			}
+			if sub < m {
+				m = sub
+			}
+			curr[j] = m
+		}
+		prev, curr = curr, prev
+	}
+	return prev[lb]
+}
+
+
+
+internal/parser/header.go
+package parser
+
+import (
+	"regexp"
+	"strconv"
+	"strings"
+)
+
+// header.go: gerbang klasifikasi halaman-1 SAJA, menggantikan probe gate lama
+// yang meng-OCR sampai PROBE_PAGES (default 5) halaman. Per Lampiran II
+// UU 12/2011 jo. UU 13/2022 (Teknik Penyusunan Peraturan Perundang-undangan),
+// identitas peraturan WAJIB ada di halaman pertama, muncul di DUA tempat:
+// Judul (jenis + instansi + nomor + tahun + tentang) dan Jabatan Pembentuk di
+// Pembukaan sebelum "Menimbang" (mis. "BUPATI ACEH BARAT,"). Regulasi tidak
+// pakai halaman sampul terpisah, jadi cukup satu halaman untuk diperiksa.
+
+// HeaderInfo adalah hasil ekstraksi deterministik dari halaman pertama.
+type HeaderInfo struct {
+	Jenis           string // "PERATURAN DAERAH", "QANUN", "PERATURAN BUPATI", dst
+	Instansi        string // frasa instansi APA ADANYA dari teks (utuh, tak dipotong)
+	Nomor           string
+	Tahun           string
+	Tentang         string
+	StructureType   string // "pasal_ayat" | "diktum" | "unknown"
+	Found           bool   // true bila pola judul/jabatan-pembentuk ketemu sama sekali
+	PreUU122011     bool   // true bila Tahun < 2011 (aturan format Lampiran II belum berlaku)
+}
+
+// reHeaderJudul menangkap blok "<JENIS> <INSTANSI...> NOMOR <N> TAHUN <Y> TENTANG <T>".
+// Instansi ditangkap NON-GREEDY sampai kata "NOMOR" — sengaja ambil frasa PENUH,
+// bukan dibatasi jumlah kata, supaya "ACEH BARAT DAYA" tidak terpotong jadi
+// "ACEH BARAT" (lihat diskusi soal nama kabupaten yang mirip tipis).
+var reHeaderJudul = regexp.MustCompile(`(?is)(UNDANG-UNDANG|PERATURAN\s+PEMERINTAH\s+PENGGANTI\s+UNDANG-UNDANG|PERATURAN\s+PEMERINTAH|PERATURAN\s+PRESIDEN|PERATURAN\s+MENTERI|PERATURAN\s+DAERAH|PERATURAN\s+GUBERNUR|PERATURAN\s+BUPATI|PERATURAN\s+WALI\s*KOTA|PERATURAN\s+KEPALA\s+DAERAH|PERATURAN\s+DESA|QANUN)\s+([A-Z][A-Z\s]*?)\s*NOMOR\s+([0-9]+[A-Z]?)\s+TAHUN\s+([0-9]{4})\s+TENTANG\s+(.+)`)
+
+// reJabatanPembentuk menangkap baris jabatan pembentuk di Pembukaan, mis.
+// "BUPATI ACEH BARAT," atau "GUBERNUR ACEH,". Dipakai sebagai titik ekstraksi
+// KEDUA (fallback) bila Judul rusak/OCR gagal tangkap — keduanya sama-sama
+// wajib ada per Lampiran II, jadi salah satu cukup untuk validasi instansi.
+var reJabatanPembentuk = regexp.MustCompile(`(?im)^(GUBERNUR|BUPATI|WALI\s*KOTA|PRESIDEN|MENTERI)\s+([A-Z][A-Z\s]*?)\s*,\s*$`)
+
+// reDiktum menangkap format Keputusan: "KESATU", "KEDUA", dst (Diktum), bukan
+// Pasal/Ayat. Deteksinya CUKUP satu diktum di halaman 1 karena Keputusan tidak
+// pernah punya Pasal 1 di halaman pertama juga.
+var reDiktum = regexp.MustCompile(`(?im)^\s*(KESATU|KEDUA|KETIGA)\s*:`)
+
+// ExtractHeader membaca teks halaman PERTAMA (sudah di-OCR) dan mengekstrak
+// identitas peraturan secara deterministik (regex, BUKAN LLM — lihat alasan
+// yang sama seperti relations.go: LLM berisiko mengarang nomor/instansi).
+func ExtractHeader(page1Text string) HeaderInfo {
+	raw := page1Text
+
+	var info HeaderInfo
+
+	if m := reHeaderJudul.FindStringSubmatch(raw); m != nil {
+		info.Found = true
+		info.Jenis = normalizeSpace(m[1])
+		info.Instansi = normalizeSpace(m[2])
+		info.Nomor = strings.TrimSpace(m[3])
+		info.Tahun = strings.TrimSpace(m[4])
+		info.Tentang = strings.TrimSpace(firstLine(m[5]))
+	} else if m := reJabatanPembentuk.FindStringSubmatch(raw); m != nil {
+		// fallback: Judul tak tertangkap (rusak/OCR), tapi Jabatan Pembentuk ada.
+		info.Found = true
+		info.Instansi = normalizeSpace(m[2])
+	}
+
+	if y, err := strconv.Atoi(info.Tahun); err == nil && y > 0 && y < 2011 {
+		info.PreUU122011 = true
+	}
+
+	// Deteksi jenis struktur pada teks MENTAH (dengan newline): kedua regex
+	// di bawah ber-anchor awal-baris (?m)^ dan tidak akan pernah cocok pada
+	// teks yang sudah diratakan jadi satu baris.
+	switch {
+	case reDiktum.MatchString(raw):
+		info.StructureType = "diktum"
+	case rePasalAnywhere.MatchString(raw):
+		info.StructureType = "pasal_ayat"
+	default:
+		info.StructureType = "unknown"
+	}
+
+	return info
+}
+
+func firstLine(s string) string {
+	if i := strings.IndexAny(s, "\r\n"); i >= 0 {
+		s = s[:i]
+	}
+	return s
+}
+
+// ---- Kecocokan jurisdiksi ----
+
+// CanonicalInstansi adalah 23 kabupaten/kota Aceh + entri provinsi. Nama HARUS
+// persis seperti yang tertulis di dokumen resmi (UU/Qanun tidak pernah pakai
+// singkatan), sehingga exact-match (bukan Contains) aman dipakai — mencegah
+// "ACEH BARAT" salah cocok dengan "ACEH BARAT DAYA" atau sebaliknya.
+var CanonicalInstansi = []string{
+	// Provinsi — Aceh TIDAK menulis "Provinsi" untuk dokumen modern (Qanun era
+	// UU 11/2006 Pemerintahan Aceh menulis langsung "ACEH" / "PEMERINTAH ACEH").
+	// Dokumen format lama (pra-UU 11/2006) mungkin masih menulis "DAERAH
+	// ISTIMEWA ACEH" atau "PROVINSI DAERAH TINGKAT I ACEH" — ditangani lewat
+	// PreUU122011 -> review_manual, bukan exact-match di sini.
+	"ACEH",
+	"PEMERINTAH ACEH",
+	// 23 kabupaten/kota.
+	"KABUPATEN ACEH BARAT",
+	"KABUPATEN ACEH BARAT DAYA",
+	"KABUPATEN ACEH BESAR",
+	"KABUPATEN ACEH JAYA",
+	"KABUPATEN ACEH SELATAN",
+	"KABUPATEN ACEH SINGKIL",
+	"KABUPATEN ACEH TAMIANG",
+	"KABUPATEN ACEH TENGAH",
+	"KABUPATEN ACEH TENGGARA",
+	"KABUPATEN ACEH TIMUR",
+	"KABUPATEN ACEH UTARA",
+	"KABUPATEN BENER MERIAH",
+	"KABUPATEN BIREUEN",
+	"KABUPATEN GAYO LUES",
+	"KABUPATEN NAGAN RAYA",
+	"KABUPATEN PIDIE",
+	"KABUPATEN PIDIE JAYA",
+	"KABUPATEN SIMEULUE",
+	"KOTA BANDA ACEH",
+	"KOTA LANGSA",
+	"KOTA LHOKSEUMAWE",
+	"KOTA SABANG",
+	"KOTA SUBULUSSALAM",
+}
+
+// MatchesJurisdiction melaporkan apakah instansi yang terekstrak dari halaman 1
+// cocok PERSIS dengan instansi pemilik source (setelah normalisasi kapital/
+// spasi) — EXACT match, bukan substring, khusus untuk menghindari salah-cocok
+// pada nama kabupaten yang mirip tipis (mis. "Aceh Barat" vs "Aceh Barat Daya").
+func MatchesJurisdiction(extractedInstansi, sourceInstansiName string) bool {
+	a := normalizeInstansi(extractedInstansi)
+	b := normalizeInstansi(sourceInstansiName)
+	if a == "" || b == "" {
+		return false
+	}
+	return a == b
+}
+
+func normalizeInstansi(s string) string {
+	s = strings.ToUpper(s)
+	s = strings.Join(strings.Fields(s), " ")
+	s = strings.TrimSuffix(s, ",")
+	// Ejaan lama (dokumen sebelum EYD/reformasi ejaan) menulis "Propinsi"
+	// dengan p — dokumen modern menulis "Provinsi". Normalisasi ke satu
+	// bentuk supaya keduanya bisa dicocokkan ke daftar kanonik yang sama.
+	s = strings.ReplaceAll(s, "PROPINSI", "PROVINSI")
+	return strings.TrimSpace(s)
+}
+
+
+
+internal/parser/line.go
+package parser
+
+// Line adalah satu baris teks OCR beserta nomor halaman asalnya (1-indexed).
+// Menggantikan bare string di seluruh pipeline internal (stitch -> segment ->
+// sub-parser -> builder) supaya tiap Node bisa melaporkan StartPage/EndPage —
+// dipakai UI nanti untuk "klik node -> lihat halaman PDF aslinya".
+type Line struct {
+	Text string
+	Page int
+}
+
+
+
+internal/parser/ocrfix.go
+package parser
+
+import (
+	"regexp"
+	"strings"
+)
+
+// ocrfix.go memperbaiki kesalahan OCR yang berulang & khas pada dokumen hukum,
+// dijalankan per-baris SEBELUM deteksi pola. Hanya menyentuh pola bernomor di
+// AWAL baris (penanda ayat/angka), agar tidak merusak isi teks di tengah kalimat.
+
+var (
+	// GLM-OCR mengeluarkan Markdown dan sering membungkusnya dengan pagar kode
+	// (```markdown / ```text / ```). Baris pagar bukan isi dokumen.
+	reCodeFence = regexp.MustCompile("^`{3,}[a-zA-Z]*$")
+	// Heading Markdown: "# BAB I" -> "BAB I".
+	reMdHeading = regexp.MustCompile(`^#{1,6}\s+`)
+	// Penekanan Markdown: **Pasal 1** / __Pasal 1__ -> Pasal 1.
+	reMdBold = regexp.MustCompile(`(\*\*|__)(.+?)(\*\*|__)`)
+	// Baris pemisah tabel Markdown: |---|---|
+	reMdTableSep = regexp.MustCompile(`^\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?$`)
+
+	// Penanda ayat di awal baris yang OCR-nya keliru:
+	//  (l) (I) (i) -> (1) ; huruf l/I/i yang berdiri sendiri dalam kurung ayat.
+	reAyatOCRDigit = regexp.MustCompile(`^\(\s*[lIi]\s*\)`)
+	// (l1) (1l) dst: campuran l/I di antara digit pada label ayat.
+	reAyatMixed = regexp.MustCompile(`^\((\s*[0-9lIi]+\s*[a-zA-Z]?\s*)\)`)
+	// Bullet OCR yang seharusnya huruf/angka kadang jadi "o." / "0." di awal baris.
+)
+
+// fixOCRLine menormalkan satu baris. Mengembalikan baris yang sudah dirapikan.
+func fixOCRLine(line string) string {
+	s := line
+
+	// Rapikan spasi ganda & trim.
+	s = strings.TrimSpace(s)
+	s = collapseSpaces(s)
+	if s == "" {
+		return s
+	}
+
+	// Buang sisa penanda Markdown dari keluaran OCR sebelum pencocokan pola,
+	// agar "# BAB I" atau "**Pasal 1**" tetap dikenali sebagai penanda struktur.
+	if reCodeFence.MatchString(s) || reMdTableSep.MatchString(s) {
+		return ""
+	}
+	s = reMdHeading.ReplaceAllString(s, "")
+	s = reMdBold.ReplaceAllString(s, "$2")
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return s
+	}
+
+	// Perbaiki penanda ayat OCR: (l)/(I)/(i) -> (1).
+	if reAyatOCRDigit.MatchString(s) {
+		s = reAyatOCRDigit.ReplaceAllString(s, "(1)")
+	} else if m := reAyatMixed.FindStringSubmatch(s); m != nil {
+		inner := m[1]
+		fixed := fixAyatInner(inner)
+		if fixed != inner {
+			s = "(" + fixed + ")" + s[len(m[0]):]
+		}
+	}
+
+	return s
+}
+
+// fixAyatInner mengganti l/I -> 1 dan O -> 0 HANYA pada bagian numerik label ayat,
+// menyisakan huruf sisipan (mis. "1a") apa adanya.
+func fixAyatInner(inner string) string {
+	inner = strings.TrimSpace(inner)
+	var b strings.Builder
+	for i, r := range inner {
+		switch r {
+		case 'l', 'I':
+			// jadi digit '1' bila bukan huruf sisipan di posisi akhir.
+			if isTrailingLetterSuffix(inner, i) {
+				b.WriteRune(r)
+			} else {
+				b.WriteRune('1')
+			}
+		case 'O':
+			if isTrailingLetterSuffix(inner, i) {
+				b.WriteRune(r)
+			} else {
+				b.WriteRune('0')
+			}
+		default:
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
+}
+
+// isTrailingLetterSuffix true bila posisi i adalah huruf sisipan di akhir (mis. "1a").
+func isTrailingLetterSuffix(s string, i int) bool {
+	// huruf sisipan hanya valid bila SEBELUMNYA sudah ada minimal satu digit
+	// dan ini karakter non-digit terakhir.
+	if i == 0 {
+		return false
+	}
+	hasDigitBefore := false
+	for _, r := range s[:i] {
+		if r >= '0' && r <= '9' {
+			hasDigitBefore = true
+			break
+		}
+	}
+	rest := s[i+1:]
+	return hasDigitBefore && strings.TrimSpace(rest) == ""
+}
+
+var reMultiSpace = regexp.MustCompile(`[ \t]{2,}`)
+
+func collapseSpaces(s string) string {
+	return reMultiSpace.ReplaceAllString(s, " ")
+}
+
+
+
+internal/parser/parser.go
+package parser
+
+import "strings"
+
+// Parse adalah satu-satunya entry point publik. Menerima teks OCR per halaman,
+// mengembalikan Result berisi Nodes (siap loop-insert ke DB) dan DocumentWarnings.
+//
+// Alur: stitch (tandai halaman) -> classify(gate) -> segmentize -> parse per-segmen -> gabung.
+func Parse(pages []string) (Result, error) {
+	if len(pages) == 0 {
+		return Result{}, ErrEmptyInput
+	}
+
+	lines := stitch(pages)
+	if len(lines) == 0 {
+		return Result{}, ErrEmptyInput
+	}
+
+	cls := classify(lines)
+	if !cls.isLegal {
+		return Result{}, ErrNotLegalDocument
+	}
+
+	segs, docWarns := segmentize(lines, cls)
+
+	var all []Node
+	for _, s := range segs {
+		var b *builder
+		switch s.section {
+		case SectionJudul:
+			b = parseJudul(s.lines)
+		case SectionMenimbang, SectionMengingat:
+			b = parseFlat(s.section, s.lines)
+		case SectionPenetapan:
+			b = parsePenetapan(s.lines)
+		case SectionBatangTubuh:
+			b = parseBatangTubuh(s.lines)
+		case SectionPenjelasanUmum:
+			b = parsePenjelasanUmum(s.lines)
+		case SectionPenjelasanPasal:
+			b = parsePenjelasanPasal(s.lines)
+		default:
+			continue
+		}
+		all = append(all, b.nodes...)
+		if len(b.leftoverDoc) > 0 {
+			joined := strings.Join(b.leftoverDoc, "\n")
+			docWarns = append(docWarns, Warning{
+				Severity:   SeverityNeedsReview,
+				Message:    "Teks tak terstruktur pada section " + string(s.section),
+				OrphanText: &joined,
+			})
+		}
+	}
+
+	// DocOrder global monotonik lintas segmen (OrderIndex tetap lokal per parent).
+	for i := range all {
+		all[i].DocOrder = float64(i+1) * docStep
+	}
+
+	if len(all) == 0 {
+		docWarns = append(docWarns, Warning{
+			Severity: SeverityNeedsReview,
+			Message:  "Tidak ada node terbentuk meskipun terklasifikasi sebagai dokumen hukum",
+		})
+	}
+
+	return Result{Nodes: all, DocumentWarnings: docWarns}, nil
+}
+
+// parseJudul memperlakukan blok awal (nama & nomor peraturan, frasa pembuka) sebagai
+// baris-baris judul/pembukaan.
+func parseJudul(lines []Line) *builder {
+	b := newBuilder(SectionJudul)
+	for _, raw := range lines {
+		line := strings.TrimSpace(raw.Text)
+		if line == "" {
+			continue
+		}
+		b.curLinePage = raw.Page
+		nt := NodeJudul
+		up := strings.ToUpper(line)
+		if strings.Contains(up, "RAHMAT TUHAN") ||
+			strings.Contains(up, "PRESIDEN") && strings.Contains(up, "REPUBLIK INDONESIA") && len(line) < 60 ||
+			strings.HasPrefix(up, "DENGAN ") {
+			nt = NodePembukaan
+		}
+		b.oiPasal += orderStep
+		b.nodes = append(b.nodes, Node{
+			Section:    SectionJudul,
+			NodeType:   nt,
+			OrderIndex: b.oiPasal,
+			DocOrder:   b.nextDoc(),
+			Text:       line,
+			StartPage:  raw.Page,
+			EndPage:    raw.Page,
+		})
+		b.activeIdx = len(b.nodes) - 1
+	}
+	return b
+}
+
+// parsePenetapan menangani blok MEMUTUSKAN / Menetapkan.
+func parsePenetapan(lines []Line) *builder {
+	b := newBuilder(SectionPenetapan)
+	for _, raw := range lines {
+		line := strings.TrimSpace(raw.Text)
+		if line == "" {
+			continue
+		}
+		b.curLinePage = raw.Page
+		if reMemutuskan.MatchString(line) {
+			b.emitPenetapan(line)
+			continue
+		}
+		if reMenetapkan.MatchString(line) {
+			b.emitPenetapan(line)
+			continue
+		}
+		// lanjutan (mis. judul peraturan yang ditetapkan).
+		if b.activeIdx >= 0 {
+			b.appendText(line)
+		} else {
+			b.emitPenetapan(line)
+		}
+	}
+	return b
+}
+
+func (b *builder) emitPenetapan(text string) {
+	b.oiPasal += orderStep
+	b.nodes = append(b.nodes, Node{
+		Section:    SectionPenetapan,
+		NodeType:   NodePenetapan,
+		OrderIndex: b.oiPasal,
+		DocOrder:   b.nextDoc(),
+		Text:       text,
+		StartPage:  b.curLinePage,
+		EndPage:    b.curLinePage,
+	})
+	b.activeIdx = len(b.nodes) - 1
+}
+
+
+
+internal/parser/parse_batangtubuh.go
+package parser
+
+import (
+	"regexp"
+	"strings"
+)
+
+// parse_batangtubuh.go: state machine penuh untuk section batang_tubuh.
+// Hierarki: Bab -> Bagian -> Paragraf -> Pasal -> Ayat. Huruf dan Angka TIDAK
+// lagi jadi node sendiri (2026-07-20) — teksnya dilipat ke Ayat aktif (atau
+// Pasal bila belum ada Ayat) lewat builder.foldHuruf/foldAngka.
+
+// Penanda penutup: setelah ini, konten adalah pengesahan/tempat-tanggal/tanda tangan,
+// bukan bagian struktur pasal.
+// [UPDATE UU 15/2019 & UU 13/2022] Menambahkan deteksi "Berita Negara" dan "Berita Daerah"
+// sebagai sarana pengundangan resmi yang setara dengan Lembaran Negara/Daerah.
+var reClosing = regexp.MustCompile(`(?i)^(ditetapkan\s+di|diundangkan\s+di|agar\s+setiap\s+orang|lembaran\s+(negara|daerah)\b|tambahan\s+lembaran|berita\s+(negara|daerah)\b|tambahan\s+berita)`)
+
+func parseBatangTubuh(lines []Line) *builder {
+	b := newBuilder(SectionBatangTubuh)
+	inClosing := false
+
+	for _, raw := range lines {
+		line := strings.TrimSpace(raw.Text)
+		if line == "" {
+			continue
+		}
+		b.curLinePage = raw.Page
+
+		if !inClosing && reClosing.MatchString(line) {
+			inClosing = true
+		}
+		if inClosing {
+			b.emitPenutup(line)
+			continue
+		}
+
+		m := detectStructural(line)
+		switch m.kind {
+		case mkBab:
+			b.openBab(m.label, m.title)
+		case mkBagian:
+			b.openBagian(m.label, m.title)
+		case mkParagraf:
+			b.openParagraf(m.label, m.title)
+		case mkPasal:
+			b.openPasal(m.label)
+		case mkAyat:
+			b.openAyat(m.label, m.text)
+		case mkHuruf:
+			// hanya valid bila sudah ada Pasal aktif; jika tidak, ini kemungkinan
+			// teks biasa (mis. daftar dalam kalimat) -> perlakukan sebagai lanjutan.
+			if b.curPasal == "" {
+				b.appendText(line)
+			} else {
+				b.foldHuruf(m.label, m.text)
+			}
+		case mkAngka:
+			// angka sub-huruf hanya valid bila ada Huruf aktif; jika tidak, lanjutan.
+			if b.curPasal == "" || b.curHuruf == "" {
+				b.appendText(line)
+			} else {
+				b.foldAngka(m.label, m.text)
+			}
+		default:
+			b.appendText(line)
+		}
+	}
+
+	if leftover, noNode := b.flushOrphan(); noNode && len(leftover) > 0 {
+		// ditangani oleh caller (Parse) sebagai document warning.
+		b.leftoverDoc = leftover
+	}
+	return b
+}
+
+// emitPenutup menambahkan node penutup (paragraf naratif tanpa penomoran).
+func (b *builder) emitPenutup(text string) {
+	b.oiPasal += orderStep // pakai kanal order pasal agar urut stabil di ekor dokumen
+	n := Node{
+		Section:    SectionPenutup,
+		NodeType:   NodeParagrafIsi,
+		OrderIndex: b.oiPasal,
+		DocOrder:   b.nextDoc(),
+		Text:       text,
+		StartPage:  b.curLinePage,
+		EndPage:    b.curLinePage,
+	}
+	b.nodes = append(b.nodes, n)
+	b.activeIdx = len(b.nodes) - 1
+}
+
+
+
+internal/parser/parse_flat.go
+package parser
+
+import "strings"
+
+// parse_flat.go menangani Menimbang & Mengingat: daftar poin datar (huruf a.b.c.
+// untuk Menimbang, angka 1.2.3. untuk Mengingat), tanpa hierarki Bab/Pasal.
+// Semua poin menjadi NodeItem (dengan label huruf/angka terisi), agar tidak
+// tercampur dengan konteks huruf/angka batang tubuh. TIDAK terpengaruh oleh
+// keputusan fold-huruf-ke-Ayat (itu spesifik batang tubuh) — poin di sini
+// tetap satu node per poin karena memang bukan bagian struktur Pasal/Ayat.
+
+func parseFlat(section Section, lines []Line) *builder {
+	b := newBuilder(section)
+
+	handleItem := func(m lineMatch) bool {
+		switch m.kind {
+		case mkHuruf:
+			b.emitItem(m.label, "", m.text)
+			return true
+		case mkAngka:
+			b.emitItem("", m.label, m.text)
+			return true
+		}
+		return false
+	}
+
+	for _, raw := range lines {
+		line := strings.TrimSpace(raw.Text)
+		if line == "" {
+			continue
+		}
+		b.curLinePage = raw.Page
+
+		// Baris header ("Menimbang :", "Mengingat :"): buang kata kunci, tangkap sisa.
+		if reMenimbang.MatchString(line) || reMengingat.MatchString(line) {
+			if i := strings.Index(line, ":"); i >= 0 {
+				rest := strings.TrimSpace(line[i+1:])
+				if rest != "" {
+					if !handleItem(detectStructural(rest)) {
+						b.emitItem("", "", rest)
+					}
+				}
+			}
+			continue
+		}
+
+		if !handleItem(detectStructural(line)) {
+			b.appendText(line) // lanjutan poin sebelumnya
+		}
+	}
+	return b
+}
+
+// emitItem menambahkan satu NodeItem datar dengan label huruf/angka opsional.
+func (b *builder) emitItem(huruf, angka, text string) {
+	b.oiHuruf += orderStep
+	n := Node{
+		Section:    b.section,
+		NodeType:   NodeItem,
+		OrderIndex: b.oiHuruf,
+		DocOrder:   b.nextDoc(),
+		Huruf:      ptr(huruf),
+		Angka:      ptr(angka),
+		Text:       text,
+		StartPage:  b.curLinePage,
+		EndPage:    b.curLinePage,
+	}
+	b.nodes = append(b.nodes, n)
+	b.activeIdx = len(b.nodes) - 1
+	if len(b.pendingOrphan) > 0 {
+		b.attachOrphan(b.activeIdx, "before", b.pendingOrphan)
+		b.pendingOrphan = nil
+	}
+}
+
+
+
+internal/parser/parse_penjelasan.go
+package parser
+
+import (
+	"regexp"
+	"strings"
+)
+
+// parse_penjelasan.go: parser terpisah untuk penjelasan_umum & penjelasan_pasal.
+// Sengaja dipisah dari parse_batangtubuh.go meski pola dasar mirip, agar kekhususan
+// penjelasan (mis. "Cukup jelas.", ayat berprefiks kata "Ayat (1)") bisa ditangani
+// tanpa berisiko merusak parsing batang tubuh. Keduanya berbagi helper patterns.go
+// dan sama-sama melipat huruf/angka ke node aktif (bukan node sendiri).
+
+// Di penjelasan, ayat sering ditulis dengan prefiks kata: "Ayat (1)".
+var reAyatWord = regexp.MustCompile(`^(?i:ayat)\s*\(\s*([0-9]+\s*[a-zA-Z]?)\s*\)\s*(.*)$`)
+
+// Header romawi/angka pada Penjelasan Umum, mis. "1." atau "A." sebagai sub-bab naratif.
+var rePenjHead = regexp.MustCompile(`^([IVXLCDM]+|[A-Z])\.\s+(.+)$`)
+
+func parsePenjelasanUmum(lines []Line) *builder {
+	b := newBuilder(SectionPenjelasanUmum)
+	for _, raw := range lines {
+		line := strings.TrimSpace(raw.Text)
+		if line == "" {
+			continue
+		}
+		b.curLinePage = raw.Page
+
+		// buang baris header "PENJELASAN" / "UMUM" itu sendiri.
+		if rePenjelasan.MatchString(line) || reUmumHead.MatchString(line) {
+			continue
+		}
+		// sub-heading naratif (opsional) -> node paragraf baru.
+		if m := rePenjHead.FindStringSubmatch(line); m != nil {
+			b.emitNarrative(m[2])
+			continue
+		}
+		// paragraf naratif: baris non-kosong memulai/ melanjutkan paragraf.
+		if b.activeIdx < 0 || b.nodes[b.activeIdx].Section != SectionPenjelasanUmum {
+			b.emitNarrative(line)
+		} else {
+			b.appendText(line)
+		}
+	}
+	b.flushOrphan()
+	return b
+}
+
+// emitNarrative membuat node paragraf naratif untuk Penjelasan Umum.
+func (b *builder) emitNarrative(text string) {
+	b.oiPasal += orderStep
+	n := Node{
+		Section:    SectionPenjelasanUmum,
+		NodeType:   NodeParagrafIsi,
+		OrderIndex: b.oiPasal,
+		DocOrder:   b.nextDoc(),
+		Text:       text,
+		StartPage:  b.curLinePage,
+		EndPage:    b.curLinePage,
+	}
+	b.nodes = append(b.nodes, n)
+	b.activeIdx = len(b.nodes) - 1
+}
+
+func parsePenjelasanPasal(lines []Line) *builder {
+	b := newBuilder(SectionPenjelasanPasal)
+
+	for _, raw := range lines {
+		line := strings.TrimSpace(raw.Text)
+		if line == "" {
+			continue
+		}
+		b.curLinePage = raw.Page
+
+		// buang header blok.
+		if rePasalDemi.MatchString(line) {
+			continue
+		}
+
+		// ayat berprefiks kata "Ayat (1)" khas penjelasan.
+		if m := reAyatWord.FindStringSubmatch(line); m != nil {
+			if b.curPasal == "" {
+				// ayat penjelasan tanpa pasal induk: tetap catat, beri warning.
+				b.openAyat(normalizeAyatLabel(m[1]), strings.TrimSpace(m[2]))
+				b.warnActive(SeverityNeedsReview, "Ayat penjelasan tanpa Pasal induk yang jelas")
+			} else {
+				b.openAyat(normalizeAyatLabel(m[1]), strings.TrimSpace(m[2]))
+			}
+			continue
+		}
+
+		m := detectStructural(line)
+		switch m.kind {
+		case mkPasal:
+			b.openPasal(m.label)
+		case mkAyat:
+			b.openAyat(m.label, m.text)
+		case mkHuruf:
+			if b.curPasal == "" {
+				b.appendText(line)
+			} else {
+				b.foldHuruf(m.label, m.text)
+			}
+		case mkAngka:
+			if b.curHuruf == "" {
+				b.appendText(line)
+			} else {
+				b.foldAngka(m.label, m.text)
+			}
+		default:
+			// "Cukup jelas." dan penjelasan lain -> teks node aktif (biasanya Pasal/Ayat).
+			b.appendText(line)
+		}
+	}
+
+	if leftover, noNode := b.flushOrphan(); noNode && len(leftover) > 0 {
+		b.leftoverDoc = leftover
+	}
+	return b
+}
+
+
+
+internal/parser/patterns.go
+package parser
+
+import (
+	"regexp"
+	"strings"
+)
+
+// ---- Regex level struktur. Semua di-anchor ke awal baris (setelah trim). ----
+
+var (
+	reBab      = regexp.MustCompile(`^BAB\s+([IVXLCDM]+|[0-9]+)\b\s*(.*)$`)
+	reBagian   = regexp.MustCompile(`^(?i:bagian)\s+(.+?)\s*$`)
+	reParagraf = regexp.MustCompile(`^(?i:paragraf)\s+([0-9]+)\b\s*(.*)$`)
+	// Pasal: "Pasal 27" atau sisipan "Pasal 27A"/"Pasal 27 A".
+	rePasal = regexp.MustCompile(`^(?i:pasal)\s+([0-9]+\s*[A-Za-z]?)\s*$`)
+	// Ayat: "(1)", "(1a)", termasuk hasil OCR yang longgar sudah dinormalisasi dulu.
+	reAyat = regexp.MustCompile(`^\(\s*([0-9]+\s*[a-zA-Z]?)\s*\)\s*(.*)$`)
+	// Huruf: "a.", "ab." (setelah z lanjut aa, ab, ...). Maksimal 2 huruf.
+	reHuruf = regexp.MustCompile(`^([a-z]{1,2})\.\s+(.*)$`)
+	// Angka: "1." "12)" — sub dari huruf pada batang tubuh, atau item Mengingat.
+	reAngka = regexp.MustCompile(`^([0-9]+)[.\)]\s+(.*)$`)
+)
+
+// ---- Kata kunci macro-section (dipakai classify & segment). ----
+
+var (
+	reMenimbang  = regexp.MustCompile(`(?im)^\s*Menimbang\s*:?`)
+	reMengingat  = regexp.MustCompile(`(?im)^\s*Mengingat\s*:?`)
+	reMemutuskan = regexp.MustCompile(`(?im)^\s*MEMUTUSKAN\s*:?`)
+	reMenetapkan = regexp.MustCompile(`(?im)^\s*Menetapkan\s*:`)
+	rePenjelasan = regexp.MustCompile(`(?im)^\s*PENJELASAN\b`)
+	rePasalDemi  = regexp.MustCompile(`(?im)^\s*(?:I{1,3}\.\s*)?PASAL\s+DEMI\s+PASAL\b`)
+	reUmumHead   = regexp.MustCompile(`(?im)^\s*(?:I\.\s*)?UMUM\s*$`)
+	reCukupJelas = regexp.MustCompile(`(?i)^cukup\s+jelas\.?\s*$`)
+)
+
+// reBabAnywhere & rePasalAnywhere dipakai gate klasifikasi (boleh di tengah baris).
+var (
+	reBabAnywhere   = regexp.MustCompile(`(?im)^\s*BAB\s+[IVXLCDM]+\b`)
+	rePasalAnywhere = regexp.MustCompile(`(?im)^\s*Pasal\s+[0-9]+`)
+)
+
+// matchKind hasil deteksi satu baris.
+type matchKind int
+
+const (
+	mkNone matchKind = iota
+	mkBab
+	mkBagian
+	mkParagraf
+	mkPasal
+	mkAyat
+	mkHuruf
+	mkAngka
+)
+
+// lineMatch hasil klasifikasi satu baris oleh detectStructural.
+type lineMatch struct {
+	kind  matchKind
+	label string // nomor/huruf yang dinormalisasi, mis "27A", "1a", "a", "3"
+	title string // judul yang menempel di baris yang sama (mis nama Bab), bisa kosong
+	text  string // sisa teks isi pada baris yang sama (mis isi ayat), bisa kosong
+}
+
+// detectStructural mengklasifikasikan satu baris (sudah di-trim & di-OCR-fix).
+// Tidak memutuskan hierarki — hanya "baris ini pola apa".
+func detectStructural(line string) lineMatch {
+	if m := reBab.FindStringSubmatch(line); m != nil {
+		return lineMatch{kind: mkBab, label: normalizeRoman(m[1]), title: strings.TrimSpace(m[2])}
+	}
+	if m := reParagraf.FindStringSubmatch(line); m != nil {
+		return lineMatch{kind: mkParagraf, label: strings.TrimSpace(m[1]), title: strings.TrimSpace(m[2])}
+	}
+	if m := rePasal.FindStringSubmatch(line); m != nil {
+		return lineMatch{kind: mkPasal, label: normalizePasalLabel(m[1])}
+	}
+	if m := reAyat.FindStringSubmatch(line); m != nil {
+		return lineMatch{kind: mkAyat, label: normalizeAyatLabel(m[1]), text: strings.TrimSpace(m[2])}
+	}
+	// Bagian dicek SETELAH pasal/ayat karena "Bagian" bisa jadi kata biasa;
+	// kita batasi hanya bila diikuti kata bilangan tingkat (Kesatu, Kedua, ...).
+	if m := reBagian.FindStringSubmatch(line); m != nil {
+		title := strings.TrimSpace(m[1])
+		if ord := ordinalWord(title); ord != "" {
+			return lineMatch{kind: mkBagian, label: ord, title: strings.TrimSpace(strings.TrimPrefix(title, ordinalSurface(title)))}
+		}
+	}
+	if m := reHuruf.FindStringSubmatch(line); m != nil {
+		return lineMatch{kind: mkHuruf, label: m[1], text: strings.TrimSpace(m[2])}
+	}
+	if m := reAngka.FindStringSubmatch(line); m != nil {
+		return lineMatch{kind: mkAngka, label: m[1], text: strings.TrimSpace(m[2])}
+	}
+	return lineMatch{kind: mkNone}
+}
+
+// normalizePasalLabel merapikan "27 A" -> "27A", "27a" -> "27A".
+func normalizePasalLabel(s string) string {
+	s = strings.ReplaceAll(s, " ", "")
+	return strings.ToUpper(s)
+}
+
+// normalizeAyatLabel merapikan "1 a" -> "1a" (huruf sisipan tetap huruf kecil).
+func normalizeAyatLabel(s string) string {
+	s = strings.ReplaceAll(s, " ", "")
+	return strings.ToLower(s)
+}
+
+// normalizeRoman membiarkan romawi apa adanya (uppercase) atau angka arab.
+func normalizeRoman(s string) string {
+	return strings.ToUpper(strings.TrimSpace(s))
+}
+
+// ---- Kata bilangan tingkat untuk Bagian ("Bagian Kesatu" dst). ----
+
+var ordinalMap = map[string]string{
+	"kesatu": "1", "pertama": "1",
+	"kedua": "2", "ketiga": "3", "keempat": "4", "kelima": "5",
+	"keenam": "6", "ketujuh": "7", "kedelapan": "8", "kesembilan": "9",
+	"kesepuluh": "10", "kesebelas": "11", "kedua belas": "12", "ketiga belas": "13",
+	"keempat belas": "14", "kelima belas": "15", "keenam belas": "16",
+	"ketujuh belas": "17", "kedelapan belas": "18", "kesembilan belas": "19",
+	"kedua puluh": "20",
+}
+
+// ordinalWord mengembalikan urutan numerik dari awal string bila diawali kata bilangan tingkat.
+func ordinalWord(s string) string {
+	low := strings.ToLower(strings.TrimSpace(s))
+	// cek frasa dua-kata dulu (mis "kedua belas") baru satu kata.
+	for _, k := range []string{
+		"kesembilan belas", "kedelapan belas", "ketujuh belas", "keenam belas",
+		"kelima belas", "keempat belas", "ketiga belas", "kedua belas",
+		"kedua puluh", "kesebelas", "kesepuluh", "kesembilan", "kedelapan",
+		"ketujuh", "keenam", "kelima", "keempat", "ketiga", "kedua",
+		"kesatu", "pertama",
+	} {
+		if strings.HasPrefix(low, k) {
+			return ordinalMap[k]
+		}
+	}
+	return ""
+}
+
+// ordinalSurface mengembalikan bentuk permukaan kata bilangan yang cocok (untuk memotong dari judul).
+func ordinalSurface(s string) string {
+	low := strings.ToLower(strings.TrimSpace(s))
+	for _, k := range []string{
+		"kesembilan belas", "kedelapan belas", "ketujuh belas", "keenam belas",
+		"kelima belas", "keempat belas", "ketiga belas", "kedua belas",
+		"kedua puluh", "kesebelas", "kesepuluh", "kesembilan", "kedelapan",
+		"ketujuh", "keenam", "kelima", "keempat", "ketiga", "kedua",
+		"kesatu", "pertama",
+	} {
+		if strings.HasPrefix(low, k) {
+			return s[:len(k)]
+		}
+	}
+	return ""
+}
+
+// isBlank true bila baris kosong setelah trim.
+func isBlank(s string) bool { return strings.TrimSpace(s) == "" }
+
+
+
+internal/parser/relations.go
+package parser
+
+import (
+	"regexp"
+	"strings"
+)
+
+// relations.go mengekstrak relasi antar-peraturan dari hasil parsing:
+// peraturan yang DICABUT, DIUBAH, atau dijadikan DASAR HUKUM oleh dokumen ini.
+//
+// Sengaja deterministik (regex + kata kerja), bukan lewat LLM: kalimat pencabutan
+// dalam peraturan Indonesia sangat formulaik, sehingga pola dapat diandalkan DAN
+// hasilnya dapat diaudit. Model bahasa berisiko mengarang nomor/tahun peraturan —
+// kesalahan yang sulit terdeteksi. Rujukan yang polanya tidak yakin tetap
+// dikeluarkan dengan Confidence="perlu_review" agar ditinjau manusia.
+
+// RelationType jenis hubungan terhadap peraturan lain.
+type RelationType string
+
+const (
+	RelMencabut   RelationType = "mencabut"    // dicabut & dinyatakan tidak berlaku
+	RelMengubah   RelationType = "mengubah"    // perubahan atas peraturan lain
+	RelDasarHukum RelationType = "dasar_hukum" // disebut pada Mengingat
+	RelDisebut    RelationType = "disebut"     // dirujuk, maksud hubungan belum jelas
+)
+
+// Confidence tingkat keyakinan ekstraksi.
+const (
+	ConfTinggi      = "tinggi"
+	ConfPerluReview = "perlu_review"
+)
+
+// Relation satu rujukan ke peraturan lain.
+type Relation struct {
+	Type RelationType `json:"type"`
+
+	// Key adalah kunci kanonik untuk join di database, dibentuk dari
+	// jenis dasar + nomor + tahun, mis. "peraturan_daerah|5|2010".
+	// Sengaja TIDAK memuat nama instansi agar bisa dicocokkan lintas dokumen.
+	Key string `json:"key"`
+
+	Jenis    string `json:"jenis"`              // jenis dasar, mis. "PERATURAN DAERAH"
+	Instansi string `json:"instansi,omitempty"` // penyerta bila ada, mis. "KABUPATEN CONTOH"
+
+	Nomor      string  `json:"nomor"`             // mis. "5"
+	Tahun      string  `json:"tahun"`             // mis. "2010"
+	Tentang    string  `json:"tentang,omitempty"` // judul bila tercantum
+	Confidence string  `json:"confidence"`
+	Section    Section `json:"section"` // bagian dokumen tempat ditemukan
+	Pasal      *string `json:"pasal,omitempty"`
+	DocOrder   float64 `json:"doc_order"` // node tempat rujukan ditemukan
+	Kutipan    string  `json:"kutipan"`   // kalimat sumber (untuk audit manual)
+}
+
+// reCitation menangkap rujukan peraturan: <jenis> [pengubah] Nomor N Tahun YYYY [tentang ...].
+// [UPDATE UU 13/2022 & UU 15/2019] Menambahkan Peraturan Kepala Daerah, Peraturan Desa,
+// dan Peraturan Lembaga Negara sesuai hierarki dan jenis peraturan terbaru.
+var reCitation = regexp.MustCompile(
+	`(?i)(Undang-Undang Dasar|Undang-Undang|Peraturan Pemerintah Pengganti Undang-Undang|` +
+		`Peraturan Pemerintah|Peraturan Presiden|Peraturan Menteri|Peraturan Lembaga Negara|Peraturan Daerah|` +
+		`Peraturan Kepala Daerah|Peraturan Desa|` +
+		`Peraturan Gubernur|Peraturan Bupati|Peraturan Walikota|Peraturan Wali Kota|` +
+		`Qanun Aceh|Qanun|Keputusan Presiden|Instruksi Presiden|Keputusan Menteri)` +
+		`((?:\s+[^,;.()]{1,50}?)?)\s+Nomor\s+([0-9]+[A-Za-z]?)\s+Tahun\s+([0-9]{4})` +
+		`(?:\s+[Tt]entang\s+([^.;]{3,200}))?`)
+
+// kata kerja penanda hubungan.
+var (
+	reCabut  = regexp.MustCompile(`(?i)\b(dicabut|tidak berlaku|dinyatakan tidak berlaku|mencabut)\b`)
+	reUbah   = regexp.MustCompile(`(?i)\b(diubah|perubahan atas|perubahan kedua atas|perubahan ketiga atas|mengubah)\b`)
+	reSpaces = regexp.MustCompile(`\s+`)
+)
+
+// ExtractRelations memindai seluruh node dan mengembalikan rujukan peraturan lain.
+// Rujukan identik (jenis+nomor+tahun+type) hanya dikeluarkan sekali.
+func ExtractRelations(res Result) []Relation {
+	var out []Relation
+	seen := map[string]bool{}
+
+	for _, n := range res.Nodes {
+		text := strings.TrimSpace(n.Text)
+		if text == "" {
+			continue
+		}
+		matches := reCitation.FindAllStringSubmatch(text, -1)
+		if matches == nil {
+			continue
+		}
+		for _, m := range matches {
+			jenis := normalizeSpace(m[1])
+			instansi := normalizeSpace(m[2])
+			rel := Relation{
+				Jenis:    strings.ToUpper(jenis),
+				Instansi: strings.ToUpper(instansi),
+				Nomor:    normalizeSpace(m[3]),
+				Tahun:    normalizeSpace(m[4]),
+				Tentang:  trimTentang(normalizeSpace(m[5])),
+				Section:  n.Section,
+				Pasal:    n.Pasal,
+				DocOrder: n.DocOrder,
+				Kutipan:  trimQuote(text),
+			}
+			rel.Type, rel.Confidence = classifyRelation(n, text)
+			rel.Key = canonicalKey(rel.Jenis, rel.Nomor, rel.Tahun)
+
+			dedup := string(rel.Type) + "#" + rel.Key
+			if seen[dedup] {
+				continue
+			}
+			seen[dedup] = true
+			out = append(out, rel)
+		}
+	}
+	return suppressWeakDuplicates(out)
+}
+
+// suppressWeakDuplicates membuang entri "disebut" bila peraturan yang sama (Key
+// sama) sudah punya klasifikasi yang lebih kuat (mencabut/mengubah/dasar_hukum).
+// Tujuannya mengurangi kebisingan saat peninjauan manual: satu peraturan cukup
+// muncul dengan hubungan terkuatnya.
+func suppressWeakDuplicates(rels []Relation) []Relation {
+	strong := map[string]bool{}
+	for _, r := range rels {
+		if r.Type != RelDisebut {
+			strong[r.Key] = true
+		}
+	}
+	out := rels[:0]
+	for _, r := range rels {
+		if r.Type == RelDisebut && strong[r.Key] {
+			continue
+		}
+		out = append(out, r)
+	}
+	return out
+}
+
+// classifyRelation menentukan jenis hubungan dari konteks node.
+func classifyRelation(n Node, text string) (RelationType, string) {
+	switch n.Section {
+	case SectionMengingat:
+		// Daftar "Mengingat" memang dasar hukum — pola sangat baku.
+		return RelDasarHukum, ConfTinggi
+	case SectionPenjelasanUmum, SectionPenjelasanPasal:
+		// Penjelasan hanya menjelaskan; jangan diperlakukan sebagai tindakan hukum.
+		return RelDisebut, ConfPerluReview
+	}
+	switch {
+	case reCabut.MatchString(text):
+		return RelMencabut, ConfTinggi
+	case reUbah.MatchString(text):
+		return RelMengubah, ConfTinggi
+	default:
+		// Dirujuk di batang tubuh tanpa kata kerja pencabutan/perubahan yang jelas.
+		return RelDisebut, ConfPerluReview
+	}
+}
+
+func normalizeSpace(s string) string {
+	return strings.TrimSpace(reSpaces.ReplaceAllString(s, " "))
+}
+
+func trimQuote(s string) string {
+	s = normalizeSpace(s)
+	if len(s) > 400 {
+		s = s[:400] + "..."
+	}
+	return s
+}
+
+// reTentangTail memotong judul peraturan pada kata kerja/klausa lanjutan yang
+// bukan bagian judul (mis. "... tentang Izin Gangguan dicabut dan dinyatakan ...").
+var reTentangTail = regexp.MustCompile(`(?i)\s+(dicabut|diubah|dinyatakan|sebagaimana|menjadi|dihapus|berlaku|mulai berlaku|dan dinyatakan|sebagai berikut)\b.*$`)
+
+// trimTentang membersihkan judul hasil tangkapan regex.
+func trimTentang(s string) string {
+	s = reTentangTail.ReplaceAllString(s, "")
+	s = strings.TrimRight(s, " ,;:.")
+	return strings.TrimSpace(s)
+}
+
+// canonicalKey membentuk kunci join yang stabil: jenis_dasar|nomor|tahun.
+// Contoh: ("PERATURAN DAERAH", "5", "2010") -> "peraturan_daerah|5|2010".
+func canonicalKey(jenis, nomor, tahun string) string {
+	j := strings.ToLower(strings.TrimSpace(jenis))
+	j = strings.Join(strings.Fields(j), "_")
+	j = strings.ReplaceAll(j, "-", "_")
+	return j + "|" + strings.ToLower(strings.TrimSpace(nomor)) + "|" + strings.TrimSpace(tahun)
+}
+
+
+
+internal/parser/segment.go
+package parser
+
+import "strings"
+
+// segment.go memotong daftar baris (dengan halaman asal masing-masing) menjadi
+// beberapa macro-section berdasarkan anchor kata kunci besar. Satu kali scan
+// linear; tidak peduli hierarki Bab/Pasal.
+
+type segment struct {
+	section Section
+	lines   []Line
+}
+
+// segmentize membagi baris menjadi urutan segmen sesuai kemunculan anchor.
+// Juga mengembalikan daftar warning level-dokumen (mis. section standar hilang).
+func segmentize(lines []Line, cls classifyResult) ([]segment, []Warning) {
+	// Tentukan indeks anchor utama.
+	idxMenimbang := findLineIndex(lines, reMenimbang)
+	idxMengingat := findLineIndex(lines, reMengingat)
+	idxMemutuskan := findLineIndex(lines, reMemutuskan)
+	idxMenetapkan := findLineIndexFrom(lines, reMenetapkan, maxInt(idxMemutuskan, 0))
+	idxPenjelasan := findLineIndex(lines, rePenjelasan)
+
+	// Awal batang tubuh: setelah "Menetapkan :" (baris penetapan) bila ada,
+	// jika tidak, setelah MEMUTUSKAN, jika tidak, dari Pasal/BAB pertama.
+	batangStart := -1
+	switch {
+	case idxMenetapkan >= 0:
+		batangStart = idxMenetapkan + 1
+	case idxMemutuskan >= 0:
+		batangStart = idxMemutuskan + 1
+	default:
+		batangStart = firstStructuralIndex(lines)
+	}
+
+	// Akhir batang tubuh: sebelum PENJELASAN bila ada, jika tidak sampai akhir.
+	batangEnd := len(lines)
+	if idxPenjelasan >= 0 {
+		batangEnd = idxPenjelasan
+	}
+
+	var segs []segment
+	var warns []Warning
+
+	// --- Judul: dari awal sampai anchor pembuka pertama. ---
+	firstAnchor := minPositive(idxMenimbang, idxMengingat, idxMemutuskan)
+	if firstAnchor < 0 {
+		firstAnchor = batangStart
+	}
+	if firstAnchor > 0 {
+		segs = append(segs, segment{SectionJudul, sliceLines(lines, 0, firstAnchor)})
+	}
+
+	// --- Menimbang ---
+	if idxMenimbang >= 0 {
+		end := minPositiveAfter(len(lines), idxMenimbang, idxMengingat, idxMemutuskan, batangStart)
+		segs = append(segs, segment{SectionMenimbang, sliceLines(lines, idxMenimbang, end)})
+	} else if cls.hasPasal {
+		warns = append(warns, Warning{SeverityNeedsReview, "Section 'Menimbang' tidak ditemukan", nil, ""})
+	}
+
+	// --- Mengingat ---
+	if idxMengingat >= 0 {
+		end := minPositiveAfter(len(lines), idxMengingat, idxMemutuskan, batangStart)
+		segs = append(segs, segment{SectionMengingat, sliceLines(lines, idxMengingat, end)})
+	} else if cls.hasPasal {
+		warns = append(warns, Warning{SeverityNeedsReview, "Section 'Mengingat' tidak ditemukan", nil, ""})
+	}
+
+	// --- Penetapan (MEMUTUSKAN..Menetapkan) ---
+	if idxMemutuskan >= 0 {
+		end := batangStart
+		if end < 0 || end <= idxMemutuskan {
+			end = idxMemutuskan + 1
+		}
+		segs = append(segs, segment{SectionPenetapan, sliceLines(lines, idxMemutuskan, end)})
+	} else if cls.hasPasal {
+		warns = append(warns, Warning{SeverityNeedsReview, "Section 'MEMUTUSKAN/Menetapkan' tidak ditemukan", nil, ""})
+	}
+
+	// --- Batang tubuh ---
+	if batangStart >= 0 && batangStart < batangEnd {
+		segs = append(segs, segment{SectionBatangTubuh, sliceLines(lines, batangStart, batangEnd)})
+	} else {
+		warns = append(warns, Warning{SeverityNeedsReview, "Batang tubuh (Pasal-pasal) tidak terdeteksi", nil, ""})
+	}
+
+	// --- Penjelasan: pisah Umum vs Pasal Demi Pasal. ---
+	if idxPenjelasan >= 0 {
+		penjLines := sliceLines(lines, idxPenjelasan, len(lines))
+		umumSegs := splitPenjelasan(penjLines)
+		segs = append(segs, umumSegs...)
+	}
+
+	return segs, warns
+}
+
+// splitPenjelasan memisah blok PENJELASAN menjadi penjelasan_umum & penjelasan_pasal.
+func splitPenjelasan(lines []Line) []segment {
+	idxUmum := findLineIndex(lines, reUmumHead)
+	idxPasalDemi := findLineIndex(lines, rePasalDemi)
+
+	var out []segment
+	switch {
+	case idxPasalDemi >= 0:
+		// Umum = dari setelah header sampai sebelum "PASAL DEMI PASAL".
+		umumStart := 0
+		if idxUmum >= 0 && idxUmum < idxPasalDemi {
+			umumStart = idxUmum
+		}
+		if idxPasalDemi > umumStart {
+			out = append(out, segment{SectionPenjelasanUmum, sliceLines(lines, umumStart, idxPasalDemi)})
+		}
+		out = append(out, segment{SectionPenjelasanPasal, sliceLines(lines, idxPasalDemi, len(lines))})
+	case idxUmum >= 0:
+		out = append(out, segment{SectionPenjelasanUmum, sliceLines(lines, idxUmum, len(lines))})
+	default:
+		// Tidak ada sub-header jelas: perlakukan seluruhnya sebagai penjelasan_umum,
+		// namun bila mengandung pola Pasal, arahkan ke penjelasan_pasal.
+		joined := joinLineText(lines)
+		if rePasalAnywhere.MatchString(joined) {
+			out = append(out, segment{SectionPenjelasanPasal, lines})
+		} else {
+			out = append(out, segment{SectionPenjelasanUmum, lines})
+		}
+	}
+	return out
+}
+
+func joinLineText(lines []Line) string {
+	parts := make([]string, len(lines))
+	for i, l := range lines {
+		parts[i] = l.Text
+	}
+	return strings.Join(parts, "\n")
+}
+
+// ---- util indeks ----
+
+func findLineIndex(lines []Line, re interface{ MatchString(string) bool }) int {
+	return findLineIndexFrom(lines, re, 0)
+}
+
+func findLineIndexFrom(lines []Line, re interface{ MatchString(string) bool }, from int) int {
+	if from < 0 {
+		from = 0
+	}
+	for i := from; i < len(lines); i++ {
+		if re.MatchString(lines[i].Text) {
+			return i
+		}
+	}
+	return -1
+}
+
+// firstStructuralIndex mencari baris struktural pertama (BAB atau Pasal).
+func firstStructuralIndex(lines []Line) int {
+	for i, ln := range lines {
+		m := detectStructural(ln.Text)
+		if m.kind == mkBab || m.kind == mkPasal {
+			return i
+		}
+	}
+	return -1
+}
+
+func sliceLines(lines []Line, a, b int) []Line {
+	if a < 0 {
+		a = 0
+	}
+	if b > len(lines) {
+		b = len(lines)
+	}
+	if a >= b {
+		return nil
+	}
+	cp := make([]Line, b-a)
+	copy(cp, lines[a:b])
+	return cp
+}
+
+func minPositive(vals ...int) int {
+	best := -1
+	for _, v := range vals {
+		if v >= 0 && (best < 0 || v < best) {
+			best = v
+		}
+	}
+	return best
+}
+
+// minPositiveAfter: nilai positif terkecil yang > after, di antara vals.
+// Bila tidak ada, kembalikan fallback.
+func minPositiveAfter(fallback int, vals ...int) int {
+	after := vals[0]
+	best := -1
+	for _, v := range vals[1:] {
+		if v > after && (best < 0 || v < best) {
+			best = v
+		}
+	}
+	if best < 0 {
+		return fallback
+	}
+	return best
+}
+
+func maxInt(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+
+
+
+internal/parser/stitch.go
+package parser
+
+import (
+	"regexp"
+	"strings"
+)
+
+// stitch.go menggabung array halaman OCR menjadi satu daftar baris bersih,
+// TIAP BARIS MEMBAWA NOMOR HALAMAN ASALNYA (Line.Page):
+//   - buang baris nomor halaman & garis pemisah,
+//   - buang header/footer yang berulang identik di banyak halaman,
+//   - jalankan fixOCRLine pada tiap baris.
+//
+// Output: []Line ter-normalisasi, siap disegmentasi.
+
+var (
+	rePageNum   = regexp.MustCompile(`^[-–—\s]*\d{1,4}[-–—\s]*$`)           // "- 5 -", "12"
+	rePageLabel = regexp.MustCompile(`(?i)^(halaman|hlm|page)\s*\.?\s*\d+`) // "Halaman 5"
+	reRuleLine  = regexp.MustCompile(`^[-_=.·•\s]{3,}$`)                    // garis pemisah
+	// reWatermark menangkap baris yang HANYA berisi watermark/URL situs JDIH
+	// (mis. "www.jdih.acehprov.go.id") — pola furniture halaman yang sama
+	// sekali bukan bagian isi peraturan, sama seperti nomor halaman.
+	reWatermark = regexp.MustCompile(`(?i)^\s*(https?://|www\.)?[a-z0-9.-]*\.(go\.id|ac\.id|co\.id|or\.id)\S*\s*$`)
+)
+
+func stitch(pages []string) []Line {
+	// 1) pecah tiap halaman jadi baris & normalisasi awal, tandai nomor halaman (1-indexed).
+	perPage := make([][]Line, 0, len(pages))
+	for pi, p := range pages {
+		raw := strings.Split(p, "\n")
+		lines := make([]Line, 0, len(raw))
+		for _, ln := range raw {
+			f := fixOCRLine(ln)
+			f = fuzzyFixAnchorLine(f)
+			lines = append(lines, Line{Text: f, Page: pi + 1}) // simpan termasuk kosong dulu, untuk deteksi header/footer posisi
+		}
+		perPage = append(perPage, lines)
+	}
+
+	// 2) deteksi header/footer berulang: baris identik yang muncul di >=40% halaman
+	//    (dan bukan baris struktural) dianggap boilerplate.
+	if len(perPage) >= 3 {
+		freq := map[string]int{}
+		for _, lines := range perPage {
+			seen := map[string]bool{}
+			for _, ln := range lines {
+				t := strings.TrimSpace(ln.Text)
+				if t == "" || seen[t] {
+					continue
+				}
+				seen[t] = true
+				freq[t]++
+			}
+		}
+		threshold := (len(perPage)*4 + 9) / 10 // ~40%
+		boiler := map[string]bool{}
+		for t, c := range freq {
+			if c >= threshold && !looksStructural(t) {
+				boiler[t] = true
+			}
+		}
+		for pi := range perPage {
+			kept := perPage[pi][:0]
+			for _, ln := range perPage[pi] {
+				if boiler[strings.TrimSpace(ln.Text)] {
+					continue
+				}
+				kept = append(kept, ln)
+			}
+			perPage[pi] = kept
+		}
+	}
+
+	// 3) gabung semua halaman, buang nomor halaman/garis, rapikan blank berlebih.
+	out := make([]Line, 0, 1024)
+	prevBlank := false
+	for _, lines := range perPage {
+		for _, ln := range lines {
+			t := strings.TrimSpace(ln.Text)
+			if t == "" {
+				if !prevBlank {
+					out = append(out, Line{Text: "", Page: ln.Page})
+					prevBlank = true
+				}
+				continue
+			}
+			if rePageNum.MatchString(t) || rePageLabel.MatchString(t) || reRuleLine.MatchString(t) || reWatermark.MatchString(t) {
+				continue
+			}
+			out = append(out, ln)
+			prevBlank = false
+		}
+	}
+	// buang blank di ujung.
+	for len(out) > 0 && strings.TrimSpace(out[len(out)-1].Text) == "" {
+		out = out[:len(out)-1]
+	}
+	return dedupPageBoundaries(out)
+}
+
+// dedupPageBoundaries menangani satu gejala scan lama: baris terakhir suatu
+// halaman terpotong ("...pada dasarnya") lalu halaman berikutnya mengulang
+// balik dari situ dengan versi yang lebih lengkap ("pada dasarnya kita
+// memahami..."). Ini SENGAJA hanya menangani kasus AMAN — baris pemotong
+// adalah PREFIKS PERSIS (case-insensitive, setelah TrimSpace) dari baris
+// pembuka halaman berikutnya — dan BUKAN baris struktural (BAB/Pasal/dst).
+// Overlap yang tidak persis (mis. parafrase, typo beda) SENGAJA TIDAK
+// disentuh — menebak di sini berisiko menghapus isi asli yang sebetulnya
+// bukan duplikat, dan proyek ini sudah punya sikap tegas soal itu (lihat
+// alasan penolakan LLM text-fix).
+func dedupPageBoundaries(lines []Line) []Line {
+	if len(lines) < 2 {
+		return lines
+	}
+	const minOverlapLen = 6 // hindari baris pendek kebetulan jadi prefiks (mis. "BAB I")
+	out := make([]Line, 0, len(lines))
+	for i := 0; i < len(lines); i++ {
+		if i+1 < len(lines) && lines[i].Page != lines[i+1].Page {
+			a := strings.TrimSpace(lines[i].Text)
+			b := strings.TrimSpace(lines[i+1].Text)
+			if len(a) >= minOverlapLen && !looksStructural(a) &&
+				strings.HasPrefix(strings.ToLower(b), strings.ToLower(a)) {
+				continue // lewati baris[i]: duplikat terpotong, versi lengkap ada di baris[i+1]
+			}
+		}
+		out = append(out, lines[i])
+	}
+	return out
+}
+
+// looksStructural mencegah baris struktural (BAB, Pasal, dst) terhapus sebagai boilerplate
+// meskipun kebetulan berulang.
+func looksStructural(t string) bool {
+	m := detectStructural(t)
+	if m.kind != mkNone {
+		return true
+	}
+	if reMenimbang.MatchString(t) || reMengingat.MatchString(t) ||
+		reMemutuskan.MatchString(t) || rePenjelasan.MatchString(t) {
+		return true
+	}
+	return false
+}
+
+
+
+internal/parser/types.go
+package parser
+
+import "errors"
+
+// ErrNotLegalDocument dikembalikan oleh Parse ketika teks masukan tidak
+// menunjukkan ciri dokumen perundang-undangan sama sekali (tidak ada satupun
+// anchor kuat seperti "Pasal N", "BAB <romawi>", atau kata kunci konsiderans).
+// Caller sebaiknya memperlakukan ini sebagai "lewati dokumen ini", bukan bug.
+var ErrNotLegalDocument = errors.New("uuparser: teks tidak dikenali sebagai dokumen hukum")
+
+// ErrEmptyInput dikembalikan ketika tidak ada halaman/teks sama sekali.
+var ErrEmptyInput = errors.New("uuparser: input kosong")
+
+// Section adalah bagian besar (macro-section) dokumen.
+type Section string
+
+const (
+	SectionJudul           Section = "judul"
+	SectionMenimbang       Section = "menimbang"
+	SectionMengingat       Section = "mengingat"
+	SectionPenetapan       Section = "penetapan"
+	SectionBatangTubuh     Section = "batang_tubuh"
+	SectionPenjelasanUmum  Section = "penjelasan_umum"
+	SectionPenjelasanPasal Section = "penjelasan_pasal"
+	SectionPenutup         Section = "penutup" // pengesahan/tempat-tanggal/ttd di akhir batang tubuh
+)
+
+// NodeType adalah jenis unit struktural pada satu baris.
+type NodeType string
+
+const (
+	NodeJudul       NodeType = "judul"
+	NodePembukaan   NodeType = "pembukaan" // frasa pembuka spt "DENGAN RAHMAT TUHAN YANG MAHA ESA"
+	NodeItem        NodeType = "item"      // poin datar di Menimbang/Mengingat (huruf/angka)
+	NodePenetapan   NodeType = "penetapan"
+	NodeBab         NodeType = "bab"
+	NodeBagian      NodeType = "bagian"
+	NodeParagraf    NodeType = "paragraf"
+	NodePasal       NodeType = "pasal"
+	NodeAyat        NodeType = "ayat"
+	NodeParagrafIsi NodeType = "paragraf_isi" // paragraf naratif tanpa penomoran (mis. Penjelasan Umum)
+	// NodeHuruf/NodeAngka SENGAJA DIHAPUS (2026-07-20): huruf/angka pada batang
+	// tubuh tidak lagi jadi node terpisah — teksnya dilipat ke dalam Node Ayat
+	// (atau Pasal bila belum ada Ayat) oleh builder.foldHuruf/foldAngka, supaya
+	// tidak memutus konteks kalimat pembuka ayat. NodeItem (poin Menimbang/
+	// Mengingat) TIDAK terpengaruh — itu daftar datar yang berbeda konteks.
+)
+
+// Severity tingkat keparahan sebuah warning.
+type Severity string
+
+const (
+	SeverityInfo        Severity = "info"
+	SeverityNeedsReview Severity = "needs_review"
+)
+
+// Warning adalah catatan untuk human review. Bisa menempel pada Node (level baris)
+// atau berdiri di Result.DocumentWarnings (level dokumen).
+type Warning struct {
+	Severity   Severity `json:"severity"`
+	Message    string   `json:"message"`
+	OrphanText *string  `json:"orphan_text,omitempty"` // teks asli yang tidak ter-parse (jika ada)
+	Position   string   `json:"position,omitempty"`    // "before" | "after" — relatif terhadap node pembawa
+}
+
+// Node adalah satu baris hasil parsing, siap di-loop insert ke DB.
+// Field label (Bab..Angka) berisi NOMOR/LABEL LANGSUNG (string), bukan FK ke row lain,
+// sehingga filter seperti "semua ayat pada Pasal 2" cukup mencocokkan kolom.
+type Node struct {
+	Section  Section  `json:"section"`
+	NodeType NodeType `json:"node_type"`
+
+	Bab      *string `json:"bab,omitempty"`
+	Bagian   *string `json:"bagian,omitempty"`
+	Paragraf *string `json:"paragraf,omitempty"`
+	Pasal    *string `json:"pasal,omitempty"`
+	Ayat     *string `json:"ayat,omitempty"`
+	Huruf    *string `json:"huruf,omitempty"`
+	Angka    *string `json:"angka,omitempty"`
+
+	// StartPage/EndPage = halaman OCR (1-indexed) tempat node ini mulai/berakhir.
+	// StartPage == EndPage bila node tidak melintasi batas halaman.
+	StartPage int `json:"start_page"`
+	EndPage   int `json:"end_page"`
+
+	// OrderIndex = urutan lokal dalam parent langsung.
+	// DocOrder   = urutan baca linear seluruh dokumen (tidak reset).
+	// Keduanya renggang (kelipatan step) agar UI drag-insert tak perlu renumber massal.
+	OrderIndex float64 `json:"order_index"`
+	DocOrder   float64 `json:"doc_order"`
+
+	Text     string    `json:"text"`
+	Warnings []Warning `json:"warnings,omitempty"`
+}
+
+// Result adalah keluaran Parse.
+type Result struct {
+	Nodes            []Node    `json:"nodes"`
+	DocumentWarnings []Warning `json:"document_warnings,omitempty"`
+}
+
+// ptr util kecil untuk field label opsional.
+func ptr(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}
+
+
+
+internal/pipeline/downloader_worker.go
+package pipeline
+
+import (
+	"context"
+	"path/filepath"
+	"time"
+
+	"github.com/fuadarradhi/uuparser/internal/config"
+	"github.com/fuadarradhi/uuparser/internal/downloader"
+	"github.com/fuadarradhi/uuparser/internal/fsutil"
+	"github.com/fuadarradhi/uuparser/internal/logx"
+	"github.com/fuadarradhi/uuparser/internal/store"
+)
+
+// Nilai tetap — bukan config, karena jawabannya sudah pasti (permintaan user
+// 2026-07-20: jangan bikin tombol untuk sesuatu yang tidak akan pernah diubah).
+const (
+	downloaderRegisterInterval = 2 * time.Minute // seberapa sering cek dokumen baru per sumber
+	downloaderDelay            = 1500 * time.Millisecond
+	downloaderMaxRetries       = 3
+	downloaderHTTPTimeout      = 120 * time.Second
+	downloaderMaxAttempts      = 3
+)
+
+// downloaderWorker mendaftarkan dokumen baru dari tiap sumber lalu mengunduh
+// PDF untuk yang berstatus 'pending'. Berjalan independen dari OCR/parser —
+// PDF baru selalu siap sebelum OCR sempat memintanya.
+func downloaderWorker(ctx context.Context, cfg config.Config, st *store.Store) {
+	for {
+		if ctx.Err() != nil {
+			return
+		}
+		registerNewDocuments(ctx, st)
+		drainDownloads(ctx, cfg, st)
+
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(downloaderRegisterInterval):
+		}
+	}
+}
+
+func dlConfig() downloader.Config {
+	return downloader.Config{
+		Delay: downloaderDelay, MaxRetries: downloaderMaxRetries, HTTPTimeout: downloaderHTTPTimeout,
+	}
+}
+
+func registerNewDocuments(ctx context.Context, st *store.Store) {
+	rows, err := st.ListSources(ctx)
+	if err != nil {
+		logx.Warn("downloader: daftar sumber: %v", err)
+		return
+	}
+	for _, row := range rows {
+		if ctx.Err() != nil {
+			return
+		}
+		cfg := dlConfig()
+		cfg.Endpoint = row.EndpointURL
+		src, err := downloader.NewSource(downloader.SourceRow{
+			Code: row.Code, EndpointURL: row.EndpointURL, SourceType: row.SourceType,
+			SourceConfigRaw: row.SourceConfigRaw,
+		}, cfg)
+		if err != nil {
+			logx.Warn("downloader: %v", err)
+			continue
+		}
+		docs, err := src.ListDocuments(ctx)
+		if err != nil {
+			logx.Warn("downloader: sumber %s tak terjangkau (%v) — dicoba lagi nanti", row.Code, err)
+			continue
+		}
+		n := 0
+		for _, d := range docs {
+			slug := downloader.Slug(downloader.Record{IDData: d.IDData, FileDownload: d.Meta["file_download"]})
+			if err := st.UpsertDocumentMeta(ctx, row.IDStr, d.IDData, d.Judul, slug, d.FileURL); err != nil {
+				logx.Warn("downloader: daftar %s: %v", d.IDData, err)
+				continue
+			}
+			n++
+		}
+		logx.Info("downloader: %s — %d dokumen diperiksa dari sumber", row.Code, n)
+	}
+}
+
+func drainDownloads(ctx context.Context, cfg config.Config, st *store.Store) {
+	for {
+		if ctx.Err() != nil {
+			return
+		}
+		job, err := st.ClaimForDownload(ctx)
+		if err == store.ErrNoWork {
+			return
+		}
+		if err != nil {
+			logx.Warn("downloader: klaim gagal: %v", err)
+			return
+		}
+		processOneDownload(ctx, cfg, st, job)
+	}
+}
+
+func processOneDownload(ctx context.Context, cfg config.Config, st *store.Store, job store.DownloadJob) {
+	row, err := st.GetSource(ctx, job.SourceID)
+	if err != nil {
+		logx.Warn("downloader: sumber %s tak ditemukan: %v", job.SourceID, err)
+		_ = st.MarkDownloadFailed(ctx, job.ID, err.Error(), downloaderMaxAttempts)
+		return
+	}
+	dc := dlConfig()
+	dc.Endpoint = row.EndpointURL
+	src, err := downloader.NewSource(downloader.SourceRow{
+		Code: row.Code, EndpointURL: row.EndpointURL, SourceType: row.SourceType,
+	}, dc)
+	if err != nil {
+		_ = st.MarkDownloadFailed(ctx, job.ID, err.Error(), downloaderMaxAttempts)
+		return
+	}
+
+	body, err := src.FetchPDF(ctx, downloader.RemoteDoc{FileURL: job.PDFURL})
+	if err != nil {
+		logx.Fail(job.Slug, "unduh gagal: %v", err)
+		_ = st.MarkDownloadFailed(ctx, job.ID, err.Error(), downloaderMaxAttempts)
+		return
+	}
+
+	// Satu-satunya berkas yang tetap hidup di disk: PDF-nya sendiri (untuk
+	// pratinjau). Semua yang lain (metadata, teks OCR, hasil parse) langsung
+	// ke Postgres, tidak lewat perantara file.
+	pdfDir := filepath.Join(cfg.DataDir, row.Code, "pdf")
+	dest := filepath.Join(pdfDir, job.Slug+".pdf")
+	if err := fsutil.WriteFileAtomic(dest, body, 0o644); err != nil {
+		logx.Fail(job.Slug, "simpan PDF gagal: %v", err)
+		_ = st.MarkDownloadFailed(ctx, job.ID, err.Error(), downloaderMaxAttempts)
+		return
+	}
+
+	if err := st.MarkDownloaded(ctx, job.ID, dest, sha256Hex(body)); err != nil {
+		logx.Warn("downloader: tandai selesai %s: %v", job.Slug, err)
+		return
+	}
+	logx.Step("unduh", "%s", job.Slug)
+	time.Sleep(downloaderDelay)
+}
+
+
+
+internal/pipeline/ocr_worker.go
+package pipeline
+
+import (
+	"context"
+	"time"
+
+	"github.com/fuadarradhi/uuparser/internal/config"
+	"github.com/fuadarradhi/uuparser/internal/extractor"
+	"github.com/fuadarradhi/uuparser/internal/localllm"
+	"github.com/fuadarradhi/uuparser/internal/logx"
+	"github.com/fuadarradhi/uuparser/internal/parser"
+	"github.com/fuadarradhi/uuparser/internal/store"
+)
+
+// Nilai tetap — lihat catatan di downloader_worker.go soal kenapa ini
+// konstanta, bukan config.
+const (
+	ocrIdleInterval = 30 * time.Second
+	ocrDPI          = 200
+	ocrAutoCrop     = true
+	ocrMaxTokens    = 2048
+)
+
+// ocrWorker adalah SATU goroutine saja: model yzma/llama.cpp dimuat sekali
+// dan tidak aman dipakai konkuren dari banyak goroutine sekaligus.
+func ocrWorker(ctx context.Context, cfg config.Config, st *store.Store, model *localllm.Client) {
+	for {
+		if ctx.Err() != nil {
+			return
+		}
+		processed := drainOCR(ctx, st, model)
+		if !processed {
+			model.Release() // tak ada kerjaan: lepas memori sampai dokumen baru datang
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(ocrIdleInterval):
+			}
+		}
+	}
+}
+
+func drainOCR(ctx context.Context, st *store.Store, model *localllm.Client) (processedAny bool) {
+	for {
+		if ctx.Err() != nil {
+			return processedAny
+		}
+		job, err := st.ClaimForOCR(ctx)
+		if err == store.ErrNoWork {
+			return processedAny
+		}
+		if err != nil {
+			logx.Warn("ocr: klaim gagal: %v", err)
+			return processedAny
+		}
+		processedAny = true
+		processOneOCR(ctx, st, model, job)
+	}
+}
+
+func processOneOCR(ctx context.Context, st *store.Store, model *localllm.Client, job store.OCRJob) {
+	var headerRejectReason, headerExtractedInstansi, headerStructureType string
+	var headerIsRegulation, headerPreUU122011 bool
+
+	exCfg := extractor.Config{
+		DPI: ocrDPI, AutoCrop: ocrAutoCrop,
+		OCRClient: model, OCRMaxTokens: ocrMaxTokens,
+		GateFunc: func(page1Text string) (bool, string) {
+			h := parser.ExtractHeader(page1Text)
+			headerIsRegulation = h.Found
+			headerStructureType = h.StructureType
+			headerExtractedInstansi = h.Instansi
+			headerPreUU122011 = h.PreUU122011
+
+			if !h.Found {
+				headerRejectReason = "no_legal_signal"
+				return false, headerRejectReason
+			}
+			// Kecocokan jurisdiksi: instansi di halaman 1 harus cocok PERSIS
+			// dengan instansi pemilik source (lihat internal/parser/header.go
+			// soal kenapa exact-match, bukan Contains). Dokumen pra-2011
+			// tetap diterima OCR PENUH di sini supaya ada teks lengkap untuk
+			// ditinjau manusia — ApplyHeaderResult di bawah yang memutuskan
+			// status akhirnya jadi 'review_manual', bukan gate ini.
+			if !headerPreUU122011 && !parser.MatchesJurisdiction(h.Instansi, job.SourceInstansi) {
+				headerRejectReason = "wrong_jurisdiction"
+				return false, headerRejectReason
+			}
+			return true, ""
+		},
+	}
+
+	pages := dbPageStore{st: st, documentID: job.ID}
+	ex := extractor.New(exCfg, pages)
+	err := ex.Document(ctx, job.PDFPath)
+
+	if applyErr := st.ApplyHeaderResult(ctx, job.ID, headerIsRegulation, headerRejectReason,
+		headerStructureType, headerExtractedInstansi, headerPreUU122011); applyErr != nil {
+		logx.Warn("ocr: simpan header check %s: %v", job.ID, applyErr)
+	}
+
+	switch {
+	case err == extractor.ErrRejected:
+		logx.Info("ocr: %s ditolak gate (%s)", job.ID, headerRejectReason)
+	case err != nil:
+		logx.Fail(job.ID, "OCR gagal: %v", err)
+		_ = st.MarkOCRFailed(ctx, job.ID, err.Error(), downloaderMaxAttempts)
+	default:
+		if err := st.MarkOCRDone(ctx, job.ID); err != nil {
+			logx.Warn("ocr: tandai selesai %s: %v", job.ID, err)
+			return
+		}
+		logx.OK("ocr selesai · %s", job.ID)
+	}
+}
+
+
+
+internal/pipeline/pagestore.go
+package pipeline
+
+import (
+	"context"
+
+	"github.com/fuadarradhi/uuparser/internal/store"
+)
+
+// dbPageStore mengadaptasi *store.Store (Postgres) ke interface kecil
+// extractor.PageStore, supaya package extractor sendiri tidak perlu tahu
+// apa-apa soal DB — lihat internal/extractor/extractor.go.
+type dbPageStore struct {
+	st         *store.Store
+	documentID string
+}
+
+func (d dbPageStore) HasPage(ctx context.Context, page int) (bool, error) {
+	return d.st.HasPage(ctx, d.documentID, page)
+}
+
+func (d dbPageStore) SavePage(ctx context.Context, page int, text string, isEmpty, isTruncated bool, notes []string) error {
+	return d.st.SavePage(ctx, d.documentID, page, text, isEmpty, isTruncated, 0, 0, notes, 0)
+}
+
+func (d dbPageStore) ReadPages(ctx context.Context, a, b int) ([]string, error) {
+	return d.st.ReadPageRange(ctx, d.documentID, a, b)
+}
+
+
+
+internal/pipeline/parser_worker.go
+package pipeline
+
+import (
+	"context"
+	"encoding/json"
+	"time"
+
+	"github.com/fuadarradhi/uuparser/internal/logx"
+	"github.com/fuadarradhi/uuparser/internal/parser"
+	"github.com/fuadarradhi/uuparser/internal/store"
+)
+
+const parserIdleInterval = 15 * time.Second
+
+func parserWorker(ctx context.Context, st *store.Store) {
+	for {
+		if ctx.Err() != nil {
+			return
+		}
+		processed := drainParse(ctx, st)
+		if !processed {
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(parserIdleInterval):
+			}
+		}
+	}
+}
+
+func drainParse(ctx context.Context, st *store.Store) (processedAny bool) {
+	for {
+		if ctx.Err() != nil {
+			return processedAny
+		}
+		job, err := st.ClaimForParse(ctx)
+		if err == store.ErrNoWork {
+			return processedAny
+		}
+		if err != nil {
+			logx.Warn("parser: klaim gagal: %v", err)
+			return processedAny
+		}
+		processedAny = true
+		processOneParse(ctx, st, job)
+	}
+}
+
+func processOneParse(ctx context.Context, st *store.Store, job store.ParseJob) {
+	pages := make([]string, 0, job.NumPages)
+	for i := 1; i <= job.NumPages; i++ {
+		text, err := st.GetPageText(ctx, job.ID, i)
+		if err != nil {
+			text = ""
+		}
+		pages = append(pages, text)
+	}
+
+	res, err := parser.Parse(pages)
+	var status string
+	var reportJSON, notesJSON []byte
+	var nodeRows []store.NodeInsert
+
+	if err != nil {
+		status = "FAIL"
+		reportJSON, _ = json.Marshal(map[string]string{"error": err.Error()})
+		notesJSON = []byte("[]")
+	} else {
+		rep := parser.Diagnose(res)
+		status = string(rep.Status)
+		reportJSON, _ = json.Marshal(rep)
+		notes := make([]string, 0)
+		for _, w := range res.DocumentWarnings {
+			notes = append(notes, w.Message)
+		}
+		notesJSON, _ = json.Marshal(notes)
+		nodeRows = mapNodesToInserts(res.Nodes)
+	}
+
+	if err := st.ReplaceParseResult(ctx, job.ID, status, reportJSON, notesJSON, nodeRows); err != nil {
+		logx.Fail(job.ID, "simpan hasil parse: %v", err)
+		return
+	}
+	logx.OK("parse selesai · %s · status=%s · %d node", job.ID, status, len(nodeRows))
+}
+
+// mapNodesToInserts memetakan parser.Node (flat, per-baris, konteks label
+// via pointer) menjadi store.NodeInsert (flat juga, tapi dengan ParentIdx
+// eksplisit) untuk di-insert sebagai pohon. parser.Node menyimpan label
+// ANCESTOR PENUH (Bab/Bagian/Paragraf/Pasal/Ayat), bukan pointer parent — jadi
+// pemetaan di sini memakai "parent = node terakhir satu tingkat di atas",
+// yang valid selama urutan node linear sesuai DocOrder (yang memang
+// dijamin oleh parser.Parse). BELUM DIUJI terhadap dokumen nyata — lihat
+// CATATAN-MIGRASI.md.
+func mapNodesToInserts(nodes []parser.Node) []store.NodeInsert {
+	out := make([]store.NodeInsert, 0, len(nodes))
+	lastBab, lastBagian, lastParagraf, lastPasal := -1, -1, -1, -1
+	prevSection := parser.Section("")
+
+	for _, n := range nodes {
+		// Ganti section = mulai pohon baru. Tanpa reset ini, Pasal di
+		// penjelasan_pasal akan salah-parent ke BAB terakhir batang tubuh.
+		if n.Section != prevSection {
+			lastBab, lastBagian, lastParagraf, lastPasal = -1, -1, -1, -1
+			prevSection = n.Section
+		}
+
+		parentIdx := -1
+		switch n.NodeType {
+		case parser.NodeBagian:
+			parentIdx = lastBab
+		case parser.NodeParagraf:
+			parentIdx = pickParent(lastParagraf, lastBagian, lastBab)
+		case parser.NodePasal:
+			parentIdx = pickParent(lastParagraf, lastBagian, lastBab)
+		case parser.NodeAyat:
+			parentIdx = lastPasal
+		}
+
+		row := store.NodeInsert{
+			ParentIdx: parentIdx,
+			Section:   string(n.Section), NodeType: string(n.NodeType),
+			BabNumber: n.Bab, BagianLabel: n.Bagian, ParagrafLabel: n.Paragraf,
+			PasalNumber: n.Pasal, AyatNumber: n.Ayat, HurufLabel: n.Huruf, AngkaLabel: n.Angka,
+			// Label WAJIB diisi dari field level node itu sendiri: trigger
+			// BEFORE INSERT di DB (nodes_recompute_own_labels) menghitung
+			// bab_number/bagian_label/paragraf_label/pasal_number dari
+			// NEW.label — tanpa ini semua label flat jadi NULL saat insert.
+			Label:   ownLevelLabel(n),
+			Content: n.Text, StartPage: n.StartPage, EndPage: n.EndPage,
+			OrderIndex: int64(n.DocOrder),
+		}
+		if warnBytes, err := json.Marshal(n.Warnings); err == nil {
+			row.Warnings = warnBytes
+		}
+		out = append(out, row)
+
+		idx := len(out) - 1
+		switch n.NodeType {
+		case parser.NodeBab:
+			lastBab, lastBagian, lastParagraf, lastPasal = idx, -1, -1, -1
+		case parser.NodeBagian:
+			lastBagian, lastParagraf, lastPasal = idx, -1, -1
+		case parser.NodeParagraf:
+			lastParagraf, lastPasal = idx, -1
+		case parser.NodePasal:
+			lastPasal = idx
+		}
+	}
+	return out
+}
+
+// ownLevelLabel mengembalikan label milik LEVEL node itu sendiri — nilai yang
+// dipakai trigger DB sebagai sumber kolom flat levelnya ("BAB I", "1" untuk
+// Pasal 1, "1"/"2" untuk Ayat). Node non-struktural (judul/item/paragraf_isi/
+// penetapan) tidak punya label level → nil.
+func ownLevelLabel(n parser.Node) *string {
+	switch n.NodeType {
+	case parser.NodeBab:
+		return n.Bab
+	case parser.NodeBagian:
+		return n.Bagian
+	case parser.NodeParagraf:
+		return n.Paragraf
+	case parser.NodePasal:
+		return n.Pasal
+	case parser.NodeAyat:
+		return n.Ayat
+	}
+	return nil
+}
+
+func pickParent(candidates ...int) int {
+	for _, c := range candidates {
+		if c >= 0 {
+			return c
+		}
+	}
+	return -1
+}
+
+
+
+internal/pipeline/pipeline.go
+// Package pipeline menjalankan tiga worker independen (downloader, OCR,
+// parser) yang berkoordinasi lewat Postgres — lihat CATATAN-MIGRASI.md untuk
+// latar belakang arsitektur lengkap. main.go hanya memanggil Run.
+package pipeline
+
+import (
+	"context"
+	"sync"
+
+	"github.com/fuadarradhi/uuparser/internal/config"
+	"github.com/fuadarradhi/uuparser/internal/localllm"
+	"github.com/fuadarradhi/uuparser/internal/logx"
+	"github.com/fuadarradhi/uuparser/internal/store"
+)
+
+// Run menjalankan ketiga worker sampai ctx dibatalkan (sinyal berhenti).
+// Diblokir sampai semuanya keluar.
+func Run(ctx context.Context, cfg config.Config, st *store.Store, model *localllm.Client) {
+	var wg sync.WaitGroup
+	wg.Add(3)
+
+	go func() { defer wg.Done(); downloaderWorker(ctx, cfg, st) }()
+	go func() { defer wg.Done(); ocrWorker(ctx, cfg, st, model) }()
+	go func() { defer wg.Done(); parserWorker(ctx, st) }()
+
+	wg.Wait()
+	logx.Info("semua worker berhenti.")
+}
+
+
+
+internal/pipeline/util.go
+package pipeline
+
+import (
+	"crypto/sha256"
+	"encoding/hex"
+)
+
+func sha256Hex(b []byte) string {
+	sum := sha256.Sum256(b)
+	return hex.EncodeToString(sum[:])
+}
+
+
+
+internal/raster/raster.go
+// Package raster merasterisasi halaman PDF menjadi PNG memakai go-fitz (MuPDF).
+//
+// Dokumen dibuka SEKALI lalu halaman dirender berulang lewat handle yang sama,
+// sehingga PDF tebal tidak perlu diurai ulang setiap halaman.
+//
+// Catatan build: go-fitz memakai CGo, jadi diperlukan compiler C saat membangun.
+// Di Linux cukup `build-essential`. (Di Windows go-fitz rewel karena pustaka
+// MuPDF pra-bangunnya harus cocok persis dengan versi mingw-w64 — lihat README.)
+package raster
+
+import (
+	"bytes"
+	"fmt"
+	"image"
+	"image/png"
+
+	"github.com/gen2brain/go-fitz"
+)
+
+// Doc adalah handle dokumen PDF yang terbuka.
+type Doc struct {
+	doc  *fitz.Document
+	path string
+}
+
+// Open membuka PDF. Pemanggil wajib memanggil Close.
+func Open(path string) (*Doc, error) {
+	d, err := fitz.New(path)
+	if err != nil {
+		return nil, fmt.Errorf("buka pdf: %w", err)
+	}
+	return &Doc{doc: d, path: path}, nil
+}
+
+// NumPages mengembalikan jumlah halaman.
+func (d *Doc) NumPages() int { return d.doc.NumPage() }
+
+// Page adalah hasil render satu halaman.
+type Page struct {
+	PNG []byte
+	W   int
+	H   int
+	// InkRatio adalah proporsi piksel gelap (0..1). Halaman kosong bernilai ~0.
+	// Dipakai untuk melewati halaman hampa tanpa memanggil model OCR.
+	InkRatio float64
+	// CroppedFrom adalah jumlah piksel halaman sebelum pemotongan/pengecilan,
+	// untuk melaporkan berapa banyak yang dihemat.
+	CroppedFrom int
+}
+
+// Opts mengatur pengolahan gambar halaman.
+type Opts struct {
+	DPI int
+	// AutoCrop memotong margin kosong halaman. Ini memangkas banyak piksel TANPA
+	// mengecilkan huruf sama sekali — ukuran karakter tetap sama tajamnya —
+	// sehingga OCR lebih cepat tanpa mengorbankan ketelitian.
+	//
+	// Pengecilan gambar sengaja tidak disediakan: mengecilkan huruf membuat angka
+	// pasal/ayat rawan salah baca, dan satu digit keliru merusak struktur dokumen.
+	AutoCrop bool
+}
+
+// PagePNG merender satu halaman tanpa pengolahan tambahan.
+func (d *Doc) PagePNG(page, dpi int) ([]byte, error) {
+	p, err := d.Render(page, Opts{DPI: dpi})
+	if err != nil {
+		return nil, err
+	}
+	return p.PNG, nil
+}
+
+// PagePNGMax merender satu halaman (1-based) pada DPI tertentu, lalu MENGECILKAN
+// gambar bila sisi terpanjangnya melebihi maxPx (0 = tanpa batas).
+//
+// Ini pengungkit kecepatan utama: waktu proses model visi kira-kira sebanding
+// dengan luas piksel gambar. Halaman A4 pada 200 DPI berukuran 1654x2339 (≈3,9
+// juta piksel); membatasinya ke sisi 1600 px memangkas luasnya lebih dari
+// setengah, dengan dampak kecil pada keterbacaan teks badan peraturan.
+//
+// Render merender satu halaman (1-based) lalu menerapkan pemotongan margin
+// dan/atau pembatasan ukuran sesuai Opts.
+//
+// Mengembalikan PNG beserta dimensi akhir dan proporsi tinta halaman.
+func (d *Doc) Render(page int, o Opts) (Page, error) {
+	dpi := o.DPI
+	if dpi <= 0 {
+		dpi = 200
+	}
+	if page < 1 || page > d.NumPages() {
+		return Page{}, fmt.Errorf("halaman %d di luar jangkauan (1..%d)", page, d.NumPages())
+	}
+	img, err := d.doc.ImageDPI(page-1, float64(dpi)) // go-fitz memakai indeks 0-based
+	if err != nil {
+		return Page{}, fmt.Errorf("render hal %d: %w", page, err)
+	}
+	full := img.Bounds()
+	if o.AutoCrop {
+		img = cropMargins(img, cropPadding)
+	}
+	var buf bytes.Buffer
+	if err := png.Encode(&buf, img); err != nil {
+		return Page{}, err
+	}
+	b := img.Bounds()
+	pg := Page{PNG: buf.Bytes(), W: b.Dx(), H: b.Dy(), InkRatio: inkRatio(img)}
+	if fullPx := full.Dx() * full.Dy(); fullPx > 0 {
+		pg.CroppedFrom = fullPx
+	}
+	return pg, nil
+}
+
+// inkRatio menghitung proporsi piksel gelap terhadap seluruh piksel. Dipakai untuk
+// mengenali halaman kosong (atau nyaris kosong) sebelum dikirim ke model OCR.
+// Piksel dicuplik (tidak semua diperiksa) agar tetap murah pada gambar besar.
+func inkRatio(img image.Image) float64 {
+	b := img.Bounds()
+	w, h := b.Dx(), b.Dy()
+	if w == 0 || h == 0 {
+		return 0
+	}
+	step := 1
+	if w*h > 400_000 { // cuplik agar biaya tetap kecil pada halaman besar
+		step = 3
+	}
+	var dark, total uint64
+	for y := b.Min.Y; y < b.Max.Y; y += step {
+		for x := b.Min.X; x < b.Max.X; x += step {
+			r, g, bl, _ := img.At(x, y).RGBA()
+			// luminansi kasar pada skala 16-bit
+			lum := (uint64(r)*299 + uint64(g)*587 + uint64(bl)*114) / 1000
+			if lum < 40000 { // ambang gelap (~61% dari putih penuh)
+				dark++
+			}
+			total++
+		}
+	}
+	if total == 0 {
+		return 0
+	}
+	return float64(dark) / float64(total)
+}
+
+// Close melepaskan sumber daya dokumen.
+func (d *Doc) Close() error { return d.doc.Close() }
+
+// cropMargins memotong margin kosong di sekeliling isi halaman.
+//
+// Ini pengungkit kecepatan yang tidak mengorbankan ketelitian: jumlah piksel
+// berkurang banyak, tetapi ukuran huruf sama sekali tidak berubah — berbeda dengan
+// pengecilan gambar yang membuat angka pasal/ayat lebih rawan salah baca.
+//
+// Pemotongan sengaja AGRESIF: halaman A4 yang hanya berisi satu atau dua baris
+// akan terpotong menjadi seukuran baris itu saja, sehingga tidak ada piksel putih
+// yang dikirim ke model.
+//
+// Pengamannya bukan batas luas minimum — halaman satu baris memang seharusnya
+// menghasilkan potongan yang sangat kecil. Yang dijaga adalah keutuhan isi:
+// potongan harus menahan hampir seluruh piksel bertinta halaman. Bila tidak
+// (misalnya ada baris samar yang kepadatannya di bawah ambang), deteksi diulang
+// dengan ambang paling ketat sehingga tidak ada isi yang terbuang.
+// cropPadding adalah ruang tepi (piksel) yang disisakan di sekeliling isi.
+const cropPadding = 12
+
+func cropMargins(img image.Image, pad int) image.Image {
+	b := img.Bounds()
+	w, h := b.Dx(), b.Dy()
+	if w < 40 || h < 40 {
+		return img
+	}
+
+	dark := func(x, y int) bool {
+		r, g, bl, _ := img.At(x, y).RGBA()
+		lum := (uint64(r)*299 + uint64(g)*587 + uint64(bl)*114) / 1000
+		return lum < 40000
+	}
+
+	// [BUGFIX] Hilangkan step untuk akurasi piksel persis. Loop Go sangat cepat
+	// untuk ukuran w*h standar (2-4 juta piksel), dan ini menghindari bug indeks
+	// array meleset akibat step > 1.
+	rowInk := make([]int, h)
+	colInk := make([]int, w)
+	total := 0
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			if dark(b.Min.X+x, b.Min.Y+y) {
+				rowInk[y]++
+				colInk[x]++
+				total++
+			}
+		}
+	}
+	if total == 0 {
+		return img // halaman kosong: tidak ada yang bisa dijadikan acuan
+	}
+
+	// Percobaan pertama memakai ambang kecil agar bintik noda dan bayangan tepi
+	// hasil pindai tidak menggagalkan pemotongan.
+	rowMin := maxInt(2, w/500)
+	colMin := maxInt(2, h/500)
+	top, bottom, left, right, ok := inkBox(rowInk, colInk, rowMin, colMin)
+
+	// Verifikasi keutuhan: bila ada tinta di luar kotak (mis. baris samar), ulangi
+	// dengan ambang paling ketat sehingga seluruh isi pasti tercakup.
+	if ok && !keepsAllInk(rowInk, colInk, top, bottom, left, right, total) {
+		top, bottom, left, right, ok = inkBox(rowInk, colInk, 1, 1)
+	}
+	if !ok {
+		return img
+	}
+
+	if pad <= 0 {
+		pad = 12
+	}
+	top = maxInt(0, top-pad)
+	left = maxInt(0, left-pad)
+	bottom = minInt(h-1, bottom+pad)
+	right = minInt(w-1, right+pad)
+
+	newW, newH := right-left+1, bottom-top+1
+	if newW < 16 || newH < 8 {
+		return img // hasil tak masuk akal: kemungkinan deteksi gagal
+	}
+	// Tidak ada gunanya memotong bila hasilnya nyaris sama dengan aslinya.
+	if float64(newW*newH)/float64(w*h) > 0.98 {
+		return img
+	}
+
+	rect := image.Rect(b.Min.X+left, b.Min.Y+top, b.Min.X+right+1, b.Min.Y+bottom+1)
+	type subImager interface {
+		SubImage(r image.Rectangle) image.Image
+	}
+	if si, ok := img.(subImager); ok {
+		return si.SubImage(rect)
+	}
+	dst := image.NewRGBA(image.Rect(0, 0, newW, newH))
+	for y := 0; y < newH; y++ {
+		for x := 0; x < newW; x++ {
+			dst.Set(x, y, img.At(rect.Min.X+x, rect.Min.Y+y))
+		}
+	}
+	return dst
+}
+
+// inkBox mencari kotak pembatas isi berdasarkan ambang kepadatan yang diberikan.
+// [BUGFIX] Parameter step dihilangkan agar firstAbove mengecek setiap indeks.
+func inkBox(rowInk, colInk []int, rowMin, colMin int) (top, bottom, left, right int, ok bool) {
+	top = firstAbove(rowInk, rowMin, false)
+	bottom = firstAbove(rowInk, rowMin, true)
+	left = firstAbove(colInk, colMin, false)
+	right = firstAbove(colInk, colMin, true)
+	ok = top >= 0 && bottom >= top && left >= 0 && right >= left
+	return
+}
+
+// keepsAllInk memeriksa apakah kotak menahan hampir seluruh tinta halaman.
+// Inilah pengaman sesungguhnya: yang penting bukan luas sisa halaman, melainkan
+// tidak ada isi yang terbuang.
+func keepsAllInk(rowInk, colInk []int, top, bottom, left, right, total int) bool {
+	const minRetained = 0.995
+
+	inRows := 0
+	for i := top; i <= bottom && i < len(rowInk); i++ {
+		inRows += rowInk[i]
+	}
+	inCols := 0
+	for i := left; i <= right && i < len(colInk); i++ {
+		inCols += colInk[i]
+	}
+	return float64(inRows) >= float64(total)*minRetained &&
+		float64(inCols) >= float64(total)*minRetained
+}
+
+// firstAbove mencari indeks pertama (atau terakhir bila fromEnd) yang nilainya
+// melampaui ambang.
+// [BUGFIX] Menghapus parameter step agar tidak melewatkan indeks ganjil (misal y=1).
+func firstAbove(vals []int, min int, fromEnd bool) int {
+	if fromEnd {
+		for i := len(vals) - 1; i >= 0; i-- {
+			if vals[i] >= min {
+				return i
+			}
+		}
+		return -1
+	}
+	for i := 0; i < len(vals); i++ {
+		if vals[i] >= min {
+			return i
+		}
+	}
+	return -1
+}
+
+func maxInt(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+
+func minInt(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+
+
+internal/store/store.go
+// Package store adalah satu-satunya titik akses ke Postgres. Menggantikan
+// deteksi "sudah selesai" berbasis file-existence yang lama (lihat CATATAN-
+// MIGRASI.md) — sekarang semua status hidup di kolom `documents.status`,
+// dan tiga worker (downloader/OCR/parser di main.go) berkoordinasi lewat
+// `SELECT ... FOR UPDATE SKIP LOCKED`, idiom antrian standar Postgres yang
+// aman dipakai bareng banyak goroutine (atau nanti banyak instance proses)
+// tanpa locking manual di sisi Go.
+//
+// VERIFIKASI: package ini TIDAK bisa di-compile di sandbox pembuatnya —
+// modul pgx/v5 versi terbaru butuh Go >= 1.25 dan sebagian dependency
+// transitifnya (gopkg.in/yaml.v3) diblokir oleh allowlist jaringan sandbox
+// tersebut. Kode ini ditulis mengikuti API pgx/v5 yang terdokumentasi, tapi
+// BELUM PERNAH di-build sungguhan — jalankan `go mod tidy && go build ./...`
+// dan kirim galat kompilasi apa pun; perbaikannya kemungkinan besar terbatas
+// di berkas ini saja. Pola yang sama persis dengan CATATAN-BUILD.md untuk
+// localllm/yzma.
+package store
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+)
+
+// ErrNoWork dikembalikan oleh method Claim* ketika tidak ada baris yang bisa
+// diambil saat ini — caller (worker loop) memperlakukan ini sebagai "tidur
+// sebentar, coba lagi", bukan error fatal.
+var ErrNoWork = errors.New("store: tidak ada pekerjaan tersedia")
+
+type Store struct {
+	pool *pgxpool.Pool
+}
+
+// Open membuka connection pool ke Postgres. databaseURL wajib diisi (lihat
+// internal/config).
+func Open(ctx context.Context, databaseURL string) (*Store, error) {
+	pool, err := pgxpool.New(ctx, databaseURL)
+	if err != nil {
+		return nil, err
+	}
+	if err := pool.Ping(ctx); err != nil {
+		pool.Close()
+		return nil, err
+	}
+	return &Store{pool: pool}, nil
+}
+
+func (s *Store) Close() { s.pool.Close() }
+
+// ---- Sumber ----
+
+type SourceRow struct {
+	IDStr             string
+	Code              string
+	EndpointURL       string
+	SourceType        string
+	SourceConfigRaw   []byte
+	JurisdictionLevel string
+	InstansiName      string
+}
+
+// GetSource mengambil satu baris sources by id — dipakai downloader worker
+// saat memproses satu DownloadJob untuk tahu source_type/endpoint/code-nya.
+func (s *Store) GetSource(ctx context.Context, id string) (SourceRow, error) {
+	var r SourceRow
+	err := s.pool.QueryRow(ctx, `
+		SELECT id::text, code, endpoint_url, source_type, source_config,
+		       jurisdiction_level, instansi_name
+		FROM sources WHERE id = $1`, id,
+	).Scan(&r.IDStr, &r.Code, &r.EndpointURL, &r.SourceType, &r.SourceConfigRaw,
+		&r.JurisdictionLevel, &r.InstansiName)
+	return r, err
+}
+
+// ListSources mengembalikan semua sumber terdaftar — dipanggil sekali saat
+// start untuk membangun satu downloader.Source per baris.
+func (s *Store) ListSources(ctx context.Context) ([]SourceRow, error) {
+	rows, err := s.pool.Query(ctx, `
+		SELECT id::text, code, endpoint_url, source_type, source_config,
+		       jurisdiction_level, instansi_name
+		FROM sources ORDER BY code`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var out []SourceRow
+	for rows.Next() {
+		var r SourceRow
+		if err := rows.Scan(&r.IDStr, &r.Code, &r.EndpointURL, &r.SourceType,
+			&r.SourceConfigRaw, &r.JurisdictionLevel, &r.InstansiName); err != nil {
+			return nil, err
+		}
+		out = append(out, r)
+	}
+	return out, rows.Err()
+}
+
+// ---- Dokumen: insert dari hasil ListDocuments() sumber ----
+
+// UpsertDocumentMeta mendaftarkan (atau mengabaikan bila sudah ada) satu
+// dokumen hasil downloader.Source.ListDocuments. Status awal selalu
+// 'pending' — tidak menimpa dokumen yang sudah diproses (ON CONFLICT DO
+// NOTHING), sehingga aman dipanggil berulang tiap siklus tanpa mereset
+// progres yang sudah ada.
+func (s *Store) UpsertDocumentMeta(ctx context.Context, sourceID, idData, judul, slug, fileURL string) error {
+	_, err := s.pool.Exec(ctx, `
+		INSERT INTO documents (source_id, id_data, judul, slug, pdf_url, status)
+		VALUES ($1, $2, $3, $4, $5, 'pending')
+		ON CONFLICT (source_id, id_data) DO NOTHING`,
+		sourceID, idData, judul, slug, fileURL)
+	return err
+}
+
+// ---- Worker 1: downloader ----
+
+type DownloadJob struct {
+	ID       string
+	SourceID string
+	PDFURL   string
+	Slug     string
+}
+
+// ClaimForDownload mengambil SATU dokumen berstatus 'pending' dan
+// menandainya 'downloading' dalam satu transaksi (SKIP LOCKED mencegah dua
+// goroutine/proses mengambil baris yang sama).
+func (s *Store) ClaimForDownload(ctx context.Context) (DownloadJob, error) {
+	var job DownloadJob
+	err := s.pool.QueryRow(ctx, `
+		UPDATE documents SET status = 'downloading', updated_at = now()
+		WHERE id = (
+			SELECT id FROM documents
+			WHERE status = 'pending'
+			ORDER BY created_at
+			LIMIT 1
+			FOR UPDATE SKIP LOCKED
+		)
+		RETURNING id::text, source_id::text, pdf_url, slug`,
+	).Scan(&job.ID, &job.SourceID, &job.PDFURL, &job.Slug)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return DownloadJob{}, ErrNoWork
+	}
+	return job, err
+}
+
+// MarkDownloaded menandai dokumen sudah terunduh, siap untuk gate/OCR.
+func (s *Store) MarkDownloaded(ctx context.Context, id, pdfPath, sha256 string) error {
+	_, err := s.pool.Exec(ctx, `
+		UPDATE documents
+		SET status = 'downloaded', pdf_path = $2, pdf_sha256 = $3,
+		    downloaded_at = now(), updated_at = now(), attempts = 0, last_error = NULL
+		WHERE id = $1`, id, pdfPath, sha256)
+	return err
+}
+
+// MarkDownloadFailed mencatat kegagalan unduh dan mengembalikan status ke
+// 'pending' (akan dicoba lagi siklus berikutnya) kecuali sudah melewati
+// MAX_ATTEMPTS, dalam hal ini pindah ke 'failed'.
+func (s *Store) MarkDownloadFailed(ctx context.Context, id string, errMsg string, maxAttempts int) error {
+	_, err := s.pool.Exec(ctx, `
+		UPDATE documents
+		SET attempts = attempts + 1,
+		    last_error = $2,
+		    status = CASE WHEN attempts + 1 >= $3 THEN 'failed' ELSE 'pending' END,
+		    updated_at = now()
+		WHERE id = $1`, id, errMsg, maxAttempts)
+	return err
+}
+
+// ---- Worker 2: probe (header halaman 1) + OCR ----
+
+type OCRJob struct {
+	ID                string
+	PDFPath           string
+	SourceInstansi    string
+}
+
+// ClaimForOCR mengambil dokumen berstatus 'downloaded' (belum pernah
+// diprobe/OCR sama sekali). Ikut mengembalikan instansi_name sumbernya
+// (JOIN ke sources) supaya pemanggil bisa menjalankan
+// parser.MatchesJurisdiction — tanpa ini gate jurisdiksi tidak bisa jalan.
+func (s *Store) ClaimForOCR(ctx context.Context) (OCRJob, error) {
+	var job OCRJob
+	err := s.pool.QueryRow(ctx, `
+		UPDATE documents SET status = 'probing', ocr_started_at = now(), updated_at = now()
+		WHERE id = (
+			SELECT id FROM documents
+			WHERE status = 'downloaded'
+			ORDER BY created_at
+			LIMIT 1
+			FOR UPDATE SKIP LOCKED
+		)
+		RETURNING id::text, pdf_path,
+			(SELECT s.instansi_name FROM sources s WHERE s.id = documents.source_id)`,
+	).Scan(&job.ID, &job.PDFPath, &job.SourceInstansi)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return OCRJob{}, ErrNoWork
+	}
+	return job, err
+}
+
+// SavePage menyimpan hasil OCR satu halaman (upsert per page_number, sehingga
+// resume per-halaman tetap berfungsi seperti versi berbasis-file yang lama).
+func (s *Store) SavePage(ctx context.Context, documentID string, pageNumber int, ocrText string, isEmpty, isTruncated bool, inkRatio, croppedPct float64, notes []string, durationMS int) error {
+	notesJSON, _ := json.Marshal(notes)
+	_, err := s.pool.Exec(ctx, `
+		INSERT INTO document_pages
+			(document_id, page_number, ocr_text, is_empty, is_truncated, ink_ratio, cropped_pct, notes, duration_ms)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		ON CONFLICT (document_id, page_number) DO UPDATE SET
+			ocr_text = EXCLUDED.ocr_text,
+			is_empty = EXCLUDED.is_empty,
+			is_truncated = EXCLUDED.is_truncated,
+			ink_ratio = EXCLUDED.ink_ratio,
+			cropped_pct = EXCLUDED.cropped_pct,
+			notes = EXCLUDED.notes,
+			duration_ms = EXCLUDED.duration_ms`,
+		documentID, pageNumber, ocrText, isEmpty, isTruncated, inkRatio, croppedPct, notesJSON, durationMS)
+	return err
+}
+
+// HasPage melapor apakah halaman ini sudah punya hasil OCR tersimpan —
+// dasar resume per-halaman (menggantikan cek file-existence lama).
+func (s *Store) HasPage(ctx context.Context, documentID string, pageNumber int) (bool, error) {
+	var exists bool
+	err := s.pool.QueryRow(ctx, `
+		SELECT EXISTS(SELECT 1 FROM document_pages WHERE document_id = $1 AND page_number = $2)`,
+		documentID, pageNumber,
+	).Scan(&exists)
+	return exists, err
+}
+
+// ReadPageRange membaca teks halaman [a,b] (inklusif, 1-based) yang SUDAH
+// tersimpan, terurut, memakai COALESCE(edited_text, ocr_text) seperti
+// GetPageText. Halaman yang belum ada dilewati (bukan error) — sama seperti
+// perilaku readPageRange berbasis-file yang lama.
+func (s *Store) ReadPageRange(ctx context.Context, documentID string, a, b int) ([]string, error) {
+	rows, err := s.pool.Query(ctx, `
+		SELECT COALESCE(edited_text, ocr_text) FROM document_pages
+		WHERE document_id = $1 AND page_number BETWEEN $2 AND $3
+		ORDER BY page_number`, documentID, a, b)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []string
+	for rows.Next() {
+		var t string
+		if err := rows.Scan(&t); err != nil {
+			return nil, err
+		}
+		out = append(out, t)
+	}
+	return out, rows.Err()
+}
+
+// GetPageText mengembalikan teks yang HARUS dipakai parser untuk satu
+// halaman: edited_text bila user sudah mengoreksi, kalau tidak ocr_text
+// mentah.
+func (s *Store) GetPageText(ctx context.Context, documentID string, pageNumber int) (string, error) {
+	var text string
+	err := s.pool.QueryRow(ctx, `
+		SELECT COALESCE(edited_text, ocr_text) FROM document_pages
+		WHERE document_id = $1 AND page_number = $2`, documentID, pageNumber,
+	).Scan(&text)
+	return text, err
+}
+
+// ApplyHeaderResult menyimpan hasil pemeriksaan header halaman-1
+// (internal/parser.ExtractHeader + MatchesJurisdiction) dan memutuskan
+// status berikutnya:
+//   - bukan peraturan sama sekali           -> 'rejected'
+//   - instansi tak cocok jurisdiksi sumber  -> 'rejected' (reason=wrong_jurisdiction)
+//   - dokumen sebelum UU 12/2011            -> 'review_manual'
+//   - lolos semua                           -> 'ocr_in_progress' (lanjut ke hal. 2 dst)
+func (s *Store) ApplyHeaderResult(ctx context.Context, id string, isRegulation bool, rejectReason, structureType, extractedInstansi string, preUU122011 bool) error {
+	status := "ocr_in_progress"
+	switch {
+	case !isRegulation:
+		status = "rejected"
+	case rejectReason == "wrong_jurisdiction":
+		status = "rejected"
+	case preUU122011:
+		status = "review_manual"
+	}
+	_, err := s.pool.Exec(ctx, `
+		UPDATE documents
+		SET is_regulation = $2, reject_reason = $3, structure_type = $4,
+		    extracted_instansi = $5, status = $6, updated_at = now()
+		WHERE id = $1`, id, isRegulation, nullIfEmpty(rejectReason), structureType,
+		nullIfEmpty(extractedInstansi), status)
+	return err
+}
+
+// MarkOCRFailed mencatat kegagalan OCR dan mengembalikan status ke
+// 'downloaded' (BUKAN 'pending' — PDF-nya sudah ada, jangan diunduh ulang)
+// supaya dicoba OCR lagi di putaran berikutnya, kecuali sudah melewati batas
+// percobaan → 'failed'.
+func (s *Store) MarkOCRFailed(ctx context.Context, id string, errMsg string, maxAttempts int) error {
+	_, err := s.pool.Exec(ctx, `
+		UPDATE documents
+		SET attempts = attempts + 1,
+		    last_error = $2,
+		    status = CASE WHEN attempts + 1 >= $3 THEN 'failed' ELSE 'downloaded' END,
+		    updated_at = now()
+		WHERE id = $1`, id, errMsg, maxAttempts)
+	return err
+}
+
+// MarkOCRDone menandai dokumen selesai di-OCR seluruhnya, siap diparse.
+func (s *Store) MarkOCRDone(ctx context.Context, id string) error {
+	_, err := s.pool.Exec(ctx, `
+		UPDATE documents SET status = 'ocr_done', ocr_completed_at = now(), updated_at = now()
+		WHERE id = $1`, id)
+	return err
+}
+
+// ---- Approve/reject dokumen berstatus review_manual ----
+// Dipakai oleh flag CLI -approve-id/-reject-id (main.go) — nanti UI web
+// tinggal jalankan UPDATE yang sama persis lewat SQL langsung.
+
+func (s *Store) ApproveDocument(ctx context.Context, id string) error {
+	_, err := s.pool.Exec(ctx, `
+		UPDATE documents SET status = 'ocr_in_progress', updated_at = now()
+		WHERE id = $1 AND status = 'review_manual'`, id)
+	return err
+}
+
+func (s *Store) RejectDocument(ctx context.Context, id string) error {
+	_, err := s.pool.Exec(ctx, `
+		UPDATE documents SET status = 'rejected', reject_reason = 'manual_reject', updated_at = now()
+		WHERE id = $1 AND status = 'review_manual'`, id)
+	return err
+}
+
+// ResetDocument mengembalikan dokumen ke 'pending' dan menghapus jejak
+// percobaan sebelumnya — pengganti "hapus failed/<slug>.json" versi lama.
+func (s *Store) ResetDocument(ctx context.Context, id string) error {
+	_, err := s.pool.Exec(ctx, `
+		UPDATE documents
+		SET status = 'pending', attempts = 0, last_error = NULL, updated_at = now()
+		WHERE id = $1`, id)
+	return err
+}
+
+// ---- Worker 3: parser ----
+
+type ParseJob struct {
+	ID       string
+	NumPages int
+}
+
+// ClaimForParse mengambil dokumen yang SIAP diparse: baru selesai OCR
+// ('ocr_done') ATAU eksplisit diminta reparse (reparse_requested_at diisi
+// user setelah mengoreksi teks OCR). Reparse TIDAK menunggu status
+// tertentu — bisa menimpa dokumen yang statusnya sudah 'parsed'/'reviewed'
+// sekalipun, karena ini permintaan eksplisit user (sudah diperingatkan lewat
+// UI bahwa reparse mereset editan manual).
+func (s *Store) ClaimForParse(ctx context.Context) (ParseJob, error) {
+	var job ParseJob
+	err := s.pool.QueryRow(ctx, `
+		UPDATE documents SET status = 'parsing', reparse_requested_at = NULL, updated_at = now()
+		WHERE id = (
+			SELECT d.id FROM documents d
+			WHERE d.status = 'ocr_done' OR d.reparse_requested_at IS NOT NULL
+			ORDER BY COALESCE(d.reparse_requested_at, d.ocr_completed_at)
+			LIMIT 1
+			FOR UPDATE SKIP LOCKED
+		)
+		RETURNING id::text,
+			(SELECT COUNT(*) FROM document_pages WHERE document_id = documents.id)`,
+	).Scan(&job.ID, &job.NumPages)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return ParseJob{}, ErrNoWork
+	}
+	return job, err
+}
+
+// NodeInsert adalah satu baris siap-insert ke `nodes` (dipetakan dari
+// parser.Node oleh main.go — lihat CATATAN-MIGRASI.md untuk pemetaan field).
+type NodeInsert struct {
+	ParentIdx        int // indeks ke NodeInsert lain dalam slice yang sama, -1 bila root
+	Section          string
+	NodeType         string
+	BabNumber        *string
+	BagianLabel      *string
+	ParagrafLabel    *string
+	PasalNumber      *string
+	AyatNumber       *string
+	HurufLabel       *string
+	AngkaLabel       *string
+	Label            *string
+	Content          string
+	StartPage        int
+	EndPage          int
+	OrderIndex       int64
+	OriginalNodeType *string
+	Warnings         []byte // JSON
+	Citation         *string
+}
+
+// ReplaceParseResult MENGHAPUS TOTAL nodes/parse_snapshot lama untuk
+// dokumen ini lalu menulis hasil parse baru, semuanya dalam SATU transaksi.
+// Ini SENGAJA bukan append-only history — lihat CATATAN-MIGRASI.md bagian
+// "kenapa parse_snapshots tidak punya banyak generasi": reparse yang sering
+// diklik tidak boleh membuat tabel membengkak, dan editan manual sudah
+// diterima sebagai sesuatu yang boleh hilang saat reparse (dengan peringatan
+// di UI), jadi tidak ada gunanya menahan versi lama hasil parser otomatis.
+func (s *Store) ReplaceParseResult(ctx context.Context, documentID string, status string, report, extractionNotes []byte, nodes []NodeInsert) error {
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx) //nolint:errcheck // no-op bila sudah Commit
+
+	if _, err := tx.Exec(ctx, `DELETE FROM nodes WHERE document_id = $1`, documentID); err != nil {
+		return err
+	}
+
+	if _, err := tx.Exec(ctx, `
+		INSERT INTO parse_snapshots (document_id, status, report, extraction_notes, parsed_at)
+		VALUES ($1, $2, $3, $4, now())
+		ON CONFLICT (document_id) DO UPDATE SET
+			status = EXCLUDED.status, report = EXCLUDED.report,
+			extraction_notes = EXCLUDED.extraction_notes, parsed_at = now()`,
+		documentID, status, report, extractionNotes); err != nil {
+		return err
+	}
+
+	// insert berurutan sesuai index di slice supaya ParentIdx bisa dipetakan
+	// ke id bigserial yang baru terbit.
+	ids := make([]int64, len(nodes))
+	for i, n := range nodes {
+		var parentID *int64
+		if n.ParentIdx >= 0 {
+			parentID = &ids[n.ParentIdx]
+		}
+		var newID int64
+		err := tx.QueryRow(ctx, `
+			INSERT INTO nodes (
+				document_id, parent_id, section, node_type,
+				bab_number, bagian_label, paragraf_label, pasal_number, ayat_number,
+				huruf_label, angka_label, label, content,
+				start_page, end_page, order_index,
+				original_node_type, warnings, citation
+			) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
+			RETURNING id`,
+			documentID, parentID, n.Section, n.NodeType,
+			n.BabNumber, n.BagianLabel, n.ParagrafLabel, n.PasalNumber, n.AyatNumber,
+			n.HurufLabel, n.AngkaLabel, n.Label, n.Content,
+			n.StartPage, n.EndPage, n.OrderIndex,
+			n.OriginalNodeType, n.Warnings, n.Citation,
+		).Scan(&newID)
+		if err != nil {
+			return err
+		}
+		ids[i] = newID
+	}
+
+	if _, err := tx.Exec(ctx, `
+		UPDATE documents SET status = 'parsed', parsed_at = now(), updated_at = now()
+		WHERE id = $1`, documentID); err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
+}
+
+// ---- Relasi antar-peraturan ----
+
+func (s *Store) InsertRelation(ctx context.Context, documentID, relType, key, jenis, instansi, nomor, tahun, tentang, confidence, kutipan string) error {
+	_, err := s.pool.Exec(ctx, `
+		INSERT INTO relations (document_id, type, key, jenis, instansi, nomor, tahun, tentang, confidence, kutipan)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+		documentID, relType, key, jenis, instansi, nomor, tahun, tentang, confidence, kutipan)
+	return err
+}
+
+// ---- util ----
+
+func nullIfEmpty(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}
+
+
+
+main.go
+// Command uuparser adalah service yang menjaga agar setiap peraturan baru pada
+// sumber JDIH terdaftar otomatis terunduh, di-OCR, lalu di-parse menjadi baris
+// siap ditinjau/diedit di database Postgres.
+//
+// Tidak ada flag CLI: konfigurasi hanya lewat .env (DATABASE_URL, MODEL_PATH,
+// MMPROJ_PATH, LIB_PATH, LOG_DIR, DATA_DIR, VERBOSE — lihat internal/config).
+// Aksi admin sesaat (reset/approve/reject dokumen) dilakukan lewat SQL
+// langsung — lihat CATATAN-MIGRASI.md bagian "Perubahan status manual".
+//
+// Arsitektur tiga-worker (downloader/OCR/parser independen, berkoordinasi
+// lewat Postgres) ada di internal/pipeline; main.go hanya menyiapkan
+// dependency (config, log, DB, model) lalu memanggil pipeline.Run.
+package main
+
+import (
+	"context"
+	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
+
+	"github.com/fuadarradhi/uuparser/internal/config"
+	"github.com/fuadarradhi/uuparser/internal/localllm"
+	"github.com/fuadarradhi/uuparser/internal/logx"
+	"github.com/fuadarradhi/uuparser/internal/pipeline"
+	"github.com/fuadarradhi/uuparser/internal/store"
+)
+
+func main() {
+	cfg, err := config.Load(".env")
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "error konfigurasi:", err)
+		os.Exit(1)
+	}
+	if err := logx.Init(cfg.LogDir); err != nil {
+		fmt.Fprintln(os.Stderr, "error log:", err)
+		os.Exit(1)
+	}
+	defer logx.Close()
+	logx.Info("log galat: %s", logx.ErrorLogPath())
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-sig
+		logx.Info("sinyal berhenti diterima — progres di database aman")
+		cancel()
+	}()
+
+	st, err := store.Open(ctx, cfg.DatabaseURL)
+	if err != nil {
+		logx.Fatal("", "membuka database: %v", err)
+		os.Exit(1)
+	}
+	defer st.Close()
+
+	model, err := localllm.New(localllm.Config{
+		ModelPath: cfg.ModelPath, MMProjPath: cfg.MMProjPath,
+		LibPath: cfg.LibPath, Verbose: cfg.Verbose,
+	})
+	if err != nil {
+		logx.Fatal("", "menyiapkan model: %v", err)
+		os.Exit(1)
+	}
+	defer model.Release()
+
+	pipeline.Run(ctx, cfg, st, model)
+}
+
+
+

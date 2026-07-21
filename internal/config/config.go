@@ -52,8 +52,10 @@ func Load(path string) (Config, error) {
 	}
 
 	get := func(key, def string) string {
-		if v, ok := os.LookupEnv(key); ok && strings.TrimSpace(v) != "" {
-			return v // variabel lingkungan menimpa .env
+		if v, ok := os.LookupEnv(key); ok {
+			if t := strings.TrimSpace(v); t != "" {
+				return t // variabel lingkungan menimpa .env (dipangkas — spasi liar bikin galat koneksi yang membingungkan)
+			}
 		}
 		if v, ok := fileVals[key]; ok && strings.TrimSpace(v) != "" {
 			return v

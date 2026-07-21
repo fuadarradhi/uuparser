@@ -40,9 +40,12 @@ type PageStore interface {
 	// (dasar resume per-halaman, menggantikan cek file-existence lama).
 	HasPage(ctx context.Context, page int) (bool, error)
 	// SavePage menyimpan hasil satu halaman. notes adalah catatan tinjauan
-	// (halaman kosong, keluaran terpotong, dst) — disimpan sebagai daftar,
-	// bisa lebih dari satu per halaman.
-	SavePage(ctx context.Context, page int, text string, isEmpty, isTruncated bool, notes []string) error
+	// (halaman kosong, keluaran terpotong, dst) — bisa lebih dari satu per
+	// halaman. inkRatio (proporsi tinta) & croppedPct (persen piksel yang
+	// terpangkas crop) & durationMS ikut disimpan untuk kebutuhan debug
+	// ("halaman X tintanya 0,0001 tapi OCR kosong — kenapa?") — temuan
+	// review eksternal: sebelumnya nilai ini dihitung tapi dibuang.
+	SavePage(ctx context.Context, page int, text string, isEmpty, isTruncated bool, inkRatio, croppedPct float64, durationMS int, notes []string) error
 	// ReadPages membaca halaman [a,b] (inklusif, 1-based) yang SUDAH
 	// tersimpan; halaman yang belum ada dilewati begitu saja (bukan error).
 	ReadPages(ctx context.Context, a, b int) ([]string, error)
@@ -166,7 +169,7 @@ func (e *Extractor) ocrPage(ctx context.Context, doc *raster.Doc, pageNum, total
 
 	if pg.InkRatio < blankInkRatio {
 		logx.Skip("hal %d/%d — kosong, dilewati", pageNum, total)
-		return e.pages.SavePage(ctx, pageNum, "", true, false,
+		return e.pages.SavePage(ctx, pageNum, "", true, false, pg.InkRatio, 0, 0,
 			[]string{"halaman kosong (tanpa teks) — OCR dilewati"})
 	}
 
@@ -183,11 +186,12 @@ func (e *Extractor) ocrPage(ctx context.Context, doc *raster.Doc, pageNum, total
 		logx.Warn("hal %d/%d — keluaran terpotong", pageNum, total)
 	}
 
+	croppedPct := 0.0
 	saved := ""
 	if pg.CroppedFrom > 0 {
-		cut := 100 - float64(pg.W*pg.H)*100/float64(pg.CroppedFrom)
-		if cut >= 1 {
-			saved = fmt.Sprintf(" (-%.1f%% piksel)", cut)
+		croppedPct = 100 - float64(pg.W*pg.H)*100/float64(pg.CroppedFrom)
+		if croppedPct >= 1 {
+			saved = fmt.Sprintf(" (-%.1f%% piksel)", croppedPct)
 		}
 	}
 	logx.Progress("OCR", pageNum, total, "%dx%d px%s · %s",
@@ -202,6 +206,9 @@ func (e *Extractor) ocrPage(ctx context.Context, doc *raster.Doc, pageNum, total
 	}
 
 	if strings.TrimSpace(text) == "" {
+		if err := ctx.Err(); err != nil { // jangan mulai percobaan ulang saat shutdown
+			return err
+		}
 		retry, rerr := c.OCRClient.Vision(ctx, DefaultOCRPrompt, pg.PNG, localllm.Params{MaxTokens: c.OCRMaxTokens})
 		if rerr != nil {
 			return fmt.Errorf("OCR (ulang): %w", rerr)
@@ -224,5 +231,6 @@ func (e *Extractor) ocrPage(ctx context.Context, doc *raster.Doc, pageNum, total
 		}
 	}
 
-	return e.pages.SavePage(ctx, pageNum, text, false, truncated, notes)
+	return e.pages.SavePage(ctx, pageNum, text, false, truncated,
+		pg.InkRatio, croppedPct, int(time.Since(started).Milliseconds()), notes)
 }

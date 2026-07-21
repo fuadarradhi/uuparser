@@ -16,7 +16,12 @@ var (
 	// Ayat: "(1)", "(1a)", termasuk hasil OCR yang longgar sudah dinormalisasi dulu.
 	reAyat = regexp.MustCompile(`^\(\s*([0-9]+\s*[a-zA-Z]?)\s*\)\s*(.*)$`)
 	// Huruf: "a.", "ab." (setelah z lanjut aa, ab, ...). Maksimal 2 huruf.
-	reHuruf = regexp.MustCompile(`^([a-z]{1,2})\.\s+(.*)$`)
+	// reHuruf: huruf kecil 1-2 karakter (a., aa.) ATAU SATU huruf kapital (OCR
+	// kerap membaca "a." sebagai "A." pada pindaian semua-kapital). Dua huruf
+	// kapital SENGAJA tidak diterima agar angka Romawi ("IV.", "VI.") tidak
+	// tertangkap sebagai huruf. Label dinormalisasi ke huruf kecil di
+	// detectStructural. (Temuan review eksternal, dimodifikasi.)
+	reHuruf = regexp.MustCompile(`^([a-z]{1,2}|[A-Z])\.\s+(.*)$`)
 	// Angka: "1." "12)" — sub dari huruf pada batang tubuh, atau item Mengingat.
 	reAngka = regexp.MustCompile(`^([0-9]+)[.\)]\s+(.*)$`)
 )
@@ -86,7 +91,7 @@ func detectStructural(line string) lineMatch {
 		}
 	}
 	if m := reHuruf.FindStringSubmatch(line); m != nil {
-		return lineMatch{kind: mkHuruf, label: m[1], text: strings.TrimSpace(m[2])}
+		return lineMatch{kind: mkHuruf, label: strings.ToLower(m[1]), text: strings.TrimSpace(m[2])}
 	}
 	if m := reAngka.FindStringSubmatch(line); m != nil {
 		return lineMatch{kind: mkAngka, label: m[1], text: strings.TrimSpace(m[2])}

@@ -69,16 +69,9 @@ func (d *Doc) PagePNG(page, dpi int) ([]byte, error) {
 	return p.PNG, nil
 }
 
-// PagePNGMax merender satu halaman (1-based) pada DPI tertentu, lalu MENGECILKAN
-// gambar bila sisi terpanjangnya melebihi maxPx (0 = tanpa batas).
-//
-// Ini pengungkit kecepatan utama: waktu proses model visi kira-kira sebanding
-// dengan luas piksel gambar. Halaman A4 pada 200 DPI berukuran 1654x2339 (≈3,9
-// juta piksel); membatasinya ke sisi 1600 px memangkas luasnya lebih dari
-// setengah, dengan dampak kecil pada keterbacaan teks badan peraturan.
-//
 // Render merender satu halaman (1-based) lalu menerapkan pemotongan margin
-// dan/atau pembatasan ukuran sesuai Opts.
+// sesuai Opts. (Pengecilan gambar/maxPx sudah DIHAPUS dari desain — memperkecil
+// karakter membahayakan angka pasal/ayat; kecepatan dikejar lewat AutoCrop.)
 //
 // Mengembalikan PNG beserta dimensi akhir dan proporsi tinta halaman.
 func (d *Doc) Render(page int, o Opts) (Page, error) {

@@ -19,7 +19,11 @@ const (
 	downloaderDelay            = 1500 * time.Millisecond
 	downloaderMaxRetries       = 3
 	downloaderHTTPTimeout      = 120 * time.Second
-	downloaderMaxAttempts      = 3
+
+	// maxAttempts berlaku untuk unduh DAN OCR (dipakai lintas worker di
+	// package ini): setelah sekian kegagalan, dokumen berstatus 'failed'
+	// dan tidak dicoba lagi sampai di-reset manual lewat SQL.
+	maxAttempts = 3
 )
 
 // downloaderWorker mendaftarkan dokumen baru dari tiap sumber lalu mengunduh
@@ -106,23 +110,24 @@ func processOneDownload(ctx context.Context, cfg config.Config, st *store.Store,
 	row, err := st.GetSource(ctx, job.SourceID)
 	if err != nil {
 		logx.Warn("downloader: sumber %s tak ditemukan: %v", job.SourceID, err)
-		_ = st.MarkDownloadFailed(ctx, job.ID, err.Error(), downloaderMaxAttempts)
+		_ = st.MarkDownloadFailed(ctx, job.ID, err.Error(), maxAttempts)
 		return
 	}
 	dc := dlConfig()
 	dc.Endpoint = row.EndpointURL
 	src, err := downloader.NewSource(downloader.SourceRow{
 		Code: row.Code, EndpointURL: row.EndpointURL, SourceType: row.SourceType,
+		SourceConfigRaw: row.SourceConfigRaw, // ikut diteruskan — implementasi scraper custom membutuhkannya
 	}, dc)
 	if err != nil {
-		_ = st.MarkDownloadFailed(ctx, job.ID, err.Error(), downloaderMaxAttempts)
+		_ = st.MarkDownloadFailed(ctx, job.ID, err.Error(), maxAttempts)
 		return
 	}
 
 	body, err := src.FetchPDF(ctx, downloader.RemoteDoc{FileURL: job.PDFURL})
 	if err != nil {
 		logx.Fail(job.Slug, "unduh gagal: %v", err)
-		_ = st.MarkDownloadFailed(ctx, job.ID, err.Error(), downloaderMaxAttempts)
+		_ = st.MarkDownloadFailed(ctx, job.ID, err.Error(), maxAttempts)
 		return
 	}
 
@@ -133,7 +138,7 @@ func processOneDownload(ctx context.Context, cfg config.Config, st *store.Store,
 	dest := filepath.Join(pdfDir, job.Slug+".pdf")
 	if err := fsutil.WriteFileAtomic(dest, body, 0o644); err != nil {
 		logx.Fail(job.Slug, "simpan PDF gagal: %v", err)
-		_ = st.MarkDownloadFailed(ctx, job.ID, err.Error(), downloaderMaxAttempts)
+		_ = st.MarkDownloadFailed(ctx, job.ID, err.Error(), maxAttempts)
 		return
 	}
 

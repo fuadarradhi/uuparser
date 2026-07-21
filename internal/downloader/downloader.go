@@ -47,7 +47,7 @@ var (
 	reMultiUnd = regexp.MustCompile(`_{2,}`)
 	reEdge     = regexp.MustCompile(`(^[._-]+)|([._-]+$)`)
 	pdfMagic   = []byte("%PDF")
-	reHrefPDF  = regexp.MustCompile(`(?i)href="([^"]+\.pdf[^"]*)"`)
+	reHrefPDF  = regexp.MustCompile(`(?i)href="([^"]+\.pdf(?:\?[^"]*)?)"`) // .pdf harus di akhir path (boleh diikuti query) — bukan "file.pdf.html"
 )
 
 // Slug mengembalikan identitas stabil & aman untuk sebuah record: stem fileDownload.

@@ -89,9 +89,10 @@ func processOneParse(ctx context.Context, st *store.Store, job store.ParseJob) {
 // eksplisit) untuk di-insert sebagai pohon. parser.Node menyimpan label
 // ANCESTOR PENUH (Bab/Bagian/Paragraf/Pasal/Ayat), bukan pointer parent — jadi
 // pemetaan di sini memakai "parent = node terakhir satu tingkat di atas",
-// yang valid selama urutan node linear sesuai DocOrder (yang memang
-// dijamin oleh parser.Parse). BELUM DIUJI terhadap dokumen nyata — lihat
-// CATATAN-MIGRASI.md.
+// yang valid selama urutan node linear sesuai DocOrder (dijamin parser.Parse).
+// TERUJI lewat tes integrasi bertahap (multi-BAB, Pasal langsung di bawah BAB
+// tanpa Bagian, penjelasan terpisah, invarian ParentIdx<index) — terhadap teks
+// sintetis; dokumen OCR nyata pertama tetap perlu diperiksa hasilnya.
 func mapNodesToInserts(nodes []parser.Node) []store.NodeInsert {
 	out := make([]store.NodeInsert, 0, len(nodes))
 	lastBab, lastBagian, lastParagraf, lastPasal := -1, -1, -1, -1
