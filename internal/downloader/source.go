@@ -17,13 +17,14 @@ import "context"
 // pemerintah biasanya berbeda dan gampang berubah) — jangan dipaksakan lewat
 // satu scraper generik yang rapuh.
 
-// RemoteDoc adalah satu entri dokumen dari sebuah Source, sudah dinormalisasi
-// lintas jenis sumber (integrasi API, API custom, atau hasil scrape).
+// RemoteDoc adalah satu entri dokumen dari sebuah Source.
+//
+// Sejak 2026-07-21 isinya HANYA tautan unduh: pipeline tidak lagi mempercayai
+// metadata apa pun dari sumber (judul/jenis/nomor/tahun kerap tidak konsisten
+// antar-JDIH). Seluruh identitas peraturan dibaca dari halaman pertama berkas
+// itu sendiri oleh model teks.
 type RemoteDoc struct {
-	IDData  string            // identitas asli dari sumber (idData / ID lain)
-	Judul   string
-	FileURL string            // URL PDF langsung, atau URL yang mengarah ke PDF
-	Meta    map[string]string // field tambahan spesifik sumber (opsional)
+	FileURL string // URL PDF, sudah dinormalisasi lewat NormalizeURL
 }
 
 // Source adalah satu sumber JDIH. Implementasinya BEBAS bagaimana cara

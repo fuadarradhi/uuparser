@@ -28,17 +28,15 @@ func (s *IntegrasiSource) ListDocuments(ctx context.Context) ([]RemoteDoc, error
 	}
 	out := make([]RemoteDoc, 0, len(records))
 	for _, r := range records {
-		out = append(out, RemoteDoc{
-			IDData:  r.IDData,
-			Judul:   r.Judul,
-			FileURL: r.URLDownload,
-			Meta: map[string]string{
-				"jenis":              r.Jenis,
-				"no_peraturan":       r.NoPeraturan,
-				"tahun_pengundangan": r.TahunPengundangan,
-				"file_download":      r.FileDownload,
-			},
-		})
+		// Hanya tautan unduh yang diambil. Metadata dari sumber (judul,
+		// jenis, nomor, tahun) SENGAJA diabaikan — sejak 2026-07-21 seluruh
+		// identitas peraturan dibaca sendiri dari halaman pertama dokumen
+		// oleh model teks, karena metadata JDIH kerap tidak konsisten.
+		u := NormalizeURL(r.URLDownload)
+		if u == "" {
+			continue
+		}
+		out = append(out, RemoteDoc{FileURL: u})
 	}
 	return out, nil
 }

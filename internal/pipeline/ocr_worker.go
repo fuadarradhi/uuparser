@@ -2,36 +2,43 @@ package pipeline
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"time"
 
-	"github.com/fuadarradhi/uuparser/internal/config"
 	"github.com/fuadarradhi/uuparser/internal/extractor"
-	"github.com/fuadarradhi/uuparser/internal/localllm"
 	"github.com/fuadarradhi/uuparser/internal/logx"
-	"github.com/fuadarradhi/uuparser/internal/parser"
+	"github.com/fuadarradhi/uuparser/internal/prompts"
 	"github.com/fuadarradhi/uuparser/internal/store"
 )
 
-// Nilai tetap — lihat catatan di downloader_worker.go soal kenapa ini
-// konstanta, bukan config.
+// ocr_worker.go menjalankan tahap kedua: OCR + perbaikan + klasifikasi.
+//
+// Urutannya SENGAJA berurutan per halaman (OCR hal-N -> perbaiki hal-N ->
+// OCR hal-N+1 -> ...) sehingga kemajuan terpantau per halaman di UI dan
+// dokumen yang gagal di halaman 1 langsung ditinggalkan tanpa membuang waktu
+// meng-OCR sisanya.
+//
+// Kedua model (visi + teks) dimuat SEKALI dan tetap menempel selama masih ada
+// antrian; keduanya dilepas bersamaan hanya ketika tidak ada lagi pekerjaan.
+// Tidak ada bongkar-pasang model per halaman.
+
 const (
 	ocrIdleInterval = 30 * time.Second
-	ocrDPI          = 200
 	ocrAutoCrop     = true
 	ocrMaxTokens    = 2048
 )
 
-// ocrWorker adalah SATU goroutine saja: model yzma/llama.cpp dimuat sekali
-// dan tidak aman dipakai konkuren dari banyak goroutine sekaligus.
-func ocrWorker(ctx context.Context, cfg config.Config, st *store.Store, model *localllm.Client) {
+func ocrWorker(ctx context.Context, deps Deps) {
 	for {
 		if ctx.Err() != nil {
 			return
 		}
-		processed := drainOCR(ctx, st, model)
-		if !processed {
-			model.Release() // tak ada kerjaan: lepas memori sampai dokumen baru datang
+		worked := drainOCR(ctx, deps)
+		if !worked {
+			// Antrian habis: lepaskan KEDUA model agar memori tidak tertahan
+			// selama menunggu (penting di mesin 8 GB).
+			deps.Vision.Release()
+			deps.Text.Release()
 			select {
 			case <-ctx.Done():
 				return
@@ -41,82 +48,170 @@ func ocrWorker(ctx context.Context, cfg config.Config, st *store.Store, model *l
 	}
 }
 
-func drainOCR(ctx context.Context, st *store.Store, model *localllm.Client) (processedAny bool) {
+func drainOCR(ctx context.Context, deps Deps) (workedAny bool) {
 	for {
 		if ctx.Err() != nil {
-			return processedAny
+			return workedAny
 		}
-		job, err := st.ClaimForOCR(ctx)
+		job, err := deps.Store.ClaimForOCR(ctx)
 		if err == store.ErrNoWork {
-			return processedAny
+			return workedAny
 		}
 		if err != nil {
 			logx.Warn("ocr: klaim gagal: %v", err)
-			return processedAny
+			return workedAny
 		}
-		processedAny = true
-		processOneOCR(ctx, st, model, job)
+		workedAny = true
+		processDocument(ctx, deps, job)
 	}
 }
 
-func processOneOCR(ctx context.Context, st *store.Store, model *localllm.Client, job store.OCRJob) {
-	var headerRejectReason, headerExtractedInstansi, headerStructureType string
-	var headerIsRegulation, headerPreUU122011 bool
+// docSink menjalankan aturan per halaman: simpan OCR mentah, perbaiki dengan
+// model teks, dan — khusus halaman 1 — klasifikasikan dokumen lalu putuskan
+// apakah proses diteruskan.
+type docSink struct {
+	deps    Deps
+	docID   string
+	prompts prompts.Set
+	stopped string // alasan berhenti, kosong bila lanjut
+	fixed   int    // halaman yang sudah selesai diperbaiki model teks
+	ocred   int    // halaman yang sudah selesai di-OCR
+}
 
-	exCfg := extractor.Config{
-		DPI: ocrDPI, AutoCrop: ocrAutoCrop,
-		OCRClient: model, OCRMaxTokens: ocrMaxTokens,
-		GateFunc: func(page1Text string) (bool, string) {
-			h := parser.ExtractHeader(page1Text)
-			headerIsRegulation = h.Found
-			headerStructureType = h.StructureType
-			headerExtractedInstansi = h.Instansi
-			headerPreUU122011 = h.PreUU122011
+// OnProgress mencetak baris kemajuan [diperbaiki/di-OCR/total]. Dipanggil
+// juga SEBELUM halaman pertama di-OCR, sehingga konsol langsung menunjukkan
+// [0/0/N] alih-alih diam sampai halaman pertama selesai.
+func (d *docSink) OnProgress(page, total int, detail string) {
+	logx.Progress(d.fixed, d.ocred, total, "hal %d · %s", page, detail)
+}
 
-			if !h.Found {
-				headerRejectReason = "no_legal_signal"
-				return false, headerRejectReason
-			}
-			// Kecocokan jurisdiksi: instansi di halaman 1 harus cocok PERSIS
-			// dengan instansi pemilik source (lihat internal/parser/header.go
-			// soal kenapa exact-match, bukan Contains). Dokumen pra-2011
-			// tetap diterima OCR PENUH di sini supaya ada teks lengkap untuk
-			// ditinjau manusia — ApplyHeaderResult di bawah yang memutuskan
-			// status akhirnya jadi 'review_manual', bukan gate ini.
-			if !headerPreUU122011 && !parser.MatchesJurisdiction(h.Instansi, job.SourceInstansi) {
-				headerRejectReason = "wrong_jurisdiction"
-				return false, headerRejectReason
-			}
-			return true, ""
-		},
+func (d *docSink) HasPage(ctx context.Context, page int) (bool, error) {
+	return d.deps.Store.HasPage(ctx, d.docID, page)
+}
+
+func (d *docSink) OnPage(ctx context.Context, r extractor.PageResult) (bool, error) {
+	// 1) Simpan hasil OCR MENTAH lebih dulu — apa pun yang terjadi setelah
+	//    ini, teks asli sudah aman dan tidak akan pernah ditimpa.
+	if err := d.deps.Store.SavePage(ctx, d.docID, r.Page, r.Text, r.IsEmpty, r.IsTruncated,
+		r.InkRatio, r.CroppedPct, r.DurationMS, r.Notes); err != nil {
+		return false, err
+	}
+	// Baris kemajuan SETELAH OCR, SEBELUM perbaikan: angka pertama (sudah
+	// diperbaiki) memang tertinggal satu dari angka kedua (sudah di-OCR).
+	d.ocred = r.Page
+	logx.Progress(d.fixed, d.ocred, r.Total, "hal %d · %dx%d px%s · %s",
+		r.Page, r.W, r.H, cropNote(r.CroppedPct), durText(r.DurationMS))
+
+	if r.IsEmpty {
+		d.fixed++ // halaman kosong dianggap selesai: tak ada yang perlu diperbaiki
+		return false, nil
 	}
 
-	pages := dbPageStore{st: st, documentID: job.ID}
-	ex := extractor.New(exCfg, pages)
-	err := ex.Document(ctx, job.PDFPath)
-
-	// Hasil header HANYA ditulis bila gate benar-benar sempat berjalan
-	// (sukses atau ditolak gate). Pada kegagalan OCR transien (disk/model),
-	// headerIsRegulation masih zero-value false — menulisnya akan MENOLAK
-	// dokumen secara keliru dan permanen. (Temuan review eksternal, valid.)
-	if err == nil || errors.Is(err, extractor.ErrRejected) {
-		if applyErr := st.ApplyHeaderResult(ctx, job.ID, headerIsRegulation, headerRejectReason,
-			headerStructureType, headerExtractedInstansi, headerPreUU122011); applyErr != nil {
-			logx.Warn("ocr: simpan header check %s: %v", job.ID, applyErr)
+	// 2) Perbaiki salah ketik/struktur. Kegagalan model TIDAK menggagalkan
+	//    dokumen — teks mentah tetap dipakai (lihat fixPage).
+	fixed, ok := fixPage(ctx, d.deps.Text, d.prompts.FixPage, r.Text)
+	if ok {
+		if err := d.deps.Store.SaveFixedText(ctx, d.docID, r.Page, fixed,
+			countChangedOps(r.Text, fixed), d.prompts.FixPageHash); err != nil {
+			return false, err
 		}
+	} else {
+		logx.Warn("hal %d: perbaikan model dilewati — memakai teks OCR mentah", r.Page)
+	}
+	d.fixed++
+	logx.Progress(d.fixed, d.ocred, r.Total, "hal %d · diperbaiki", r.Page)
+
+	// 3) Halaman pertama menentukan nasib dokumen.
+	if r.Page == 1 {
+		text := r.Text
+		if ok {
+			text = fixed
+		}
+		return d.classify(ctx, text)
+	}
+	return false, nil
+}
+
+// classify membaca halaman 1 lewat model teks lalu memutuskan: tolak (bukan
+// peraturan), tandai duplikat, atau lanjutkan ke halaman berikutnya.
+func (d *docSink) classify(ctx context.Context, page1 string) (bool, error) {
+	meta, mencabut, mengubah, err := classifyPage1(ctx, d.deps.Text, d.prompts.Classify, page1)
+	if err != nil {
+		// Model gagal membaca: JANGAN menolak dokumen (bisa jadi masalah
+		// sesaat). Hentikan dokumen ini, biarkan status dikembalikan oleh
+		// pemanggil supaya dicoba lagi nanti.
+		return true, fmt.Errorf("klasifikasi halaman 1: %w", err)
 	}
 
+	if !meta.IsPeraturan {
+		alasan := meta.Alasan
+		if alasan == "" {
+			alasan = "model menilai dokumen ini bukan produk hukum"
+		}
+		if err := d.deps.Store.RejectNotRegulation(ctx, d.docID, alasan); err != nil {
+			return true, err
+		}
+		d.stopped = "bukan peraturan: " + alasan
+		return true, nil
+	}
+
+	dup, err := d.deps.Store.ApplyMetaAndCheckDuplicate(ctx, d.docID, meta, canonicalKey(meta))
+	if err != nil {
+		return true, err
+	}
+	if dup {
+		d.stopped = "duplikat peraturan yang sudah ada"
+		return true, nil
+	}
+
+	// Relasi yang disebut di halaman 1 dicatat sebagai petunjuk awal;
+	// relations.go tetap menjadi sumber utama saat parsing nanti.
+	for _, v := range mencabut {
+		_ = d.deps.Store.InsertRelation(ctx, d.docID, "mencabut", "", "", "", "", "", v, "perlu_review", v)
+	}
+	for _, v := range mengubah {
+		_ = d.deps.Store.InsertRelation(ctx, d.docID, "mengubah", "", "", "", "", "", v, "perlu_review", v)
+	}
+
+	logx.Info("dokumen dikenali: %s %s Nomor %s Tahun %s — %s",
+		meta.Jenis, meta.Instansi, meta.Nomor, meta.Tahun, meta.Tentang)
+	return false, nil
+}
+
+func processDocument(ctx context.Context, deps Deps, job store.OCRJob) {
+	sink := &docSink{deps: deps, docID: job.ID, prompts: deps.Prompts}
+
+	ex := extractor.New(extractor.Config{
+		DPI: deps.DPI, AutoCrop: ocrAutoCrop,
+		OCRClient: deps.Vision, OCRMaxTokens: ocrMaxTokens,
+	}, sink)
+
+	total, stopped, err := ex.Document(ctx, job.PDFPath)
 	switch {
-	case err == extractor.ErrRejected:
-		logx.Info("ocr: %s ditolak gate (%s)", job.ID, headerRejectReason)
 	case err != nil:
-		logx.Fail(job.ID, "OCR gagal: %v", err)
-		_ = st.MarkOCRFailed(ctx, job.ID, err.Error(), maxAttempts)
+		logx.Fail(job.ID, "proses gagal: %v", err)
+		_ = deps.Store.MarkOCRFailed(ctx, job.ID, err.Error(), maxAttempts)
+	case stopped:
+		// Status sudah disetel oleh classify (rejected/duplicate).
+		logx.Skip("dokumen dihentikan — %s", sink.stopped)
 	default:
-		if err := st.MarkOCRDone(ctx, job.ID); err != nil {
-			logx.Warn("ocr: tandai selesai %s: %v", job.ID, err)
+		if err := deps.Store.MarkOCRDone(ctx, job.ID, total); err != nil {
+			logx.Warn("ocr: tandai selesai: %v", err)
 			return
 		}
-		logx.OK("ocr selesai · %s", job.ID)
+		logx.OK("ocr+perbaikan selesai · %d halaman", total)
 	}
+}
+
+// cropNote merangkum penghematan piksel hasil pemotongan margin, atau string
+// kosong bila pemotongannya tidak berarti.
+func cropNote(pct float64) string {
+	if pct < 1 {
+		return ""
+	}
+	return fmt.Sprintf(" · dipotong -%.0f%%", pct)
+}
+
+func durText(ms int) string {
+	return (time.Duration(ms) * time.Millisecond).Round(time.Second).String()
 }

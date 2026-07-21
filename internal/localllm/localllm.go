@@ -128,39 +128,73 @@ func (c *Client) Loaded() bool {
 	return c.loaded
 }
 
+// applyChatTemplate menerapkan chat template dengan buffer yang aman.
+//
+// llama.cpp mengembalikan UKURAN YANG DIBUTUHKAN, bukan jumlah byte yang
+// tertulis: bila lebih besar dari buffer, isi buffer TIDAK lengkap dan
+// pemanggil wajib memperbesar lalu mengulang. Tanpa penanganan ini,
+// `buf[:n]` panic "slice out of range" — dan itu pasti terjadi pada jalur
+// teks, karena satu halaman peraturan beserta prompt sistem dengan mudah
+// melewati ukuran buffer awal.
+func applyChatTemplate(template string, messages []llama.ChatMessage) (string, error) {
+	size := chatBufferLen
+	for attempt := 0; attempt < 4; attempt++ {
+		buf := make([]byte, size)
+		n := llama.ChatApplyTemplate(template, messages, true, buf)
+		switch {
+		case n <= 0:
+			return "", fmt.Errorf("gagal menerapkan chat template")
+		case int(n) <= len(buf):
+			return string(buf[:n]), nil
+		default:
+			size = int(n) + 1024 // llama.cpp memberi tahu ukuran yang diperlukan
+		}
+	}
+	return "", fmt.Errorf("chat template tidak muat setelah beberapa kali perbesaran buffer")
+}
+
+// loadLibs memuat pustaka bersama (llama + mtmd) TEPAT SEKALI seumur proses.
+//
+// Dipakai bersama oleh klien visi DAN klien teks. Penting bahwa keduanya
+// melewati fungsi yang sama: bila masing-masing punya blok sync.Once sendiri
+// dengan isi berbeda, klien mana pun yang kebetulan memuat lebih dulu
+// menentukan pustaka apa saja yang tersedia — dan model yang satunya gagal
+// dengan galat yang menyesatkan.
+func loadLibs(libPath string, verbose bool) error {
+	libsOnce.Do(func() {
+		if err := llama.Load(libPath); err != nil {
+			libsErr = fmt.Errorf("memuat pustaka llama: %w", err)
+			return
+		}
+		if err := mtmd.Load(libPath); err != nil {
+			libsErr = fmt.Errorf("memuat pustaka mtmd: %w", err)
+			return
+		}
+		if !verbose {
+			llama.LogSet(llama.LogSilent())
+			mtmd.LogSet(llama.LogSilent())
+		}
+	})
+	return libsErr
+}
+
 // ensureLoaded memuat model bila belum termuat. Pemanggil sudah memegang kunci.
 func (c *Client) ensureLoaded() error {
 	if c.loaded {
 		return nil
 	}
 
-	libsOnce.Do(func() {
-		if err := llama.Load(c.cfg.LibPath); err != nil {
-			libsErr = fmt.Errorf("memuat pustaka llama: %w", err)
-			return
-		}
-		if err := mtmd.Load(c.cfg.LibPath); err != nil {
-			libsErr = fmt.Errorf("memuat pustaka mtmd: %w", err)
-			return
-		}
-		if !c.cfg.Verbose {
-			llama.LogSet(llama.LogSilent())
-			mtmd.LogSet(llama.LogSilent())
-		}
-	})
-	if libsErr != nil {
-		return libsErr
+	if err := loadLibs(c.cfg.LibPath, c.cfg.Verbose); err != nil {
+		return err
 	}
 
 	llama.Init()
 
 	model, err := llama.ModelLoadFromFile(c.cfg.ModelPath, llama.ModelDefaultParams())
 	if err != nil {
-		llama.Close()
 		return fmt.Errorf("memuat model %s: %w", c.cfg.ModelPath, err)
 	}
 	if model == 0 {
-		llama.Close()
 		return fmt.Errorf("gagal memuat model dari %s", c.cfg.ModelPath)
 	}
 
@@ -170,7 +204,6 @@ func (c *Client) ensureLoaded() error {
 	lctx, err := newContext(model, c.curCtx)
 	if err != nil {
 		llama.ModelFree(model)
-		llama.Close()
 		return err
 	}
 
@@ -178,7 +211,6 @@ func (c *Client) ensureLoaded() error {
 	if err != nil {
 		llama.Free(lctx)
 		llama.ModelFree(model)
-		llama.Close()
 		return fmt.Errorf("memuat proyektor multimodal %s: %w", c.cfg.MMProjPath, err)
 	}
 
@@ -242,9 +274,20 @@ func (c *Client) Release() {
 	mtmd.Free(c.mctx)
 	llama.Free(c.lctx)
 	llama.ModelFree(c.model)
-	llama.Close()
 	c.loaded = false
-	logx.Info("model dilepas dari memori")
+	logx.Info("model OCR dilepas dari memori")
+}
+
+// Shutdown membebaskan backend llama.cpp yang DIPAKAI BERSAMA oleh semua klien
+// (visi maupun teks). Hanya boleh dipanggil saat proses benar-benar berakhir,
+// setelah semua Client/TextClient di-Release.
+//
+// PENTING: llama.Close() sengaja TIDAK dipanggil di Release. Sejak ada dua
+// model (OCR + thinking) yang hidup berdampingan, membebaskan backend saat
+// salah satu dilepas akan merusak model yang satunya — padahal yang memakan
+// memori besar adalah bobot model, yang sudah dibebaskan ModelFree/Free.
+func Shutdown() {
+	llama.Close()
 }
 
 // Vision menjalankan OCR atas satu gambar PNG.
@@ -269,10 +312,9 @@ func (c *Client) Vision(ctx context.Context, prompt string, png []byte, p Params
 	messages := []llama.ChatMessage{
 		llama.NewChatMessage("user", c.marker+prompt),
 	}
-	buf := make([]byte, chatBufferLen)
-	n := llama.ChatApplyTemplate(c.template, messages, true, buf)
-	if n <= 0 {
-		return Result{}, fmt.Errorf("gagal menerapkan chat template")
+	tmpl, err := applyChatTemplate(c.template, messages)
+	if err != nil {
+		return Result{}, err
 	}
 
 	chunks := mtmd.InputChunksInit()
@@ -285,9 +327,13 @@ func (c *Client) Vision(ctx context.Context, prompt string, png []byte, p Params
 	}
 	defer mtmd.BitmapFree(bw.Bitmap)
 
-	input := mtmd.NewInputText(string(buf[:n]), true, true)
+	input := mtmd.NewInputText(tmpl, true, true)
 	if rc := mtmd.Tokenize(c.mctx, chunks, input, []mtmd.Bitmap{bw.Bitmap}); rc != 0 {
 		return Result{}, fmt.Errorf("tokenisasi gagal (kode %d)", rc)
+	}
+
+	if p.OnStage != nil {
+		p.OnStage("menyandikan gambar")
 	}
 
 	var pos llama.Pos
@@ -314,6 +360,10 @@ func (c *Client) Vision(ctx context.Context, prompt string, png []byte, p Params
 		maxTokens = 2048
 	}
 
+	if p.OnStage != nil {
+		p.OnStage("menghasilkan teks")
+	}
+
 	var sb strings.Builder
 	piece := make([]byte, 256)
 	truncated := true // menjadi false bila model berhenti sendiri (EOG)
@@ -327,8 +377,11 @@ func (c *Client) Vision(ctx context.Context, prompt string, png []byte, p Params
 			truncated = false
 			break
 		}
-		if l := llama.TokenToPiece(c.vocab, token, piece, 0, true); l > 0 {
+		if l := llama.TokenToPiece(c.vocab, token, piece, 0, false); l > 0 {
 			sb.Write(piece[:l])
+		}
+		if p.OnToken != nil {
+			p.OnToken(i + 1)
 		}
 
 		batch := llama.BatchGetOne([]llama.Token{token})

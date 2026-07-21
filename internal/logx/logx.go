@@ -153,18 +153,28 @@ func Step(name, format string, args ...any) {
 
 // Progress mencetak kemajuan yang menimpa dirinya sendiri di terminal, dan
 // menjadi baris biasa bila keluaran bukan terminal (mis. journald).
-func Progress(name string, cur, total int, format string, args ...any) {
+//
+// Format: [diperbaiki/di-OCR/total] keterangan… persen
+//
+//	[0/1/12] 1029x1945 px · dipotong -48% · 12s     8%
+//
+// Angka pertama sengaja diletakkan lebih dulu karena perbaikan selalu
+// TERTINGGAL satu langkah di belakang OCR (halaman di-OCR dulu, baru
+// diperbaiki), sehingga selisih keduanya langsung terlihat: bila angka
+// pertama berhenti bergerak sementara angka kedua terus naik, berarti
+// tahap perbaikan yang bermasalah, bukan OCR-nya.
+func Progress(fixed, ocred, total int, format string, args ...any) {
 	mu.Lock()
 	defer mu.Unlock()
 	detail := fmt.Sprintf(format, args...)
 	pct := 0
 	if total > 0 {
-		pct = cur * 100 / total
+		pct = fixed * 100 / total
 	}
-	line := fmt.Sprintf("   %s%s %s",
-		paint(cDim, pad(name)),
-		paint(cCyan, fmt.Sprintf("%d/%d (%d%%)", cur, total, pct)),
-		paint(cDim, detail))
+	line := fmt.Sprintf("   %s %s  %s",
+		paint(cCyan, fmt.Sprintf("[%d/%d/%d]", fixed, ocred, total)),
+		paint(cDim, detail),
+		paint(cCyan, fmt.Sprintf("%d%%", pct)))
 	if isTTY {
 		fmt.Print("\r\033[K" + line)
 		inProg = true

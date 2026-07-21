@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -27,10 +28,20 @@ type Config struct {
 	DataDir string
 
 	// ---- model (yzma / llama.cpp, di dalam proses) ----
-	ModelPath  string
-	MMProjPath string
-	LibPath    string
-	Verbose    bool
+	ModelPath    string // model OCR (visi)
+	MMProjPath   string // proyektor multimodal untuk model visi
+	ThinkingPath string // model teks: klasifikasi halaman 1 + perbaikan salah ketik
+	LibPath      string
+	Verbose      bool
+
+	// PromptDir: folder berisi classify.md & fix_page.md (dapat disunting
+	// tanpa membangun ulang binari).
+	PromptDir string
+
+	// DPI render halaman sebelum OCR. Satu-satunya parameter render yang
+	// dapat diubah: nilai terbaiknya bergantung mutu pindaian korpus Anda
+	// dan hanya bisa ditentukan dengan mengukur (lihat CATATAN-MIGRASI.md).
+	DPI int
 
 	// ---- log ----
 	LogDir string
@@ -69,10 +80,14 @@ func Load(path string) (Config, error) {
 
 		// Bawaan mengikuti tata letak yang lazim: berkas berada di sebelah
 		// binari, sehingga service dapat dijalankan tanpa menyunting apa pun.
-		ModelPath:  get("MODEL_PATH", filepath.Join(cwd, "models", "ocr.gguf")),
-		MMProjPath: get("MMPROJ_PATH", filepath.Join(cwd, "models", "ocr.mmproj.gguf")),
-		LibPath:    get("LIB_PATH", filepath.Join(cwd, "libs")),
-		Verbose:    boolean(get("VERBOSE", "false")),
+		ModelPath:    get("MODEL_PATH", filepath.Join(cwd, "models", "ocr.gguf")),
+		MMProjPath:   get("MMPROJ_PATH", filepath.Join(cwd, "models", "ocr.mmproj.gguf")),
+		ThinkingPath: get("THINKING_PATH", filepath.Join(cwd, "models", "thinking.gguf")),
+		LibPath:      get("LIB_PATH", filepath.Join(cwd, "libs")),
+		Verbose:      boolean(get("VERBOSE", "false")),
+
+		PromptDir: get("PROMPT_DIR", filepath.Join(cwd, "prompts")),
+		DPI:       num(get("DPI", "200"), 200),
 
 		LogDir: get("LOG_DIR", filepath.Join(cwd, "log")),
 	}
@@ -87,6 +102,10 @@ func Load(path string) (Config, error) {
 	}
 	if err := mustExist("MMPROJ_PATH", c.MMProjPath,
 		"berkas proyektor multimodal (mmproj); tanpa ini gambar tidak dapat diproses"); err != nil {
+		return c, err
+	}
+	if err := mustExist("THINKING_PATH", c.ThinkingPath,
+		"berkas model teks GGUF; dipakai membaca halaman pertama dan memperbaiki salah ketik"); err != nil {
 		return c, err
 	}
 	return c, nil
@@ -127,6 +146,14 @@ func parseEnvFile(path string) (map[string]string, error) {
 		vals[key] = val
 	}
 	return vals, sc.Err()
+}
+
+func num(s string, def int) int {
+	v, err := strconv.Atoi(strings.TrimSpace(s))
+	if err != nil || v <= 0 {
+		return def
+	}
+	return v
 }
 
 func boolean(s string) bool {

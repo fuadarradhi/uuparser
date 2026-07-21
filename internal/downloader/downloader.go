@@ -13,7 +13,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
@@ -50,14 +49,47 @@ var (
 	reHrefPDF  = regexp.MustCompile(`(?i)href="([^"]+\.pdf(?:\?[^"]*)?)"`) // .pdf harus di akhir path (boleh diikuti query) — bukan "file.pdf.html"
 )
 
-// Slug mengembalikan identitas stabil & aman untuk sebuah record: stem fileDownload.
-func Slug(r Record) string {
-	name := strings.TrimSpace(r.FileDownload)
-	if name == "" {
-		return "doc_" + sanitize(r.IDData)
+// NormalizeURL merapikan tautan unduh agar layak dipakai sebagai IDENTITAS
+// UNIK dokumen (kolom documents.download_url).
+//
+// PENTING — parameter query TIDAK dibuang seluruhnya. Banyak JDIH memakai
+// tautan seperti ?id=123 atau ?file=xxx.pdf di mana parameter ITULAH yang
+// menunjukkan berkas mana yang diminta; membuangnya membuat semua dokumen
+// menyusut menjadi satu tautan yang sama dan hanya satu berkas yang terunduh.
+//
+// Yang dibuang hanyalah parameter yang jelas-jelas bukan identitas berkas:
+// penanda kampanye/analitik dan token sesi. Selebihnya diurutkan agar tautan
+// yang sama dengan urutan parameter berbeda tetap dikenali sama.
+func NormalizeURL(raw string) string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return ""
 	}
-	stem := strings.TrimSuffix(name, filepath.Ext(name))
-	return sanitize(stem)
+	u, err := url.Parse(raw)
+	if err != nil {
+		return raw
+	}
+	u.Scheme = strings.ToLower(u.Scheme)
+	u.Host = strings.ToLower(u.Host)
+	u.Fragment = ""
+
+	q := u.Query()
+	for _, junk := range []string{
+		"utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content",
+		"fbclid", "gclid", "PHPSESSID", "phpsessid", "sessionid", "_ga",
+	} {
+		q.Del(junk)
+	}
+	u.RawQuery = q.Encode() // Encode() mengurutkan kunci: urutan tak lagi berpengaruh
+	return u.String()
+}
+
+// FileName menurunkan nama berkas PDF dari hash isinya. Semua PDF disimpan di
+// SATU folder tanpa pemisahan per sumber (keputusan 2026-07-21: dokumen adalah
+// pusatnya, bukan sumber) — memakai hash isi berarti dua sumber yang menyajikan
+// berkas identik otomatis menunjuk ke satu berkas fisik yang sama.
+func FileName(sha256hex string) string {
+	return sha256hex + ".pdf"
 }
 
 // SourceCode menurunkan kode sumber ringkas dari URL endpoint, dipakai sebagai

@@ -1,6 +1,16 @@
-// Package pipeline menjalankan tiga worker independen (downloader, OCR,
-// parser) yang berkoordinasi lewat Postgres — lihat CATATAN-MIGRASI.md untuk
-// latar belakang arsitektur lengkap. main.go hanya memanggil Run.
+// Package pipeline menjalankan tiga worker independen yang berkoordinasi
+// lewat Postgres:
+//
+//	downloaderWorker — daftarkan tautan baru dari tiap sumber, lalu unduh PDF.
+//	                    Tidak mempercayai metadata sumber sama sekali; yang
+//	                    diambil hanya tautannya.
+//	ocrWorker        — SATU goroutine: OCR halaman-per-halaman, tiap halaman
+//	                    langsung diperbaiki model teks; halaman 1 menentukan
+//	                    dokumen ini peraturan/duplikat/bukan. Kedua model
+//	                    dimuat sekali dan dilepas bersamaan saat antrian habis.
+//	parserWorker     — dokumen berstatus 'ocr_done' diurai menjadi nodes.
+//
+// main.go hanya menyiapkan dependensi lalu memanggil Run.
 package pipeline
 
 import (
@@ -8,28 +18,36 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fuadarradhi/uuparser/internal/config"
 	"github.com/fuadarradhi/uuparser/internal/localllm"
 	"github.com/fuadarradhi/uuparser/internal/logx"
+	"github.com/fuadarradhi/uuparser/internal/prompts"
 	"github.com/fuadarradhi/uuparser/internal/store"
 )
 
-// shutdownGrace: batas tunggu worker menyelesaikan pekerjaan berjalan setelah
-// sinyal berhenti. OCR satu halaman bisa makan waktu bermenit-menit; daripada
-// menggantung tanpa batas (dan akhirnya di-SIGKILL systemd tanpa log apa pun),
-// lewat batas ini Run menyerah secara eksplisit — progres tetap aman karena
-// state per-halaman/per-dokumen sudah di Postgres.
+// shutdownGrace membatasi lama menunggu worker menyelesaikan pekerjaan yang
+// sedang berjalan setelah sinyal berhenti. OCR satu halaman bisa bermenit-
+// menit; lewat batas ini Run menyerah secara eksplisit — progres tetap aman
+// karena state per-halaman sudah tersimpan di Postgres.
 const shutdownGrace = 30 * time.Second
 
-// Run menjalankan ketiga worker sampai ctx dibatalkan (sinyal berhenti),
-// lalu menunggu mereka selesai paling lama shutdownGrace.
-func Run(ctx context.Context, cfg config.Config, st *store.Store, model *localllm.Client) {
+// Deps mengumpulkan seluruh dependensi worker dalam satu tempat, sehingga
+// menambah dependensi baru tidak mengubah tanda tangan tiap fungsi worker.
+type Deps struct {
+	Store   *store.Store
+	Vision  *localllm.Client     // model OCR (visi)
+	Text    *localllm.TextClient // model teks: klasifikasi + perbaikan
+	Prompts prompts.Set
+	DataDir string
+	DPI     int
+}
+
+func Run(ctx context.Context, deps Deps) {
 	var wg sync.WaitGroup
 	wg.Add(3)
 
-	go func() { defer wg.Done(); downloaderWorker(ctx, cfg, st) }()
-	go func() { defer wg.Done(); ocrWorker(ctx, cfg, st, model) }()
-	go func() { defer wg.Done(); parserWorker(ctx, st) }()
+	go func() { defer wg.Done(); downloaderWorker(ctx, deps) }()
+	go func() { defer wg.Done(); ocrWorker(ctx, deps) }()
+	go func() { defer wg.Done(); parserWorker(ctx, deps) }()
 
 	<-ctx.Done()
 	done := make(chan struct{})

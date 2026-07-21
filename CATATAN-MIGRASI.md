@@ -1,235 +1,244 @@
-# Catatan migrasi ke Postgres (2026-07-20)
+# Catatan arsitektur & migrasi (2026-07-21)
 
-Dokumen ini menjelaskan apa yang berubah, apa yang sudah **teruji sungguhan**,
-apa yang **belum bisa diuji** di lingkungan pembuatnya (dan kenapa), serta
-langkah yang perlu kamu lakukan sendiri. Ikuti pola `CATATAN-BUILD.md` yang
-sudah ada — jujur soal batas verifikasi, bukan basa-basi.
+Skema ini **menggantikan** versi sebelumnya. Hapus database lama, jalankan
+`schema.sql` di database kosong.
 
-## Ringkasan perubahan
+## Perubahan mendasar: dokumen sebagai pusat
 
-- **State pindah total ke Postgres.** Tidak ada lagi deteksi "sudah selesai"
-  lewat keberadaan file. Semua status hidup di kolom `documents.status`.
-- **Tidak ada file perantara sama sekali** kecuali PDF sumber (dipakai untuk
-  pratinjau) dan log. Teks OCR, catatan per halaman, dan hasil parse langsung
-  ke Postgres — tidak lewat `.txt`/`.json` dulu.
-- **Tiga worker independen** (`internal/pipeline`): downloader, OCR (satu
-  goroutine — model cuma boleh dipakai satu waktu), parser. Berkoordinasi
-  lewat `SELECT ... FOR UPDATE SKIP LOCKED`.
-- **Tidak ada flag CLI sama sekali.** Konfigurasi murni dari `.env` (6 kunci —
-  lihat `.env.example`). Aksi admin (reset/approve/reject/reparse) lewat SQL
-  langsung — lihat bagian di bawah.
-- **Parser berhenti di level Ayat** — huruf/angka dilipat ke teks Ayat induk,
-  bukan node terpisah.
-- **Gate kelayakan HANYA baca halaman 1** (bukan 5 halaman) — cek header resmi
-  (jenis + instansi + nomor + tahun) sesuai Lampiran II UU 12/2011, plus
-  kecocokan jurisdiksi terhadap sumbernya sendiri.
-- **Parser "smart"**: koreksi fuzzy (Levenshtein) untuk anchor struktural yang
-  typo (`Menimbing` → `Menimbang`), pembersihan watermark/URL JDIH,
-  penghapusan duplikasi "catchword" lintas-halaman, normalisasi ejaan lama
-  `Propinsi` → `Provinsi`.
+Sebelumnya identitas dokumen terikat pada sumbernya (`source_id` + `id_data`),
+dan metadata (judul/jenis/nomor/tahun) diambil dari JDIH. Sekarang:
 
-## Status verifikasi — baca ini sebelum menjalankan
+- **Downloader tidak mempercayai apa pun dari sumber kecuali tautannya.**
+  Judul, jenis, nomor, tahun dari JDIH diabaikan seluruhnya.
+- **`documents.download_url` UNIK.** Tautan yang sama dari sumber mana pun
+  hanya menghasilkan satu baris. Sumber pertama yang menemukannya dicatat di
+  `first_source_id` sebagai jejak, bukan identitas.
+- **Semua PDF di satu folder** (`data/pdf/`), nama berkas = SHA-256 isinya.
+  Berkas identik dari dua JDIH otomatis menjadi satu berkas fisik.
+- **Identitas peraturan dibaca dari halaman pertama dokumen** oleh model teks,
+  bukan dari metadata sumber.
+- **Tidak ada lagi pemeriksaan jurisdiksi.** Semua sumber dianggap tepercaya;
+  yang diperiksa hanya "ini peraturan atau bukan". Peraturan nasional yang
+  muncul di JDIH kabupaten tetap disimpan.
+
+## Alur
+
+```
+downloader:  daftar tautan (unik)  →  unduh  →  hash
+                                       ├─ hash sudah ada → status 'duplicate'
+                                       └─ baru           → status 'downloaded'
+
+ocr worker (satu goroutine, DUA model menempel):
+   OCR hal 1 → perbaiki hal 1 → klasifikasi (model teks, JSON)
+      ├─ bukan peraturan  → 'rejected'  (sisa halaman TIDAK di-OCR)
+      ├─ duplikat identitas → 'duplicate' (sisa halaman TIDAK di-OCR)
+      └─ lolos → OCR hal 2 → perbaiki hal 2 → ... → 'ocr_done'
+
+parser worker: 'ocr_done' → nodes + parse_snapshot → 'parsed'
+```
+
+Urutan **berurutan per halaman** (OCR → perbaiki → OCR → perbaiki) supaya
+kemajuan terpantau per halaman di UI dan dokumen yang gugur di halaman 1
+langsung ditinggalkan. Kedua model dimuat **sekali** dan dilepas **bersamaan**
+hanya ketika antrian habis — tidak ada bongkar-pasang model per halaman.
+
+## Tiga lapis teks per halaman
+
+| Kolom | Isi | Ditimpa? |
+|---|---|---|
+| `ocr_text` | mentah dari model visi | **tidak pernah** |
+| `fixed_text` | hasil perbaikan model teks | ya, tiap kali diproses ulang |
+| `edited_text` | koreksi manusia dari UI | hanya oleh manusia |
+
+Parser membaca `COALESCE(edited_text, fixed_text, ocr_text)`.
+
+**Diff tidak disimpan** — dihitung saat dibutuhkan oleh UI dari `ocr_text` dan
+`fixed_text` (data turunan cepat basi begitu `edited_text` berubah). Yang
+disimpan hanya `fix_ops_count` (berapa bagian yang diubah model) untuk
+keperluan dashboard, dan `prompt_hash` (versi prompt yang dipakai).
+
+Saran format untuk UI: render diff sebagai daftar operasi, bukan HTML di
+database —
+`[{"op":"same","text":"..."},{"op":"del","text":"..."},{"op":"ins","text":"..."}]`
+sehingga UI bebas memilih tampilan inline atau berdampingan tanpa mengubah data.
+
+## Model teks tidak pernah memerintah aplikasi
+
+Teks OCR berasal dari dokumen di internet, jadi diperlakukan sebagai masukan
+**tak tepercaya**. Model hanya mengembalikan satu objek JSON berskema tetap;
+kode Go yang memutuskan apa yang di-update. Nilai divalidasi sebelum dipakai:
+
+- `nomor` harus cocok `^[0-9]{1,4}[A-Za-z]?$`, `tahun` harus 4 digit wajar —
+  bila tidak, dikosongkan (bukan dipercaya)
+- `struktur` di luar `pasal_ayat`/`diktum` menjadi `unknown`
+- Jawaban yang bukan JSON menjadi galat, bukan diterima diam-diam
+- Identitas tidak lengkap → `canonical_key` kosong → pemeriksaan duplikat
+  dilewati (lebih baik memproses dua kali daripada membuang dokumen sah)
+
+Untuk perbaikan halaman: bila model gagal, mengembalikan kosong, atau hasilnya
+menyusut di bawah 60% panjang aslinya (indikasi meringkas), hasilnya
+**dibuang** dan teks OCR mentah yang dipakai.
+
+## Prompt dapat disunting
+
+`prompts/classify.md` dan `prompts/fix_page.md` dibaca saat start. Ubah isinya,
+restart service — tidak perlu build ulang. Sidik jarinya tersimpan di
+`document_pages.prompt_hash`, jadi Anda bisa mencari halaman mana yang masih
+diproses dengan prompt versi lama.
+
+`fix_page.md` sengaja memuat larangan tegas: jangan mengubah angka apa pun,
+jangan mengubah kata yang tidak dikenal (Qanun, Reusam, Keuchik, Propinsi,
+Atjeh, Dati II), jangan menambah/menghapus/meringkas.
+
+## Status verifikasi
 
 | Bagian | Status |
 |---|---|
-| `schema.sql` (termasuk trigger cascade) | **Dijalankan sungguhan** di Postgres 16 + pgvector nyata — instal penuh dari nol berulang kali, plus tes trigger (pindah Pasal antar-BAB, pindah Bagian 4 tingkat, insert gaya-store dan gaya-UI) |
-| **Seluruh SQL di `internal/store`** | **Setiap query diuji VERBATIM** terhadap Postgres nyata lewat PREPARE/EXECUTE, berurutan mengikuti alur pipeline: daftar sumber → upsert dokumen (idempoten) → claim download → mark downloaded → claim OCR (subselect instansi) → save page ×3 + upsert ulang → HasPage/ReadPageRange → ApplyHeaderResult (cabang terima / tolak / review_manual) → MarkOCRDone → ClaimForParse → transaksi ReplaceParseResult (delete+snapshot+insert pohon, label flat terisi otomatis oleh trigger) → alur reparse (edit teks → klaim ulang → flag terhapus) → approve/reset → MarkDownloadFailed & MarkOCRFailed (termasuk batas percobaan) → InsertRelation. **Semua lulus.** Yang belum teruji hanyalah pgx sebagai *driver* (pemanggilan dari Go) — SQL-nya sendiri sudah terbukti benar |
-| `internal/parser` + `internal/extractor` + `mapNodesToInserts` | **Tes integrasi bertahap sungguhan** (`go test`, model OCR & raster diganti stub yang mengembalikan teks Perda realistis 3 halaman): (1) jalur terima — 3 halaman tersimpan, header terbaca benar; (2) jalur tolak jurisdiksi lain — HANYA halaman 1 di-OCR; (3) jalur tolak naskah akademik; (4) resume per-halaman; (5) parse → pohon node: parent benar (Pasal→BAB, Ayat→Pasal), Label terisi, penjelasan tidak nyebrang parent ke batang tubuh, StartPage benar, urutan insert valid |
-| `internal/config`, `internal/downloader` | Compile bersih standalone |
-| `internal/localllm`, `internal/raster` | Tidak bisa di-build di sandbox (CGo + yzma Go≥1.26) — type-check lewat stub; **tidak diubah sesi ini** kecuali pemanggilan dari extractor |
-| `main.go`, `internal/pipeline` | Type-check + `go vet` bersih; logic worker teruji lewat tes integrasi di atas; loop worker sungguhan (goroutine + polling DB) belum pernah dijalankan menempel Postgres |
+| `schema.sql` + trigger label | **Dijalankan sungguhan** di Postgres 16 + pgvector; trigger diuji (label flat terisi otomatis, cascade ke anak/cucu) |
+| **Seluruh SQL `internal/store`** | **Diuji VERBATIM** terhadap Postgres nyata lewat PREPARE/EXECUTE, berurutan mengikuti alur: daftar tautan (2 sumber → 1 baris) → unduh → duplikat-hash → klaim OCR (duplikat tidak ikut terklaim) → simpan halaman + fixed_text + prioritas teks → metadata → duplikat-identitas → tolak bukan-peraturan → ocr_done → parse → nodes → kegagalan & batas percobaan → relations. **Semua asersi lulus.** |
+| `internal/pipeline/thinking.go` | **Diuji `go test`**: JSON terbungkus markdown tetap terbaca, nilai ngawur ditolak, jawaban non-JSON jadi galat, hasil perbaikan yang meringkas ditolak, ejaan lama disamakan di canonical key |
+| `internal/downloader` | **Diuji**: normalisasi URL mempertahankan param identitas (`?id=`), membuang sampah analitik, urutan param tidak berpengaruh |
+| `internal/parser` | Suite regresi sebelumnya tetap hijau |
+| `internal/localllm/text.go` | **Type-check bersih terhadap API yzma v1.19.0 YANG ASLI** (bukan stub): sumber yzma diunduh, disalin ke modul lokal go1.22, lalu `go build`+`go vet` dijalankan atas localllm — lulus. Perilaku runtime (memuat model sungguhan) tetap belum diuji |
+| `main.go`, worker loop | Type-check + `go vet` bersih; loop nyata menempel Postgres belum dijalankan |
 
-### Bug NYATA yang ditemukan & diperbaiki oleh tes bertahap ini
+**Kirimkan galat kompilasi/runtime apa pun** — perbaikan kemungkinan besar
+terbatas di satu berkas.
 
-1. **`Label` tidak pernah diisi** di `mapNodesToInserts` — padahal trigger DB
-   menghitung semua label flat dari `NEW.label`. Tanpa perbaikan ini, parse
-   pertama di produksi menghasilkan `bab_number`/`pasal_number` NULL semua.
-2. **Pergantian section tidak me-reset tracker parent** — Pasal di
-   penjelasan_pasal akan salah-parent ke BAB terakhir batang tubuh.
-3. **OCR gagal mengembalikan status ke `pending`** (via MarkDownloadFailed) —
-   dokumen diunduh ulang sia-sia. Ditambah `MarkOCRFailed` yang kembali ke
-   `downloaded` saja.
-4. **`StructureType` selalu "unknown"** — `rePasalAnywhere` ber-anchor awal
-   baris tapi dipanggil pada teks yang sudah diratakan (newline dibuang).
-5. **Trigger belum menangani `ayat`** — insert Ayat dari UI (cuma set label)
-   akan meninggalkan `ayat_number` NULL. Trigger dilengkapi.
+### Koreksi API yzma (setelah user mengirim contoh resmi jalur teks)
 
-**Kalau ada galat kompilasi atau runtime saat kamu `go build`/jalankan**,
-kirim pesan galatnya — perbaikannya kemungkinan besar terbatas di satu berkas
-saja (pola yang sama seperti kasus yzma sebelumnya).
+Contoh resmi yzma untuk model teks membongkar tiga kekeliruan yang tidak
+terlihat lewat stub:
 
-## Langkah menjalankan
+1. **`llama.Tokenize` mengembalikan `[]Token` saja, tanpa galat.** Kode semula
+   menulis `tokens, err := llama.Tokenize(...)` — pasti gagal kompilasi.
+2. **Posisi token tidak boleh diatur manual.** `BatchGetOne` mendokumentasikan
+   bahwa "posisi token dilacak otomatis oleh Decode"; penyetelan `batch.Pos`
+   dihapus dari jalur teks, mengikuti pola contoh resmi (Decode di awal
+   perulangan, lalu Sample, lalu batch baru dari token hasil).
+3. **Bug laten yang ditemukan saat memeriksa:** `text.go` punya blok
+   `sync.Once` sendiri yang HANYA memuat `llama`, tanpa `mtmd`. Karena
+   `libsOnce` dipakai bersama, klien mana pun yang kebetulan memuat lebih dulu
+   menentukan pustaka yang tersedia — bila model teks menang, model visi rusak
+   dengan galat menyesatkan. Kini keduanya melewati satu fungsi `loadLibs()`
+   yang memuat llama + mtmd sekaligus.
 
-1. `psql -d uuparser < schema.sql` (di database kosong)
-2. Daftarkan sumber JDIH secara manual (belum ada UI untuk ini):
-   ```sql
-   INSERT INTO sources (code, endpoint_url, hostname, source_type,
-                         jurisdiction_level, instansi_name)
-   VALUES ('acehbarat', 'http://jdih.acehbaratkab.go.id/integrasi',
-           'jdih.acehbaratkab.go.id', 'integrasi', 'kabupaten',
-           'Kabupaten Aceh Barat');
-   ```
-   `instansi_name` HARUS persis sama seperti yang tertulis di kepala dokumen
-   resmi sumber itu (lihat `internal/parser/header.go` — exact match, bukan
-   `Contains`).
-3. Isi `.env` (contoh di `.env.example`) — minimal `DATABASE_URL`,
-   `MODEL_PATH`, `MMPROJ_PATH`, `LIB_PATH`.
-4. `go mod tidy && go build .`
-5. Jalankan `./uuparser` — tidak ada flag, langsung baca `.env` di direktori
-   kerja.
+### Koreksi kedua dari contoh chat resmi yzma
 
-## Perubahan status manual lewat SQL (pengganti flag CLI yang dihapus)
+Contoh sesi chat resmi menemukan **bug yang akan membuat proses panic**:
 
-Semua ini sengaja SQL langsung, bukan CLI — biar kamu (atau nanti UI web)
-pakai jalur yang sama persis.
+- **`ChatApplyTemplate` mengembalikan UKURAN YANG DIBUTUHKAN, bukan jumlah byte
+  yang tertulis.** Bila lebih besar dari buffer, isi buffer tidak lengkap dan
+  pemanggil wajib memperbesar lalu mengulang. Kode semula langsung melakukan
+  `buf[:n]` — yang panic "slice out of range" begitu hasilnya melebihi buffer.
+  Ini bukan kemungkinan teoretis: jalur teks mengirim satu halaman peraturan
+  penuh beserta prompt sistem, yang dengan mudah melewati 8 KB. Kini keduanya
+  (visi dan teks) memakai `applyChatTemplate()` yang memperbesar buffer sesuai
+  ukuran yang diminta llama.cpp lalu mengulang.
+- **`TokenToPiece(..., special=false)`** pada jalur teks, mengikuti contoh
+  chat resmi: token kontrol tidak lagi dirender menjadi teks biasa sehingga
+  tidak bocor ke hasil perbaikan.
 
-**Lihat progres cepat:**
-```sql
-SELECT status, count(*) FROM documents GROUP BY status ORDER BY count(*) DESC;
+### Tampilan kemajuan
+
+Log unduhan dihapus dari konsol (statusnya tetap terlihat di database);
+hanya kegagalan yang dicatat. Baris kemajuan OCR kini
+`[sudah diperbaiki / sudah di-OCR / total halaman]`, dan **dimulai dari
+`[0/0/N]` sebelum halaman pertama dikerjakan**:
+
+```
+   [0/0/12] hal 1 · menyiapkan halaman                       0%
+   [0/0/12] hal 1 · 1029x1945 px · menyandikan gambar        0%
+   [0/0/12] hal 1 · 1029x1945 px · 128 token · 47s           0%
+   [0/1/12] hal 1 · 1029x1945 px · dipotong -48% · 1m12s     0%
+   [1/1/12] hal 1 · diperbaiki                               8%
+   [1/1/12] hal 2 · menyiapkan halaman                       8%
 ```
 
-**Retry dokumen yang gagal (reset ke pending, hapus jejak percobaan):**
+Tiga hal yang membuatnya berguna:
+
+- **Mulai dari `[0/0/N]`.** Dokumen langsung terlihat dimulai beserta jumlah
+  halamannya, tidak menunggu halaman pertama selesai.
+- **Tahap dilaporkan selama OCR berjalan.** Penyandian gambar adalah bagian
+  paling lambat dan terjadi sebelum token pertama keluar; tanpa laporan tahap,
+  konsol diam beberapa menit dan proses tampak macet padahal normal. Ini juga
+  alat pemilah: macet di "menyandikan gambar" dengan dimensi sebesar halaman
+  penuh berarti pemotongan margin gagal; dimensi kecil tapi jumlah token terus
+  naik berarti model mengoceh (turunkan batas token).
+- **Angka pertama tertinggal satu langkah** — halaman di-OCR dulu, baru
+  diperbaiki. Bila angka pertama berhenti bergerak sementara angka kedua terus
+  naik, yang bermasalah tahap perbaikan, bukan OCR-nya.
+
+## Catatan RAM
+
+Model visi + model teks menempel bersamaan selama antrian belum habis. Pada
+mesin 8 GB ini ketat: periksa ukuran `ocr.gguf` + `mmproj` Anda; bila totalnya
+dengan `thinking.gguf` mendekati 6 GB, KV cache dan MuPDF (render A4 200 DPI)
+bisa membuatnya melewati batas. Bila terjadi OOM, jalan keluar tercepat adalah
+menurunkan kuantisasi model teks.
+
+Satu perbaikan penting menyertai perubahan ini: `Release()` tidak lagi
+memanggil `llama.Close()`. Backend llama.cpp dipakai **bersama** kedua model,
+sehingga membebaskannya saat salah satu model dilepas akan merusak model yang
+lain. Pembebasan backend kini hanya di `localllm.Shutdown()`, dipanggil sekali
+saat proses berakhir.
+
+## Perubahan status manual lewat SQL
+
 ```sql
-UPDATE documents
-SET status = 'pending', attempts = 0, last_error = NULL, updated_at = now()
-WHERE id = '<uuid>';
+-- Ringkasan kemajuan
+SELECT status, count(*) FROM documents GROUP BY status ORDER BY 2 DESC;
+
+-- Dokumen yang ditolak/duplikat beserta alasannya
+SELECT id, download_url, status, reject_reason, jenis, instansi, nomor, tahun
+FROM documents WHERE status IN ('rejected','duplicate') ORDER BY updated_at DESC;
+
+-- Coba lagi dokumen yang gagal (kembali ke awal: unduh ulang)
+UPDATE documents SET status='pending', attempts=0, last_error=NULL WHERE id='<uuid>';
+
+-- Proses ulang OCR tanpa unduh ulang (berkas sudah ada)
+DELETE FROM document_pages WHERE document_id='<uuid>';
+UPDATE documents SET status='downloaded', attempts=0 WHERE id='<uuid>';
+
+-- Batalkan tanda "bukan peraturan"/"duplikat" (Anda menilai model salah)
+UPDATE documents SET status='downloaded', reject_reason=NULL, duplicate_of=NULL,
+       is_peraturan=NULL, attempts=0 WHERE id='<uuid>';
+
+-- Parse ulang saja (OCR & perbaikan dipertahankan)
+UPDATE documents SET status='ocr_done' WHERE id='<uuid>';
+
+-- Setelah mengoreksi teks OCR lewat UI, minta parse ulang
+UPDATE document_pages SET edited_text='<teks koreksi>', is_edited=true, edited_at=now()
+WHERE document_id='<uuid>' AND page_number=<n>;
+UPDATE documents SET status='ocr_done' WHERE id='<uuid>';
+
+-- Halaman yang diproses dengan prompt versi lama
+SELECT document_id, page_number FROM document_pages WHERE prompt_hash <> '<hash_baru>';
+
+-- Halaman yang paling banyak diubah model (kandidat tinjauan manusia)
+SELECT document_id, page_number, fix_ops_count FROM document_pages
+ORDER BY fix_ops_count DESC NULLS LAST LIMIT 20;
 ```
 
-**Setujui dokumen berstatus `review_manual`** (biasanya dokumen sebelum
-UU 12/2011 — kamu sudah baca halaman 1-nya dan yakin ini memang peraturan
-sumber ini) — lanjutkan OCR dari halaman 2:
-```sql
-UPDATE documents SET status = 'ocr_in_progress', updated_at = now()
-WHERE id = '<uuid>' AND status = 'review_manual';
-```
+**Mengosongkan semua data kecuali `sources`:** jalankan `reset_data.sql`.
 
-**Tolak dokumen `review_manual`:**
-```sql
-UPDATE documents
-SET status = 'rejected', reject_reason = 'manual_reject', updated_at = now()
-WHERE id = '<uuid>' AND status = 'review_manual';
-```
+## Berkas yang DIHAPUS — hapus juga di tempat Anda
 
-**Minta reparse** (setelah kamu edit `document_pages.edited_text` untuk
-memperbaiki OCR yang salah) — parser worker akan mengambilnya di putaran
-berikutnya, MENIMPA total `nodes` yang ada untuk dokumen ini:
-```sql
-UPDATE document_pages
-SET edited_text = '<teks yang sudah dikoreksi>', is_edited = true, edited_at = now()
-WHERE document_id = '<uuid>' AND page_number = <n>;
+- `internal/state/` (folder)
+- `internal/pipeline/pagestore.go`
+- `catter_go.txt`
+- Database lama beserta seluruh tabelnya (skema baru tidak kompatibel)
 
-UPDATE documents SET reparse_requested_at = now() WHERE id = '<uuid>';
-```
+## Berkas BARU
 
-**Lihat dokumen yang macet/gagal:**
-```sql
-SELECT id, slug, status, attempts, last_error FROM documents
-WHERE status IN ('failed', 'rejected') ORDER BY updated_at DESC LIMIT 20;
-```
+- `schema.sql` (menggantikan yang lama), `reset_data.sql`
+- `prompts/classify.md`, `prompts/fix_page.md`
+- `internal/prompts/prompts.go`
+- `internal/localllm/text.go`
+- `internal/pipeline/thinking.go`
 
-## Batasan yang perlu diketahui (bukan bug tersembunyi, tapi belum sempurna)
-
-- **`mapNodesToInserts`** kini teruji lewat tes integrasi (pohon multi-BAB,
-  penjelasan terpisah, invarian urutan insert) — tapi tetap terhadap teks
-  sintetis, bukan hasil OCR dokumen ASLI. Kalau `nodes.parent_id` terlihat
-  aneh setelah parse dokumen nyata pertama, kirim `document_pages.ocr_text`-nya.
-- **Watermark/URL stripping, koreksi fuzzy anchor, dan dedup catchword**
-  lintas-halaman semuanya HEURISTIK yang sengaja dibuat KONSERVATIF (lebih
-  suka tidak menyentuh daripada salah menghapus konten asli). Kalau ternyata
-  korpus nyata kamu punya pola lain yang belum tertangkap, kirim contoh
-  `document_pages.ocr_text` yang bermasalah — akan saya sesuaikan pola
-  regex/heuristiknya, bukan ditambah LLM.
-- **Cross-page dedup HANYA menangani kasus PERSIS** (baris akhir halaman N
-  adalah prefiks utuh baris awal halaman N+1). Overlap yang tidak persis
-  sengaja TIDAK disentuh — lihat komentar di `internal/parser/stitch.go`.
-- **pgx sebagai driver & loop worker sungguhan** belum pernah dijalankan
-  menempel Postgres (SQL-nya sendiri sudah diuji verbatim, lihat tabel di
-  atas) — sumber galat pertama paling mungkin saat kamu jalankan.
-
-## Tanggapan review eksternal (20 poin — diperiksa satu per satu terhadap kode)
-
-**Diperbaiki (valid):**
-- **#2** ApplyHeaderResult kini HANYA dipanggil bila gate benar-benar berjalan
-  (sukses/ditolak) — kegagalan OCR transien tidak lagi bisa menolak dokumen
-  secara keliru. Ini temuan paling penting dari review.
-- **#4** `SourceConfigRaw` kini ikut diteruskan di `processOneDownload`.
-- **#5** `inkRatio`/`croppedPct`/`durationMS` kini mengalir lewat interface
-  `PageStore` sampai tersimpan di `document_pages` (sebelumnya dihitung lalu
-  dibuang) — teruji di suite integrasi.
-- **#6** `main()` → `run() int` supaya semua `defer` (tutup pool DB, log)
-  tetap dijalankan sebelum keluar.
-- **#7** Cek `ctx.Err()` sebelum percobaan-ulang OCR (shutdown lebih sigap).
-- **#8** `reHuruf` kini menerima SATU huruf kapital ("A." hasil OCR
-  semua-kapital), dinormalisasi ke kecil; dua-huruf-kapital sengaja ditolak
-  agar angka Romawi ("IV.") tidak salah tangkap — modifikasi dari usulan review.
-- **#9** `reHrefPDF` diketatkan: `.pdf` harus di akhir path (boleh diikuti
-  query), bukan "file.pdf.html".
-- **#11** Nilai env variable dipangkas whitespace-nya.
-- **#12** Konstanta percobaan diganti nama jadi `maxAttempts` dengan komentar
-  cakupan (unduh + OCR).
-- **#15** Komentar yatim `PagePNGMax`/downscaling (sisa era MAX_PX) dihapus.
-- **#16** `pipeline.Run` kini menunggu worker maksimal 30 detik saat shutdown,
-  lalu keluar eksplisit dengan log (bukan menggantung menunggu SIGKILL).
-- **#17** Komentar "BELUM DIUJI" di `mapNodesToInserts` diperbarui — sudah
-  teruji integrasi sejak sesi tes bertahap.
-- **#19** Kata `berlaku` berdiri-sendiri dihapus dari `reTentangTail` — judul
-  sah "…Masa Berlaku Izin…" tidak lagi terpotong (ada test regresinya).
-
-**Tidak diubah (tidak valid / tidak diambil, dengan alasan):**
-- **#1** `llama.Close()` di yzma BUKAN unload pustaka — diverifikasi langsung
-  dari sumber yzma v1.19.0 (`pkg/llama/loader.go`): `Close()` = `BackendFree()`
-  + unload backend GGML, dan `ensureLoaded()` selalu memanggil `llama.Init()`
-  lagi (yang me-reload backend) sebelum tiap load model. Pasangan Init/Close
-  simetris per-load; `libsOnce` hanya menjaga dlopen yang memang tak pernah
-  di-unload. Klaim "menghancurkan load berikutnya" keliru.
-- **#3** `sources.instansi_name` adalah `NOT NULL` dan `documents.source_id`
-  ber-FK ke `sources` — subselect tidak bisa menghasilkan NULL. COALESCE tidak
-  diperlukan.
-- **#10** `reWatermark` hanya cocok pada baris SATU token (tanpa spasi) —
-  kedua contoh review ("Lembaran Negara go.id", "UU No. 5 …, lihat www…")
-  mengandung spasi dan TIDAK cocok. Usulan perbaikannya justru mewajibkan
-  prefiks `www.`/`https://` sehingga watermark domain telanjang
-  ("jdih.acehprov.go.id") lolos — regresi.
-- **#13** Batch insert node: pemetaan parent butuh `RETURNING id` berurutan
-  (anak menunjuk id parent yang baru terbit); jumlah node per dokumen kecil
-  (ratusan), transaksi lokal — belum layak kompleksitasnya.
-- **#14** Konfigurasi pool pgx: default pgxpool memadai untuk 3 worker; sejalan
-  sikap proyek "jangan bikin tombol yang jawabannya sudah pasti".
-- **#18** Rotasi log 1 backup cukup — jejak audit yang sesungguhnya ada di
-  Postgres, `error.log` murni operasional.
-- **#20** Endpoint health: di luar cakupan binari ini; UI web mendatang (atau
-  `systemd` journal + status DB) yang jadi tempat pemantauan.
-
-## Berkas yang DIHAPUS sejak sesi ini — hapus juga di tempatmu
-
-- `internal/state/` (seluruh folder, `state.go`) — retry sepenuhnya di kolom
-  `documents.attempts`/`last_error`
-- `catter_go.txt` — dump kode lama, sudah tidak representatif
-
-Berkas lain semuanya DIGANTI ISINYA (copy-paste/replace langsung aman):
-`main.go`, `schema.sql` (baru), `CATATAN-MIGRASI.md` (baru), `.env.example`,
-`README.md` (hanya tambah peringatan di atas), seluruh `internal/config`,
-`internal/downloader` (+ `source.go`, `integrasi_source.go` baru),
-`internal/extractor/extractor.go`, `internal/parser` (+ `line.go`,
-`header.go`, `fuzzyfix.go` baru), `internal/store/` (baru),
-`internal/pipeline/` (baru: `pipeline.go`, `downloader_worker.go`,
-`ocr_worker.go`, `parser_worker.go`, `pagestore.go`, `util.go`).
-`internal/localllm`, `internal/raster`, `internal/logx`, `internal/fsutil`,
+Selebihnya diganti isinya: `main.go`, `.env.example`, `internal/config`,
+`internal/downloader`, `internal/extractor/extractor.go`, `internal/store`,
+`internal/pipeline/*`, `internal/localllm/localllm.go`.
+`internal/parser`, `internal/raster`, `internal/logx`, `internal/fsutil`,
 `go.mod`, `go.sum` tidak berubah.
-
-## Yang dihapus dari desain lama
-
-- Semua flag CLI (`-env`, `-once`, `-render`, `-render-out`, `-limit`,
-  `-ids`, dan rencana `-reset-id`/`-approve-id`/`-reject-id` yang sempat
-  dirancang tapi tidak jadi dipakai — semua jadi SQL manual di atas)
-- `PROBE_PAGES`, `DOWNLOAD_FIRST`, `SAVE_PNG`/`DEBUG_CROP`, `OCR_PROMPT`,
-  `OCR_MAX_TOKENS`, `DPI`, `AUTO_CROP`, `BLANK_INK`, `DELAY_MS`,
-  `MAX_ATTEMPTS`, `INTERVAL`, `ENDPOINTS` sebagai kunci `.env` — semua jadi
-  konstanta di kode (lihat `internal/pipeline/*_worker.go` dan
-  `internal/extractor/extractor.go`)
-- `internal/state` (dua kali dihapus — sempat dikembalikan sebentar karena
-  masih dipakai `extractor.go` versi lama, sekarang benar-benar tidak
-  dipakai lagi karena retry sepenuhnya di kolom `documents.attempts`)
-- Semua penulisan file `.txt`/`.json` perantara (`ocr/<slug>/pageN.txt`,
-  `json/<slug>.json`, `_rejected.json`, `_page_notes.json`,
-  `_last_run.json`, `integrasi.json` mentah)

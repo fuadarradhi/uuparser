@@ -1,19 +1,13 @@
 // Command uuparser adalah service yang menjaga agar setiap peraturan baru pada
-// sumber JDIH terdaftar otomatis terunduh, di-OCR, lalu di-parse menjadi baris
-// siap ditinjau/diedit di database Postgres.
+// sumber JDIH terdaftar otomatis terunduh, di-OCR, diperbaiki, lalu diurai
+// menjadi baris siap ditinjau di database Postgres.
 //
-// Tidak ada flag CLI: konfigurasi hanya lewat .env (DATABASE_URL, MODEL_PATH,
-// MMPROJ_PATH, LIB_PATH, LOG_DIR, DATA_DIR, VERBOSE — lihat internal/config).
-// Aksi admin sesaat (reset/approve/reject dokumen) dilakukan lewat SQL
-// langsung — lihat CATATAN-MIGRASI.md bagian "Perubahan status manual".
-//
-// Arsitektur tiga-worker (downloader/OCR/parser independen, berkoordinasi
-// lewat Postgres) ada di internal/pipeline; main.go hanya menyiapkan
-// dependency (config, log, DB, model) lalu memanggil pipeline.Run.
+// Tidak ada flag CLI: konfigurasi hanya lewat .env. Aksi admin (reset/hapus
+// tanda duplikat/parse ulang) dilakukan lewat SQL langsung — lihat
+// CATATAN-MIGRASI.md.
 //
 // Pola main() -> run() int dipakai supaya SEMUA defer tetap dijalankan
-// sebelum proses keluar — os.Exit langsung di tengah main melewati defer
-// (pool DB tidak tertutup bersih). (Temuan review eksternal, valid.)
+// sebelum proses keluar (os.Exit di tengah main melewati defer).
 package main
 
 import (
@@ -27,12 +21,11 @@ import (
 	"github.com/fuadarradhi/uuparser/internal/localllm"
 	"github.com/fuadarradhi/uuparser/internal/logx"
 	"github.com/fuadarradhi/uuparser/internal/pipeline"
+	"github.com/fuadarradhi/uuparser/internal/prompts"
 	"github.com/fuadarradhi/uuparser/internal/store"
 )
 
-func main() {
-	os.Exit(run())
-}
+func main() { os.Exit(run()) }
 
 func run() int {
 	cfg, err := config.Load(".env")
@@ -46,6 +39,14 @@ func run() int {
 	}
 	defer logx.Close()
 	logx.Info("log galat: %s", logx.ErrorLogPath())
+
+	// Prompt dibaca dari disk saat start supaya dapat disunting tanpa
+	// membangun ulang binari; sidik jarinya ikut disimpan per halaman.
+	pset, err := prompts.Load(cfg.PromptDir)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "error prompt:", err)
+		return 1
+	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -64,16 +65,32 @@ func run() int {
 	}
 	defer st.Close()
 
-	model, err := localllm.New(localllm.Config{
+	vision, err := localllm.New(localllm.Config{
 		ModelPath: cfg.ModelPath, MMProjPath: cfg.MMProjPath,
 		LibPath: cfg.LibPath, Verbose: cfg.Verbose,
 	})
 	if err != nil {
-		logx.Fatal("", "menyiapkan model: %v", err)
+		logx.Fatal("", "menyiapkan model OCR: %v", err)
 		return 1
 	}
-	defer model.Release()
+	defer vision.Release()
 
-	pipeline.Run(ctx, cfg, st, model)
+	text, err := localllm.NewText(localllm.TextConfig{
+		ModelPath: cfg.ThinkingPath, LibPath: cfg.LibPath, Verbose: cfg.Verbose,
+	})
+	if err != nil {
+		logx.Fatal("", "menyiapkan model teks: %v", err)
+		return 1
+	}
+	defer text.Release()
+
+	// Backend llama.cpp dipakai bersama kedua model, jadi hanya dibebaskan
+	// di sini — setelah kedua Release di atas dijalankan.
+	defer localllm.Shutdown()
+
+	pipeline.Run(ctx, pipeline.Deps{
+		Store: st, Vision: vision, Text: text,
+		Prompts: pset, DataDir: cfg.DataDir, DPI: cfg.DPI,
+	})
 	return 0
 }

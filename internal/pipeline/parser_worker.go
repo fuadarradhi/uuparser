@@ -12,7 +12,8 @@ import (
 
 const parserIdleInterval = 15 * time.Second
 
-func parserWorker(ctx context.Context, st *store.Store) {
+func parserWorker(ctx context.Context, deps Deps) {
+	st := deps.Store
 	for {
 		if ctx.Err() != nil {
 			return

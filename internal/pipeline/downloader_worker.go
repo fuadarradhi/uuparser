@@ -5,37 +5,36 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/fuadarradhi/uuparser/internal/config"
 	"github.com/fuadarradhi/uuparser/internal/downloader"
 	"github.com/fuadarradhi/uuparser/internal/fsutil"
 	"github.com/fuadarradhi/uuparser/internal/logx"
 	"github.com/fuadarradhi/uuparser/internal/store"
 )
 
-// Nilai tetap — bukan config, karena jawabannya sudah pasti (permintaan user
-// 2026-07-20: jangan bikin tombol untuk sesuatu yang tidak akan pernah diubah).
+// Nilai tetap — bukan pengaturan, karena jawabannya sudah pasti.
 const (
-	downloaderRegisterInterval = 2 * time.Minute // seberapa sering cek dokumen baru per sumber
+	downloaderRegisterInterval = 2 * time.Minute
 	downloaderDelay            = 1500 * time.Millisecond
 	downloaderMaxRetries       = 3
 	downloaderHTTPTimeout      = 120 * time.Second
 
-	// maxAttempts berlaku untuk unduh DAN OCR (dipakai lintas worker di
-	// package ini): setelah sekian kegagalan, dokumen berstatus 'failed'
-	// dan tidak dicoba lagi sampai di-reset manual lewat SQL.
+	// maxAttempts berlaku untuk unduh DAN OCR: setelah sekian kegagalan
+	// dokumen berstatus 'failed' dan tidak dicoba lagi sampai di-reset
+	// manual lewat SQL.
 	maxAttempts = 3
 )
 
-// downloaderWorker mendaftarkan dokumen baru dari tiap sumber lalu mengunduh
-// PDF untuk yang berstatus 'pending'. Berjalan independen dari OCR/parser —
-// PDF baru selalu siap sebelum OCR sempat memintanya.
-func downloaderWorker(ctx context.Context, cfg config.Config, st *store.Store) {
+// downloaderWorker HANYA mengumpulkan tautan dan mengunduh berkasnya. Ia
+// tidak menyimpan judul/jenis/tahun dari sumber sama sekali — seluruh
+// identitas peraturan dibaca belakangan dari halaman pertama berkas oleh
+// model teks (keputusan 2026-07-21: jangan percaya metadata sumber).
+func downloaderWorker(ctx context.Context, deps Deps) {
 	for {
 		if ctx.Err() != nil {
 			return
 		}
-		registerNewDocuments(ctx, st)
-		drainDownloads(ctx, cfg, st)
+		registerNewURLs(ctx, deps)
+		drainDownloads(ctx, deps)
 
 		select {
 		case <-ctx.Done():
@@ -45,14 +44,15 @@ func downloaderWorker(ctx context.Context, cfg config.Config, st *store.Store) {
 	}
 }
 
-func dlConfig() downloader.Config {
+func dlConfig(endpoint string) downloader.Config {
 	return downloader.Config{
-		Delay: downloaderDelay, MaxRetries: downloaderMaxRetries, HTTPTimeout: downloaderHTTPTimeout,
+		Endpoint: endpoint, Delay: downloaderDelay,
+		MaxRetries: downloaderMaxRetries, HTTPTimeout: downloaderHTTPTimeout,
 	}
 }
 
-func registerNewDocuments(ctx context.Context, st *store.Store) {
-	rows, err := st.ListSources(ctx)
+func registerNewURLs(ctx context.Context, deps Deps) {
+	rows, err := deps.Store.ListSources(ctx)
 	if err != nil {
 		logx.Warn("downloader: daftar sumber: %v", err)
 		return
@@ -61,12 +61,10 @@ func registerNewDocuments(ctx context.Context, st *store.Store) {
 		if ctx.Err() != nil {
 			return
 		}
-		cfg := dlConfig()
-		cfg.Endpoint = row.EndpointURL
 		src, err := downloader.NewSource(downloader.SourceRow{
 			Code: row.Code, EndpointURL: row.EndpointURL, SourceType: row.SourceType,
 			SourceConfigRaw: row.SourceConfigRaw,
-		}, cfg)
+		}, dlConfig(row.EndpointURL))
 		if err != nil {
 			logx.Warn("downloader: %v", err)
 			continue
@@ -76,25 +74,31 @@ func registerNewDocuments(ctx context.Context, st *store.Store) {
 			logx.Warn("downloader: sumber %s tak terjangkau (%v) — dicoba lagi nanti", row.Code, err)
 			continue
 		}
-		n := 0
+		baru := 0
 		for _, d := range docs {
-			slug := downloader.Slug(downloader.Record{IDData: d.IDData, FileDownload: d.Meta["file_download"]})
-			if err := st.UpsertDocumentMeta(ctx, row.IDStr, d.IDData, d.Judul, slug, d.FileURL); err != nil {
-				logx.Warn("downloader: daftar %s: %v", d.IDData, err)
+			isNew, err := deps.Store.RegisterURL(ctx, row.IDStr, d.FileURL)
+			if err != nil {
+				logx.Warn("downloader: daftar tautan: %v", err)
 				continue
 			}
-			n++
+			if isNew {
+				baru++
+			}
 		}
-		logx.Info("downloader: %s — %d dokumen diperiksa dari sumber", row.Code, n)
+		// Sengaja tanpa log per-sumber saat tidak ada tautan baru: unduhan
+		// bukan tahap yang perlu dipantau di konsol (permintaan user).
+		if baru > 0 {
+			logx.Info("%s: %d tautan baru", row.Code, baru)
+		}
 	}
 }
 
-func drainDownloads(ctx context.Context, cfg config.Config, st *store.Store) {
+func drainDownloads(ctx context.Context, deps Deps) {
 	for {
 		if ctx.Err() != nil {
 			return
 		}
-		job, err := st.ClaimForDownload(ctx)
+		job, err := deps.Store.ClaimForDownload(ctx)
 		if err == store.ErrNoWork {
 			return
 		}
@@ -102,50 +106,36 @@ func drainDownloads(ctx context.Context, cfg config.Config, st *store.Store) {
 			logx.Warn("downloader: klaim gagal: %v", err)
 			return
 		}
-		processOneDownload(ctx, cfg, st, job)
+		processOneDownload(ctx, deps, job)
 	}
 }
 
-func processOneDownload(ctx context.Context, cfg config.Config, st *store.Store, job store.DownloadJob) {
-	row, err := st.GetSource(ctx, job.SourceID)
+func processOneDownload(ctx context.Context, deps Deps, job store.DownloadJob) {
+	// Endpoint sumber tidak diperlukan untuk mengunduh berkas: tautannya
+	// sudah lengkap. Konfigurasi HTTP generik sudah cukup.
+	body, err := downloader.DownloadPDF(ctx, dlConfig(""), job.DownloadURL)
 	if err != nil {
-		logx.Warn("downloader: sumber %s tak ditemukan: %v", job.SourceID, err)
-		_ = st.MarkDownloadFailed(ctx, job.ID, err.Error(), maxAttempts)
-		return
-	}
-	dc := dlConfig()
-	dc.Endpoint = row.EndpointURL
-	src, err := downloader.NewSource(downloader.SourceRow{
-		Code: row.Code, EndpointURL: row.EndpointURL, SourceType: row.SourceType,
-		SourceConfigRaw: row.SourceConfigRaw, // ikut diteruskan — implementasi scraper custom membutuhkannya
-	}, dc)
-	if err != nil {
-		_ = st.MarkDownloadFailed(ctx, job.ID, err.Error(), maxAttempts)
+		logx.Fail(job.DownloadURL, "unduh gagal: %v", err)
+		_ = deps.Store.MarkDownloadFailed(ctx, job.ID, err.Error(), maxAttempts)
 		return
 	}
 
-	body, err := src.FetchPDF(ctx, downloader.RemoteDoc{FileURL: job.PDFURL})
-	if err != nil {
-		logx.Fail(job.Slug, "unduh gagal: %v", err)
-		_ = st.MarkDownloadFailed(ctx, job.ID, err.Error(), maxAttempts)
-		return
-	}
-
-	// Satu-satunya berkas yang tetap hidup di disk: PDF-nya sendiri (untuk
-	// pratinjau). Semua yang lain (metadata, teks OCR, hasil parse) langsung
-	// ke Postgres, tidak lewat perantara file.
-	pdfDir := filepath.Join(cfg.DataDir, row.Code, "pdf")
-	dest := filepath.Join(pdfDir, job.Slug+".pdf")
+	// Nama berkas diturunkan dari hash isinya dan disimpan di SATU folder:
+	// dua sumber yang menyajikan berkas identik menunjuk ke berkas fisik
+	// yang sama, tanpa duplikasi di disk.
+	sha := sha256Hex(body)
+	dest := filepath.Join(deps.DataDir, "pdf", downloader.FileName(sha))
 	if err := fsutil.WriteFileAtomic(dest, body, 0o644); err != nil {
-		logx.Fail(job.Slug, "simpan PDF gagal: %v", err)
-		_ = st.MarkDownloadFailed(ctx, job.ID, err.Error(), maxAttempts)
+		logx.Fail(job.DownloadURL, "simpan PDF gagal: %v", err)
+		_ = deps.Store.MarkDownloadFailed(ctx, job.ID, err.Error(), maxAttempts)
 		return
 	}
 
-	if err := st.MarkDownloaded(ctx, job.ID, dest, sha256Hex(body)); err != nil {
-		logx.Warn("downloader: tandai selesai %s: %v", job.Slug, err)
+	dup, err := deps.Store.MarkDownloaded(ctx, job.ID, dest, sha, int64(len(body)))
+	if err != nil {
+		logx.Warn("downloader: tandai selesai: %v", err)
 		return
 	}
-	logx.Step("unduh", "%s", job.Slug)
+	_ = dup // unduhan tidak dilaporkan ke konsol; statusnya terlihat di database
 	time.Sleep(downloaderDelay)
 }
