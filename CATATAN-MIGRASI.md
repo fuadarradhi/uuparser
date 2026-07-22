@@ -202,25 +202,83 @@ kemajuan terpantau per halaman di UI dan dokumen yang gugur di halaman 1
 langsung ditinggalkan. Kedua model dimuat **sekali** dan dilepas **bersamaan**
 hanya ketika antrian habis — tidak ada bongkar-pasang model per halaman.
 
-## Tiga lapis teks per halaman
+## Dua lapis teks per halaman
 
 | Kolom | Isi | Ditimpa? |
 |---|---|---|
 | `ocr_text` | mentah dari model visi | **tidak pernah** |
-| `fixed_text` | hasil perbaikan model teks | ya, tiap kali diproses ulang |
 | `edited_text` | koreksi manusia dari UI | hanya oleh manusia |
 
-Parser membaca `COALESCE(edited_text, fixed_text, ocr_text)`.
+Parser membaca `COALESCE(edited_text, ocr_text)`.
 
-**Diff tidak disimpan** — dihitung saat dibutuhkan oleh UI dari `ocr_text` dan
-`fixed_text` (data turunan cepat basi begitu `edited_text` berubah). Yang
-disimpan hanya `fix_ops_count` (berapa bagian yang diubah model) untuk
-keperluan dashboard, dan `prompt_hash` (versi prompt yang dipakai).
+**Tahap "perbaikan salah ketik oleh model teks" DIHAPUS** (2026-07-21).
+Setelah membandingkan keluaran OCR mentah dengan hasil perbaikannya, perbaikan
+itu tidak memberi manfaat yang sepadan dengan biayanya — satu panggilan model
+per halaman, dengan risiko mengubah istilah lokal dan ejaan lama. Kolom
+`fixed_text`, `fix_ops_count`, dan `prompt_hash` ikut dihapus.
 
-Saran format untuk UI: render diff sebagai daftar operasi, bukan HTML di
-database —
-`[{"op":"same","text":"..."},{"op":"del","text":"..."},{"op":"ins","text":"..."}]`
-sehingga UI bebas memilih tampilan inline atau berdampingan tanpa mengubah data.
+Model teks kini dipakai HANYA untuk membaca metadata yang sulit diuraikan
+parser.
+
+## Pembagian tugas: model membaca, kode menyimpulkan
+
+Ini prinsip yang menentukan bentuk seluruh bagian model teks.
+
+**Model hanya menyalin apa yang tertulis.** Pemetaan jabatan ke badan
+pemerintahan bersifat pasti dan berkaidah tetap, jadi dikerjakan kode di
+`internal/pipeline/normalize.go` — bukan diserahkan ke model kecil yang bisa
+keliru dan sulit diaudit:
+
+```
+GUBERNUR ACEH                  -> PEMERINTAH ACEH
+BUPATI ACEH BARAT              -> KABUPATEN ACEH BARAT
+WALI KOTA BANDA ACEH           -> KOTA BANDA ACEH
+PROPINSI DAERAH ISTIMEWA ACEH  -> PEMERINTAH ACEH
+```
+
+Keduanya disimpan: `instansi_tertulis` (apa yang tercetak) dan `instansi`
+(hasil pemetaan), sehingga hasilnya selalu dapat ditelusuri balik.
+
+**Nomor peraturan disimpan dua bentuk.** Nomor keputusan kerap bukan angka
+tunggal, mis. `300.2/ 69 /2026`:
+
+| Kolom | Isi | Kegunaan |
+|---|---|---|
+| `nomor` | `300.2/ 69 /2026` | bentuk resmi, tidak pernah hilang |
+| `nomor_urut` | `300` | pengurutan saja |
+
+Kunci duplikat memakai nomor ASLI, bukan angka urutnya — dua keputusan berbeda
+dapat berbagi angka pertama yang sama (`300.2/ 69 /2026` dan
+`300.2/ 70 /2026`).
+
+## Prompt dipecah menjadi pertanyaan-pertanyaan kecil
+
+`prompts/gate.md` (produk hukum atau bukan) · `prompts/identity.md` (jenis,
+instansi, nomor, tahun, tentang) · `prompts/penetapan.md` (tempat, tanggal,
+penanda tangan).
+
+Alasannya konkret: satu prompt panjang yang meminta banyak hal sekaligus
+membuat model kecil kehilangan sebagian instruksi. Gejala nyatanya — model
+menjawab `KEPUTUSAN ...` lengkap dengan titik-titik, karena **menyalin
+placeholder di dalam prompt** sebagai jawaban. Prompt sekarang tidak lagi
+memuat `...` atau `<...>` sama sekali, dan `tolakPlaceholder()` di
+`thinking.go` membuang jawaban yang tetap berbentuk placeholder — menyimpannya
+berarti mencatat isi prompt sebagai data.
+
+## Model dipanggil hanya saat aturan pasti gagal
+
+`internal/pipeline/trigger.go` menentukan kapan model teks perlu dijalankan:
+
+```
+tidak ada penanda "Ditetapkan di"  -> model TIDAK dipanggil
+penanda ada & pola baku cocok      -> diuraikan regex, model TIDAK dipanggil
+penanda ada & pola menyimpang      -> model dipanggil untuk teks itu saja
+```
+
+Hasil penguraian pasti selalu didahulukan; model hanya mengisi bagian yang
+masih kosong. Pola ini dapat diperluas ke bagian lain yang sulit bagi parser —
+tambahkan penanda dan pola bakunya di `trigger.go`, lalu satu prompt sempit di
+`prompts/`.
 
 ## Model teks tidak pernah memerintah aplikasi
 

@@ -13,104 +13,158 @@ import (
 
 // thinking.go membungkus pemakaian model teks.
 //
-// PRINSIP: model TIDAK PERNAH memerintah aplikasi. Ia hanya mengembalikan
-// (a) satu objek JSON berskema tetap untuk klasifikasi, atau (b) teks halaman
-// yang sudah diperbaiki. Keputusan apa pun terhadap basis data — menolak,
-// menandai duplikat, menyimpan metadata — diambil oleh kode Go di sini
-// setelah nilai balikan divalidasi. Teks OCR berasal dari dokumen di
-// internet, jadi ia diperlakukan sebagai masukan tak tepercaya, bukan
-// perintah.
-
-// classifyReply adalah bentuk jawaban yang diharapkan dari prompts/classify.md.
-type classifyReply struct {
-	IsPeraturan bool     `json:"is_peraturan"`
-	Alasan      string   `json:"alasan"`
-	Jenis       string   `json:"jenis"`
-	Instansi    string   `json:"instansi"`
-	Nomor       string   `json:"nomor"`
-	Tahun       string   `json:"tahun"`
-	Tentang     string   `json:"tentang"`
-	Struktur    string   `json:"struktur"`
-	Mencabut    []string `json:"mencabut"`
-	Mengubah    []string `json:"mengubah"`
-}
+// DUA PRINSIP yang menentukan bentuk berkas ini:
+//
+//  1. Model TIDAK PERNAH memerintah aplikasi. Ia hanya mengembalikan satu
+//     objek JSON berskema tetap; keputusan terhadap basis data diambil kode Go
+//     setelah nilainya divalidasi. Teks OCR berasal dari dokumen di internet,
+//     jadi diperlakukan sebagai masukan tak tepercaya.
+//
+//  2. Model hanya MEMBACA; kode yang MENYIMPULKAN. Pemetaan jabatan ke badan
+//     pemerintahan dan penurunan angka urut dari nomor peraturan bersifat
+//     pasti, jadi dikerjakan di normalize.go — bukan diserahkan ke model kecil
+//     yang bisa keliru dan sulit diaudit.
+//
+// Pertanyaan dipecah menjadi beberapa panggilan kecil (gerbang, identitas,
+// penetapan). Satu prompt panjang yang meminta banyak hal sekaligus membuat
+// model kecil kehilangan sebagian instruksi — gejalanya antara lain menyalin
+// contoh di dalam prompt sebagai jawaban.
 
 var (
 	reJSONObject = regexp.MustCompile(`(?s)\{.*\}`)
 	reTahun4     = regexp.MustCompile(`^(1[89]|20)[0-9]{2}$`)
-	reNomorOK    = regexp.MustCompile(`^[0-9]{1,4}[A-Za-z]?$`)
+
+	// rePlaceholder menangkap jawaban yang sebenarnya potongan prompt yang
+	// tersalin, mis. "KEPUTUSAN ..." atau "<JENIS>". Nilai seperti ini WAJIB
+	// dibuang: menyimpannya berarti mencatat isi prompt sebagai data.
+	rePlaceholder = regexp.MustCompile(`\.\.\.|<[^>]*>`)
 )
 
-// classifyPage1 meminta model membaca halaman pertama, lalu MEMVALIDASI
-// jawabannya sebelum dipakai. Nilai yang tidak masuk akal dibuang (dikosongkan)
-// alih-alih dipercaya — model boleh salah, database tidak boleh ikut salah.
-func classifyPage1(ctx context.Context, tc *localllm.TextClient, systemPrompt, page1 string,
-	p localllm.TextParams) (store.DocMeta, []string, []string, error) {
-	res, err := tc.GenerateWith(ctx, systemPrompt, page1, p)
+// askJSON menjalankan satu pertanyaan dan mengurai jawabannya sebagai JSON.
+func askJSON(ctx context.Context, tc *localllm.TextClient, prompt, text string,
+	p localllm.TextParams, out any) error {
+	res, err := tc.GenerateWith(ctx, prompt, text, p)
 	if err != nil {
-		return store.DocMeta{}, nil, nil, err
+		return err
 	}
-
 	raw := strings.TrimSpace(res.Text)
 	// Model kadang membungkus JSON dengan pagar markdown atau kalimat
 	// pengantar meski sudah dilarang; ambil objek JSON pertama yang utuh.
 	if m := reJSONObject.FindString(raw); m != "" {
 		raw = m
 	}
-
-	var rep classifyReply
-	if err := json.Unmarshal([]byte(raw), &rep); err != nil {
-		return store.DocMeta{}, nil, nil, fmt.Errorf("jawaban klasifikasi bukan JSON yang sah: %w", err)
+	if err := json.Unmarshal([]byte(raw), out); err != nil {
+		return fmt.Errorf("jawaban bukan JSON yang sah: %w", err)
 	}
-
-	meta := store.DocMeta{
-		IsPeraturan: rep.IsPeraturan,
-		Alasan:      strings.TrimSpace(rep.Alasan),
-		Jenis:       cleanField(rep.Jenis, 120),
-		Instansi:    cleanField(rep.Instansi, 120),
-		Tentang:     cleanField(rep.Tentang, 500),
-	}
-
-	// Validasi ketat untuk field yang dipakai sebagai kunci identitas.
-	if n := cleanField(rep.Nomor, 8); reNomorOK.MatchString(n) {
-		meta.Nomor = n
-	}
-	if t := cleanField(rep.Tahun, 4); reTahun4.MatchString(t) {
-		meta.Tahun = t
-	}
-	switch strings.ToLower(strings.TrimSpace(rep.Struktur)) {
-	case "pasal_ayat", "diktum":
-		meta.Struktur = strings.ToLower(strings.TrimSpace(rep.Struktur))
-	default:
-		meta.Struktur = "unknown"
-	}
-
-	return meta, trimList(rep.Mencabut), trimList(rep.Mengubah), nil
+	return nil
 }
 
+// ---- Tahap 1: gerbang "ini produk hukum atau bukan" ----
+
+type gateReply struct {
+	ProdukHukum bool   `json:"produk_hukum"`
+	Alasan      string `json:"alasan"`
+}
+
+// AskIsRegulation menanyakan SATU hal saja. Pertanyaan sempit jauh lebih
+// jarang meleset pada model kecil daripada pertanyaan gabungan.
+func AskIsRegulation(ctx context.Context, tc *localllm.TextClient, prompt, page string,
+	p localllm.TextParams) (ok bool, alasan string, err error) {
+	var r gateReply
+	if err := askJSON(ctx, tc, prompt, page, p, &r); err != nil {
+		return false, "", err
+	}
+	return r.ProdukHukum, bersih(r.Alasan, 300), nil
+}
+
+// ---- Tahap 2: identitas peraturan ----
+
+type identityReply struct {
+	Jenis            string `json:"jenis"`
+	InstansiTertulis string `json:"instansi_tertulis"`
+	Nomor            string `json:"nomor"`
+	Tahun            string `json:"tahun"`
+	Tentang          string `json:"tentang"`
+}
+
+// AskIdentity membaca identitas peraturan lalu MEMVALIDASI dan MENORMALKAN
+// hasilnya. Model boleh salah; basis data tidak boleh ikut salah.
+func AskIdentity(ctx context.Context, tc *localllm.TextClient, prompt, page string,
+	p localllm.TextParams) (store.DocMeta, error) {
+	var r identityReply
+	if err := askJSON(ctx, tc, prompt, page, p, &r); err != nil {
+		return store.DocMeta{}, err
+	}
+
+	m := store.DocMeta{
+		Jenis:            tolakPlaceholder(bersih(r.Jenis, 120)),
+		InstansiTertulis: tolakPlaceholder(bersih(r.InstansiTertulis, 120)),
+		Nomor:            tolakPlaceholder(bersih(r.Nomor, 60)),
+		Tentang:          tolakPlaceholder(bersih(r.Tentang, 500)),
+	}
+	// Instansi baku diturunkan dari yang tertulis — secara deterministik.
+	m.Instansi = NormalizeInstansi(m.InstansiTertulis)
+	// Angka urut diturunkan dari nomor asli; nomor aslinya tetap utuh.
+	m.NomorUrut = NomorUrut(m.Nomor)
+
+	if t := bersih(r.Tahun, 4); reTahun4.MatchString(t) {
+		m.Tahun = t
+	}
+	return m, nil
+}
+
+// ---- Tahap 3: penetapan & pengundangan ----
+
+type penetapanReply struct {
+	DitetapkanDi       string `json:"ditetapkan_di"`
+	DitetapkanTanggal  string `json:"ditetapkan_tanggal"`
+	DitetapkanOleh     string `json:"ditetapkan_oleh"`
+	DiundangkanDi      string `json:"diundangkan_di"`
+	DiundangkanTanggal string `json:"diundangkan_tanggal"`
+	DiundangkanOleh    string `json:"diundangkan_oleh"`
+}
+
+// AskPenetapan membaca bagian penutup dokumen. Dipanggil HANYA bila parser
+// menemukan penandanya tetapi tidak dapat menguraikannya sendiri — lihat
+// pipeline/trigger.go.
+func AskPenetapan(ctx context.Context, tc *localllm.TextClient, prompt, text string,
+	p localllm.TextParams) (store.Penetapan, error) {
+	var r penetapanReply
+	if err := askJSON(ctx, tc, prompt, text, p, &r); err != nil {
+		return store.Penetapan{}, err
+	}
+	return store.Penetapan{
+		DitetapkanDi:       tolakPlaceholder(bersih(r.DitetapkanDi, 120)),
+		DitetapkanTanggal:  tolakPlaceholder(bersih(r.DitetapkanTanggal, 60)),
+		DitetapkanOleh:     tolakPlaceholder(bersih(r.DitetapkanOleh, 120)),
+		DiundangkanDi:      tolakPlaceholder(bersih(r.DiundangkanDi, 120)),
+		DiundangkanTanggal: tolakPlaceholder(bersih(r.DiundangkanTanggal, 60)),
+		DiundangkanOleh:    tolakPlaceholder(bersih(r.DiundangkanOleh, 120)),
+	}, nil
+}
+
+// ---- kunci identitas ----
+
 // canonicalKey menyusun kunci identitas peraturan untuk deteksi duplikat.
+// Memakai nomor ASLI, bukan angka urutnya: dua keputusan berbeda dapat
+// berbagi angka pertama yang sama ("300.2/ 69 /2026" dan "300.2/ 70 /2026").
+//
 // Mengembalikan string kosong bila identitas belum lengkap — lebih baik
 // memproses dokumen dua kali daripada membuang dokumen sah karena
 // metadatanya tidak terbaca.
 func canonicalKey(m store.DocMeta) string {
-	j := normKey(m.Jenis)
-	i := normKey(m.Instansi)
-	if j == "" || i == "" || m.Nomor == "" || m.Tahun == "" {
+	j := rapikan(m.Jenis)
+	i := rapikan(m.Instansi)
+	n := rapikan(m.Nomor)
+	if j == "" || i == "" || n == "" || m.Tahun == "" {
 		return ""
 	}
-	return strings.Join([]string{j, i, m.Nomor, m.Tahun}, "|")
+	return strings.Join([]string{j, i, n, m.Tahun}, "|")
 }
 
-func normKey(s string) string {
-	s = strings.ToUpper(strings.TrimSpace(s))
-	s = strings.Join(strings.Fields(s), " ")
-	// Ejaan lama disamakan supaya dokumen yang sama tidak lolos sebagai
-	// dua peraturan berbeda hanya karena beda ejaan.
-	s = strings.ReplaceAll(s, "PROPINSI", "PROVINSI")
-	return s
-}
+// ---- pembersih nilai ----
 
-func cleanField(s string, max int) string {
+func bersih(s string, max int) string {
 	s = strings.Join(strings.Fields(s), " ")
 	s = strings.TrimSpace(s)
 	if len(s) > max {
@@ -119,96 +173,15 @@ func cleanField(s string, max int) string {
 	return s
 }
 
-func trimList(in []string) []string {
-	var out []string
-	for _, v := range in {
-		if v = cleanField(v, 300); v != "" {
-			out = append(out, v)
-		}
+// tolakPlaceholder membuang jawaban yang sebenarnya potongan prompt yang
+// tersalin. Model kecil kerap melakukannya, dan hasilnya menyesatkan karena
+// tampak seperti data yang sah ("KEPUTUSAN ...").
+func tolakPlaceholder(s string) string {
+	if s == "" {
+		return ""
 	}
-	return out
-}
-
-// fixPage meminta model memperbaiki salah ketik/struktur satu halaman.
-//
-// Membedakan DUA jenis kegagalan yang sangat berbeda akibatnya:
-//
-//	galat (error != nil) — pembatalan (Ctrl+C), model gagal dimuat, konteks
-//	    habis. Ini masalah PADA SISI KITA, bukan pada dokumennya. Wajib
-//	    dikembalikan ke pemanggil supaya dokumen dikembalikan ke antrian dan
-//	    dicoba lagi utuh. Memperlakukannya seperti "keluaran buruk" berarti
-//	    halaman ditandai selesai tanpa perbaikan SELAMANYA — model yang
-//	    bermasalah, tetapi datanya yang menanggung akibat.
-//
-//	ok == false tanpa galat — model menjawab, tetapi jawabannya tidak layak
-//	    (kosong, atau menyusut drastis sehingga jelas meringkas alih-alih
-//	    memperbaiki). Di sini memang benar memakai teks OCR mentah: lebih baik
-//	    menyisakan salah ketik daripada kehilangan isi peraturan.
-func fixPage(ctx context.Context, tc *localllm.TextClient, systemPrompt, ocrText string,
-	p localllm.TextParams) (fixed string, ok bool, err error) {
-	if strings.TrimSpace(ocrText) == "" {
-		return "", false, nil
+	if rePlaceholder.MatchString(s) {
+		return ""
 	}
-	res, err := tc.GenerateWith(ctx, systemPrompt, ocrText, p)
-	if err != nil {
-		return "", false, err
-	}
-	out := stripCodeFence(strings.TrimSpace(res.Text))
-	if out == "" {
-		return "", false, nil
-	}
-	// Ambang 60%: perbaikan salah ketik hampir tidak mengubah panjang teks;
-	// penyusutan besar berarti model meringkas atau memotong.
-	if len(out) < len(strings.TrimSpace(ocrText))*6/10 {
-		return "", false, nil
-	}
-	return out, true, nil
-}
-
-func stripCodeFence(s string) string {
-	if !strings.HasPrefix(s, "```") {
-		return s
-	}
-	if i := strings.Index(s, "\n"); i >= 0 {
-		s = s[i+1:]
-	}
-	s = strings.TrimSuffix(strings.TrimSpace(s), "```")
-	return strings.TrimSpace(s)
-}
-
-// countChangedOps menghitung berapa banyak potongan teks yang berbeda antara
-// hasil OCR mentah dan hasil perbaikan — dipakai UI untuk menunjukkan
-// "model mengubah N bagian di halaman ini". Diff yang sesungguhnya (untuk
-// visualisasi) dihitung saat dibutuhkan dari kedua kolom, tidak disimpan.
-func countChangedOps(a, b string) int {
-	fa, fb := strings.Fields(a), strings.Fields(b)
-	// Perbandingan kata-per-kata sederhana lewat LCS panjang; cukup untuk
-	// angka indikatif, bukan untuk rendering.
-	m, n := len(fa), len(fb)
-	if m == 0 || n == 0 {
-		return maxInt(m, n)
-	}
-	prev := make([]int, n+1)
-	cur := make([]int, n+1)
-	for i := 1; i <= m; i++ {
-		for j := 1; j <= n; j++ {
-			if fa[i-1] == fb[j-1] {
-				cur[j] = prev[j-1] + 1
-			} else if prev[j] >= cur[j-1] {
-				cur[j] = prev[j]
-			} else {
-				cur[j] = cur[j-1]
-			}
-		}
-		prev, cur = cur, prev
-	}
-	lcs := prev[n]
-	return (m - lcs) + (n - lcs)
-}
-
-func maxInt(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
+	return s
 }

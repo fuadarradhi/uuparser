@@ -159,24 +159,24 @@ func paint(color, s string) string {
 
 // Progress adalah SATU-SATUNYA keluaran rutin ke konsol.
 //
-// Format: [sudah diperbaiki / sudah di-OCR / total halaman] keterangan  persen
+// Format: [halaman selesai / total halaman] keterangan  persen
 //
-//	[0/1/12] hal 1 · perbaikan: 128 token   8%
+//	[1/12] hal 2 · 1029x1945 px · 12s   8%
 //
-// Angka pertama memang tertinggal satu langkah dari angka kedua: halaman
-// di-OCR dulu, baru diperbaiki. Bila angka pertama berhenti bergerak
-// sementara angka kedua terus naik, yang bermasalah tahap perbaikan.
-func Progress(fixed, ocred, total int, format string, args ...any) {
+// Sebelumnya angka pertama dan kedua terpisah (sudah-diperbaiki vs
+// sudah-di-OCR) karena ada tahap perbaikan teks oleh model. Tahap itu sudah
+// dihapus, jadi keduanya selalu sama dan satu angka lebih jujur.
+func Progress(done, total int, format string, args ...any) {
 	mu.Lock()
 	defer mu.Unlock()
 
 	detail := fmt.Sprintf(format, args...)
 	pct := 0
 	if total > 0 {
-		pct = fixed * 100 / total
+		pct = done * 100 / total
 	}
 	line := fmt.Sprintf("   %s %s  %s",
-		paint(cCyan, fmt.Sprintf("[%d/%d/%d]", fixed, ocred, total)),
+		paint(cCyan, fmt.Sprintf("[%d/%d]", done, total)),
 		paint(cDim, detail),
 		paint(cCyan, fmt.Sprintf("%d%%", pct)))
 

@@ -1,9 +1,12 @@
 // Package prompts memuat berkas prompt dari disk (prompts/*.md) supaya dapat
-// disunting tanpa membangun ulang binari, sekaligus menghitung sidik jarinya.
+// disunting tanpa membangun ulang binari.
 //
-// Sidik jari (hash) disimpan bersama tiap halaman di document_pages: bila
-// kelak prompt diubah, Anda dapat menemukan halaman mana saja yang masih
-// diproses memakai prompt versi lama, tanpa harus menebak.
+// Prompt sengaja DIPECAH menjadi beberapa berkas kecil, satu pertanyaan per
+// berkas. Model teks yang dipakai berukuran kecil; satu prompt panjang yang
+// meminta banyak hal sekaligus membuatnya kehilangan sebagian instruksi —
+// gejalanya antara lain menyalin contoh di dalam prompt sebagai jawaban.
+// Pertanyaan yang sempit jauh lebih jarang meleset, dengan harga beberapa
+// panggilan tambahan yang hanya terjadi sekali per dokumen.
 package prompts
 
 import (
@@ -15,26 +18,39 @@ import (
 	"strings"
 )
 
-// Set memuat seluruh prompt yang dipakai pipeline, dibaca sekali saat start.
+// Set memuat seluruh prompt yang dipakai pipeline.
 type Set struct {
-	Classify     string
-	ClassifyHash string
+	Gate      string // apakah halaman ini produk hukum?
+	Identity  string // jenis, instansi, nomor, tahun, tentang
+	Penetapan string // tempat/tanggal/penanda tangan penetapan & pengundangan
 
-	FixPage     string
-	FixPageHash string
+	Hash string // sidik jari gabungan, disimpan bersama metadata dokumen
 }
 
-// Load membaca prompts/classify.md dan prompts/fix_page.md dari dir.
+// Load membaca seluruh berkas prompt dari dir.
 func Load(dir string) (Set, error) {
 	var s Set
 	var err error
+	var hashes []string
 
-	if s.Classify, s.ClassifyHash, err = readOne(filepath.Join(dir, "classify.md")); err != nil {
-		return s, err
+	type item struct {
+		name string
+		dst  *string
 	}
-	if s.FixPage, s.FixPageHash, err = readOne(filepath.Join(dir, "fix_page.md")); err != nil {
-		return s, err
+	for _, it := range []item{
+		{"gate.md", &s.Gate},
+		{"identity.md", &s.Identity},
+		{"penetapan.md", &s.Penetapan},
+	} {
+		var h string
+		if *it.dst, h, err = readOne(filepath.Join(dir, it.name)); err != nil {
+			return s, err
+		}
+		hashes = append(hashes, h)
 	}
+
+	sum := sha256.Sum256([]byte(strings.Join(hashes, "|")))
+	s.Hash = hex.EncodeToString(sum[:])[:16]
 	return s, nil
 }
 

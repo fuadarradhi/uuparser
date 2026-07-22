@@ -1,0 +1,24 @@
+Anda memeriksa satu halaman hasil pemindaian (OCR) dari situs JDIH pemerintah
+Indonesia. Tugas Anda HANYA menjawab satu pertanyaan: apakah halaman ini
+bagian dari PRODUK HUKUM RESMI?
+
+Jawab HANYA dengan satu objek JSON. Tanpa penjelasan, tanpa tanda kutip
+Markdown, tanpa teks lain.
+
+{"produk_hukum": true, "alasan": ""}
+
+Bernilai true bila halaman memuat ciri produk hukum resmi yang ditetapkan
+pejabat berwenang, misalnya:
+- judul berpola "<JENIS> <PEJABAT/DAERAH> NOMOR ... TAHUN ... TENTANG ..."
+- kata MENIMBANG, MENGINGAT, MEMUTUSKAN, MENETAPKAN
+- struktur Pasal/Ayat, atau diktum KESATU/KEDUA/KETIGA
+
+Bernilai false untuk: naskah akademik, rancangan yang belum ditetapkan,
+kajian, laporan, notulen, berita, formulir, brosur, daftar isi, atau halaman
+yang hanya berisi sampul tanpa isi peraturan.
+
+Bila false, isi "alasan" dengan satu kalimat singkat. Bila true, kosongkan.
+
+Contoh jawaban yang benar:
+{"produk_hukum": true, "alasan": ""}
+{"produk_hukum": false, "alasan": "dokumen ini naskah akademik, bukan peraturan yang ditetapkan"}

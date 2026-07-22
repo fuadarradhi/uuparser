@@ -76,7 +76,6 @@ type docSink struct {
 	docID   string
 	prompts prompts.Set
 	stopped string // alasan berhenti, kosong bila lanjut
-	fixed   int    // halaman yang sudah selesai diperbaiki model teks
 	ocred   int    // halaman yang sudah selesai di-OCR
 	total   int    // jumlah halaman dokumen (0 bila belum diketahui)
 
@@ -89,7 +88,7 @@ type docSink struct {
 // juga SEBELUM halaman pertama di-OCR, sehingga konsol langsung menunjukkan
 // [0/0/N] alih-alih diam sampai halaman pertama selesai.
 func (d *docSink) OnProgress(page, total int, detail string) {
-	logx.Progress(d.fixed, d.ocred, total, "hal %d · %s", page, detail)
+	logx.Progress(d.ocred, total, "hal %d · %s", page, detail)
 }
 
 func (d *docSink) HasPage(ctx context.Context, page int) (bool, error) {
@@ -107,49 +106,24 @@ func (d *docSink) OnPage(ctx context.Context, r extractor.PageResult) (bool, err
 	// diperbaiki) memang tertinggal satu dari angka kedua (sudah di-OCR).
 	d.ocred = r.Page
 	d.total = r.Total
-	logx.Progress(d.fixed, d.ocred, r.Total, "hal %d · %dx%d px%s · %s",
+	logx.Progress(d.ocred, r.Total, "hal %d · %dx%d px%s · %s",
 		r.Page, r.W, r.H, cropNote(r.CroppedPct), durText(r.DurationMS))
 
 	if r.IsEmpty {
-		// Halaman kosong tidak bisa diklasifikasi dan tidak perlu diperbaiki.
-		// Klasifikasi TIDAK dilewatkan begitu saja: ia menunggu halaman
-		// berisi pertama (lihat blok klasifikasi di bawah). Tanpa itu,
-		// dokumen yang halaman pertamanya kosong karena artefak pindaian
-		// akan diproses sampai selesai tanpa pernah diperiksa.
-		d.fixed++
+		// Halaman kosong tidak bisa diklasifikasi. Klasifikasi TIDAK
+		// dilewatkan begitu saja: ia menunggu halaman berisi pertama (lihat
+		// blok di bawah). Tanpa itu, dokumen yang halaman pertamanya kosong
+		// karena artefak pindaian akan diproses sampai selesai tanpa pernah
+		// diperiksa.
 		return false, nil
 	}
 
-	// 2) Perbaiki salah ketik/struktur. Kegagalan model TIDAK menggagalkan
-	//    dokumen — teks mentah tetap dipakai (lihat fixPage).
-	//
-	// Pada mode hemat memori, model visi dilepas lebih dulu supaya kedua
-	// model tidak pernah menempati memori bersamaan; model visi akan dimuat
-	// ulang sendiri saat halaman berikutnya di-OCR.
-	if d.deps.LowMemory {
-		d.deps.Vision.Release()
+	// Bagian penutup: bila penandanya ada, uraikan. Model teks hanya
+	// dipanggil untuk bagian yang penandanya ada tetapi tak dapat diuraikan
+	// pola baku — lihat trigger.go.
+	if err := d.uraiPenetapan(ctx, r); err != nil {
+		return false, err
 	}
-	fixed, ok, err := fixPage(ctx, d.deps.Text, d.prompts.FixPage, r.Text,
-		d.textProgress(r.Page, r.Total, "perbaikan"))
-	if d.deps.LowMemory {
-		d.deps.Text.Release()
-	}
-	if err != nil {
-		// Galat model/pembatalan: JANGAN tandai halaman ini selesai. Dokumen
-		// dikembalikan ke antrian oleh pemanggil dan dilanjutkan nanti dari
-		// halaman ini juga (teks OCR-nya sudah tersimpan, tidak diulang).
-		return false, fmt.Errorf("perbaikan halaman %d: %w", r.Page, err)
-	}
-	if ok {
-		if err := d.deps.Store.SaveFixedText(ctx, d.docID, r.Page, fixed,
-			countChangedOps(r.Text, fixed), d.prompts.FixPageHash); err != nil {
-			return false, err
-		}
-	} else {
-		logx.Warn("hal %d: keluaran model tidak layak — memakai teks OCR mentah", r.Page)
-	}
-	d.fixed++
-	logx.Progress(d.fixed, d.ocred, r.Total, "hal %d · diperbaiki", r.Page)
 
 	// 3) Halaman BERISI PERTAMA menentukan nasib dokumen. Biasanya halaman 1;
 	//    bila halaman 1 kosong, pemeriksaan bergeser ke halaman berisi
@@ -159,35 +133,33 @@ func (d *docSink) OnPage(ctx context.Context, r extractor.PageResult) (bool, err
 			d.classified = true
 			return false, nil
 		}
-		text := r.Text
-		if ok {
-			text = fixed
-		}
-		return d.classify(ctx, text)
+		return d.classify(ctx, r.Text)
 	}
 	return false, nil
 }
 
 // classify membaca halaman 1 lewat model teks lalu memutuskan: tolak (bukan
 // peraturan), tandai duplikat, atau lanjutkan ke halaman berikutnya.
-func (d *docSink) classify(ctx context.Context, page1 string) (bool, error) {
+func (d *docSink) classify(ctx context.Context, halaman string) (bool, error) {
+	// Tahap 1 — gerbang. Pertanyaan tunggal yang sempit: produk hukum atau
+	// bukan. Dipisah dari pembacaan identitas karena model kecil lebih andal
+	// menjawab satu hal daripada banyak hal sekaligus.
 	if d.deps.LowMemory {
 		d.deps.Vision.Release()
 	}
-	meta, mencabut, mengubah, err := classifyPage1(ctx, d.deps.Text, d.prompts.Classify, page1,
-		d.textProgress(1, d.total, "klasifikasi"))
-	if d.deps.LowMemory {
-		d.deps.Text.Release()
-	}
+	produkHukum, alasan, err := AskIsRegulation(ctx, d.deps.Text, d.prompts.Gate, halaman,
+		d.textProgress(d.ocred, d.total, "memeriksa jenis dokumen"))
 	if err != nil {
-		// Model gagal membaca: JANGAN menolak dokumen (bisa jadi masalah
-		// sesaat). Hentikan dokumen ini, biarkan status dikembalikan oleh
-		// pemanggil supaya dicoba lagi nanti.
-		return true, fmt.Errorf("klasifikasi halaman 1: %w", err)
+		if d.deps.LowMemory {
+			d.deps.Text.Release()
+		}
+		return true, fmt.Errorf("pemeriksaan produk hukum: %w", err)
 	}
 
-	if !meta.IsPeraturan {
-		alasan := meta.Alasan
+	if !produkHukum {
+		if d.deps.LowMemory {
+			d.deps.Text.Release()
+		}
 		if alasan == "" {
 			alasan = "model menilai dokumen ini bukan produk hukum"
 		}
@@ -198,6 +170,18 @@ func (d *docSink) classify(ctx context.Context, page1 string) (bool, error) {
 		return true, nil
 	}
 
+	// Tahap 2 — identitas. Model hanya menyalin apa yang tertulis; pemetaan
+	// instansi dan penurunan angka urut dikerjakan kode (lihat normalize.go).
+	meta, err := AskIdentity(ctx, d.deps.Text, d.prompts.Identity, halaman,
+		d.textProgress(d.ocred, d.total, "membaca identitas"))
+	if d.deps.LowMemory {
+		d.deps.Text.Release()
+	}
+	if err != nil {
+		return true, fmt.Errorf("membaca identitas: %w", err)
+	}
+	meta.IsPeraturan = true
+
 	dup, err := d.deps.Store.ApplyMetaAndCheckDuplicate(ctx, d.docID, meta, canonicalKey(meta))
 	if err != nil {
 		return true, err
@@ -207,19 +191,70 @@ func (d *docSink) classify(ctx context.Context, page1 string) (bool, error) {
 		return true, nil
 	}
 
-	// Relasi yang disebut di halaman 1 dicatat sebagai petunjuk awal;
-	// relations.go tetap menjadi sumber utama saat parsing nanti.
-	for _, v := range mencabut {
-		_ = d.deps.Store.InsertRelation(ctx, d.docID, "mencabut", "", "", "", "", "", v, "perlu_review", v)
-	}
-	for _, v := range mengubah {
-		_ = d.deps.Store.InsertRelation(ctx, d.docID, "mengubah", "", "", "", "", "", v, "perlu_review", v)
-	}
-
 	d.classified = true
 	logx.Info("dokumen dikenali: %s %s Nomor %s Tahun %s — %s",
 		meta.Jenis, meta.Instansi, meta.Nomor, meta.Tahun, meta.Tentang)
+	if meta.InstansiTertulis != meta.Instansi {
+		logx.Info("instansi dipetakan: %q -> %q", meta.InstansiTertulis, meta.Instansi)
+	}
 	return false, nil
+}
+
+// uraiPenetapan menangani bagian penutup dokumen.
+//
+// Model teks hanya dipanggil bila penandanya ADA tetapi isinya TIDAK dapat
+// diuraikan pola baku — pemakaian yang sangat jarang, sehingga biayanya kecil
+// sementara cakupannya tetap luas untuk dokumen yang formatnya menyimpang.
+func (d *docSink) uraiPenetapan(ctx context.Context, r extractor.PageResult) error {
+	h := UraiPenetapan(r.Text)
+	if !h.AdaPenanda {
+		return nil
+	}
+
+	p := store.Penetapan{
+		DitetapkanDi: h.DitetapkanDi, DitetapkanTanggal: h.DitetapkanTanggal,
+		DitetapkanOleh: h.DitetapkanOleh, DiundangkanDi: h.DiundangkanDi,
+		DiundangkanTanggal: h.DiundangkanTanggal, DiundangkanOleh: h.DiundangkanOleh,
+	}
+
+	if h.PerluModel {
+		logx.Info("hal %d: bagian penetapan tidak sesuai pola baku — model teks dipanggil", r.Page)
+		if d.deps.LowMemory {
+			d.deps.Vision.Release()
+		}
+		mp, err := AskPenetapan(ctx, d.deps.Text, d.prompts.Penetapan, r.Text,
+			d.textProgress(r.Page, r.Total, "membaca bagian penetapan"))
+		if d.deps.LowMemory {
+			d.deps.Text.Release()
+		}
+		if err != nil {
+			return fmt.Errorf("membaca bagian penetapan halaman %d: %w", r.Page, err)
+		}
+		// Hasil deterministik didahulukan; model hanya mengisi yang kosong.
+		p = gabungPenetapan(p, mp)
+	}
+
+	return d.deps.Store.SavePenetapan(ctx, d.docID, p)
+}
+
+// gabungPenetapan memakai nilai dari penguraian pola baku bila ada, dan nilai
+// dari model hanya untuk bagian yang masih kosong. Urutan ini disengaja:
+// aturan yang pasti selalu lebih dipercaya daripada pembacaan model.
+func gabungPenetapan(pasti, model store.Penetapan) store.Penetapan {
+	pilih := func(a, b string) string {
+		if a != "" {
+			return a
+		}
+		return b
+	}
+	return store.Penetapan{
+		DitetapkanDi:       pilih(pasti.DitetapkanDi, model.DitetapkanDi),
+		DitetapkanTanggal:  pilih(pasti.DitetapkanTanggal, model.DitetapkanTanggal),
+		DitetapkanOleh:     pilih(pasti.DitetapkanOleh, model.DitetapkanOleh),
+		DiundangkanDi:      pilih(pasti.DiundangkanDi, model.DiundangkanDi),
+		DiundangkanTanggal: pilih(pasti.DiundangkanTanggal, model.DiundangkanTanggal),
+		DiundangkanOleh:    pilih(pasti.DiundangkanOleh, model.DiundangkanOleh),
+	}
 }
 
 func processDocument(ctx context.Context, deps Deps, job store.OCRJob) {
@@ -317,12 +352,8 @@ func isTransient(err error) bool {
 // Mengembalikan stop=true bila klasifikasi memutuskan dokumen ini tidak
 // dilanjutkan (bukan peraturan, atau duplikat).
 func (d *docSink) resume(ctx context.Context) (stop bool, err error) {
-	if ocred, fixed, cerr := d.deps.Store.CountPagesDone(ctx, d.docID); cerr == nil {
-		d.ocred, d.fixed = ocred, fixed
-	}
-
-	if err := d.catchUpFixes(ctx); err != nil {
-		return false, err
+	if ocred, _, cerr := d.deps.Store.CountPagesDone(ctx, d.docID); cerr == nil {
+		d.ocred = ocred
 	}
 
 	done, err := d.deps.Store.IsClassified(ctx, d.docID)
@@ -344,52 +375,17 @@ func (d *docSink) resume(ctx context.Context) (stop bool, err error) {
 	return d.classify(ctx, text)
 }
 
-// catchUpFixes memperbaiki halaman yang sudah di-OCR tetapi belum diperbaiki.
-func (d *docSink) catchUpFixes(ctx context.Context) error {
-	pending, err := d.deps.Store.ListPagesNeedingFix(ctx, d.docID)
-	if err != nil {
-		return err
-	}
-	for _, p := range pending {
-		if err := ctx.Err(); err != nil {
-			return err
-		}
-		logx.Progress(d.fixed, d.ocred, d.total, "hal %d · melanjutkan perbaikan tertunda", p.PageNumber)
-
-		if d.deps.LowMemory {
-			d.deps.Vision.Release()
-		}
-		fixed, ok, ferr := fixPage(ctx, d.deps.Text, d.prompts.FixPage, p.OCRText,
-			d.textProgress(p.PageNumber, d.total, "perbaikan tertunda"))
-		if d.deps.LowMemory {
-			d.deps.Text.Release()
-		}
-		if ferr != nil {
-			return fmt.Errorf("perbaikan tertunda halaman %d: %w", p.PageNumber, ferr)
-		}
-		if !ok {
-			logx.Warn("hal %d: keluaran model tidak layak — memakai teks OCR mentah", p.PageNumber)
-			continue
-		}
-		if err := d.deps.Store.SaveFixedText(ctx, d.docID, p.PageNumber, fixed,
-			countChangedOps(p.OCRText, fixed), d.prompts.FixPageHash); err != nil {
-			return err
-		}
-		d.fixed++
-	}
-	return nil
-}
 
 // textProgress membuat pelapor kemajuan untuk pekerjaan model teks, sehingga
 // konsol tetap bergerak selama tahap yang paling lama diam.
 func (d *docSink) textProgress(page, total int, what string) localllm.TextParams {
 	return localllm.TextParams{
 		OnStage: func(stage string) {
-			logx.Progress(d.fixed, d.ocred, total, "hal %d · %s: %s", page, what, stage)
+			logx.Progress(d.ocred, total, "hal %d · %s: %s", page, what, stage)
 		},
 		OnToken: func(n int) {
 			if n%32 == 0 {
-				logx.Progress(d.fixed, d.ocred, total, "hal %d · %s: %d token", page, what, n)
+				logx.Progress(d.ocred, total, "hal %d · %s: %d token", page, what, n)
 			}
 		},
 	}

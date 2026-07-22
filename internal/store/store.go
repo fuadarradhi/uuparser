@@ -245,8 +245,8 @@ func (s *Store) MarkOCRFailed(ctx context.Context, id, errMsg string, maxAttempt
 	return err
 }
 
-// SavePage menyimpan hasil OCR mentah satu halaman (fixed_text menyusul lewat
-// SaveFixedText). ocr_text TIDAK PERNAH ditimpa oleh perbaikan model.
+// SavePage menyimpan hasil OCR satu halaman. ocr_text tidak pernah diubah
+// setelahnya; koreksi manusia ditulis ke edited_text lewat UI.
 func (s *Store) SavePage(ctx context.Context, documentID string, page int, ocrText string,
 	isEmpty, isTruncated bool, inkRatio, croppedPct float64, durationMS int, notes []string) error {
 	notesJSON, _ := json.Marshal(notes)
@@ -264,55 +264,12 @@ func (s *Store) SavePage(ctx context.Context, documentID string, page int, ocrTe
 	return err
 }
 
-// SaveFixedText menyimpan hasil perbaikan model teks untuk satu halaman.
-func (s *Store) SaveFixedText(ctx context.Context, documentID string, page int,
-	fixedText string, opsCount int, promptHash string) error {
-	_, err := s.pool.Exec(ctx, `
-		UPDATE document_pages
-		SET fixed_text = $3, fix_ops_count = $4, prompt_hash = $5
-		WHERE document_id = $1 AND page_number = $2`,
-		documentID, page, fixedText, opsCount, promptHash)
-	return err
-}
-
 func (s *Store) HasPage(ctx context.Context, documentID string, page int) (bool, error) {
 	var ok bool
 	err := s.pool.QueryRow(ctx, `
 		SELECT EXISTS(SELECT 1 FROM document_pages WHERE document_id = $1 AND page_number = $2)`,
 		documentID, page).Scan(&ok)
 	return ok, err
-}
-
-// PageNeedingFix adalah halaman yang teks OCR-nya sudah ada tetapi belum
-// diperbaiki model teks.
-type PageNeedingFix struct {
-	PageNumber int
-	OCRText    string
-}
-
-// ListPagesNeedingFix mengembalikan halaman yang sudah di-OCR namun
-// fixed_text-nya masih kosong — misalnya karena proses dihentikan di antara
-// kedua langkah itu. Tanpa daftar ini, halaman tersebut tidak akan pernah
-// diperbaiki: pemeriksaan "halaman sudah ada" membuatnya dilewati selamanya.
-func (s *Store) ListPagesNeedingFix(ctx context.Context, documentID string) ([]PageNeedingFix, error) {
-	rows, err := s.pool.Query(ctx, `
-		SELECT page_number, ocr_text FROM document_pages
-		WHERE document_id = $1 AND fixed_text IS NULL AND is_empty = false
-		      AND ocr_text <> ''
-		ORDER BY page_number`, documentID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var out []PageNeedingFix
-	for rows.Next() {
-		var p PageNeedingFix
-		if err := rows.Scan(&p.PageNumber, &p.OCRText); err != nil {
-			return nil, err
-		}
-		out = append(out, p)
-	}
-	return out, rows.Err()
 }
 
 // FirstNonEmptyPage mengembalikan halaman BERISI pertama beserta teksnya.
@@ -323,10 +280,10 @@ func (s *Store) ListPagesNeedingFix(ctx context.Context, documentID string) ([]P
 // kosong, dan dokumen yang sebenarnya sah ikut tertolak.
 func (s *Store) FirstNonEmptyPage(ctx context.Context, documentID string) (page int, text string, ok bool, err error) {
 	err = s.pool.QueryRow(ctx, `
-		SELECT page_number, COALESCE(edited_text, fixed_text, ocr_text)
+		SELECT page_number, COALESCE(edited_text, ocr_text)
 		FROM document_pages
 		WHERE document_id = $1 AND is_empty = false
-		      AND COALESCE(edited_text, fixed_text, ocr_text) <> ''
+		      AND COALESCE(edited_text, ocr_text) <> ''
 		ORDER BY page_number LIMIT 1`, documentID).Scan(&page, &text)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return 0, "", false, nil
@@ -341,13 +298,11 @@ func (s *Store) FirstNonEmptyPage(ctx context.Context, documentID string) (page 
 // sudah diperbaiki. Dipakai saat melanjutkan dokumen supaya baris kemajuan
 // meneruskan hitungan sebelumnya, bukan mulai dari nol seolah belum ada
 // pekerjaan yang selesai.
-func (s *Store) CountPagesDone(ctx context.Context, documentID string) (ocred, fixed int, err error) {
+func (s *Store) CountPagesDone(ctx context.Context, documentID string) (ocred, done int, err error) {
 	err = s.pool.QueryRow(ctx, `
-		SELECT
-			COUNT(*),
-			COUNT(*) FILTER (WHERE fixed_text IS NOT NULL OR is_empty)
-		FROM document_pages WHERE document_id = $1`, documentID).Scan(&ocred, &fixed)
-	return ocred, fixed, err
+		SELECT COUNT(*), COUNT(*) FROM document_pages WHERE document_id = $1`,
+		documentID).Scan(&ocred, &done)
+	return ocred, done, err
 }
 
 // IsClassified melaporkan apakah metadata halaman 1 sudah pernah dibaca,
@@ -364,14 +319,14 @@ func (s *Store) IsClassified(ctx context.Context, documentID string) (bool, erro
 func (s *Store) GetPageText(ctx context.Context, documentID string, page int) (string, error) {
 	var t string
 	err := s.pool.QueryRow(ctx, `
-		SELECT COALESCE(edited_text, fixed_text, ocr_text) FROM document_pages
+		SELECT COALESCE(edited_text, ocr_text) FROM document_pages
 		WHERE document_id = $1 AND page_number = $2`, documentID, page).Scan(&t)
 	return t, err
 }
 
 func (s *Store) ReadPageRange(ctx context.Context, documentID string, a, b int) ([]string, error) {
 	rows, err := s.pool.Query(ctx, `
-		SELECT COALESCE(edited_text, fixed_text, ocr_text) FROM document_pages
+		SELECT COALESCE(edited_text, ocr_text) FROM document_pages
 		WHERE document_id = $1 AND page_number BETWEEN $2 AND $3
 		ORDER BY page_number`, documentID, a, b)
 	if err != nil {
@@ -393,12 +348,49 @@ func (s *Store) ReadPageRange(ctx context.Context, documentID string, a, b int) 
 type DocMeta struct {
 	IsPeraturan bool
 	Jenis       string
-	Instansi    string
-	Nomor       string
-	Tahun       string
-	Tentang     string
-	Struktur    string
-	Alasan      string
+	// Instansi adalah bentuk baku hasil pemetaan deterministik
+	// ("PEMERINTAH ACEH"); InstansiTertulis menyimpan apa yang benar-benar
+	// tercetak di dokumen ("GUBERNUR ACEH"). Keduanya disimpan supaya hasil
+	// pemetaan selalu dapat ditelusuri balik ke sumbernya.
+	Instansi         string
+	InstansiTertulis string
+	// Nomor disimpan apa adanya ("300.2/ 69 /2026"); NomorUrut adalah angka
+	// pertamanya (300) semata untuk pengurutan.
+	Nomor     string
+	NomorUrut int
+	Tahun     string
+	Tentang   string
+	Struktur  string
+	Alasan    string
+}
+
+// Penetapan memuat bagian penutup dokumen.
+type Penetapan struct {
+	DitetapkanDi       string
+	DitetapkanTanggal  string
+	DitetapkanOleh     string
+	DiundangkanDi      string
+	DiundangkanTanggal string
+	DiundangkanOleh    string
+}
+
+// SavePenetapan menyimpan bagian penetapan & pengundangan. Hanya kolom yang
+// terisi yang ditimpa, sehingga hasil penguraian deterministik tidak terhapus
+// oleh pemanggilan berikutnya yang kebetulan mengembalikan nilai kosong.
+func (s *Store) SavePenetapan(ctx context.Context, id string, p Penetapan) error {
+	_, err := s.pool.Exec(ctx, `
+		UPDATE documents SET
+			ditetapkan_di       = COALESCE(NULLIF($2,''), ditetapkan_di),
+			ditetapkan_tanggal  = COALESCE(NULLIF($3,''), ditetapkan_tanggal),
+			ditetapkan_oleh     = COALESCE(NULLIF($4,''), ditetapkan_oleh),
+			diundangkan_di      = COALESCE(NULLIF($5,''), diundangkan_di),
+			diundangkan_tanggal = COALESCE(NULLIF($6,''), diundangkan_tanggal),
+			diundangkan_oleh    = COALESCE(NULLIF($7,''), diundangkan_oleh),
+			updated_at = now()
+		WHERE id = $1`, id,
+		p.DitetapkanDi, p.DitetapkanTanggal, p.DitetapkanOleh,
+		p.DiundangkanDi, p.DiundangkanTanggal, p.DiundangkanOleh)
+	return err
 }
 
 // RejectNotRegulation menandai dokumen bukan peraturan; sisa halaman tidak
@@ -433,11 +425,13 @@ func (s *Store) ApplyMetaAndCheckDuplicate(ctx context.Context, id string, m Doc
 			_, err := s.pool.Exec(ctx, `
 				UPDATE documents
 				SET status = 'duplicate', reject_reason = 'duplikat_peraturan', duplicate_of = $2,
-				    is_peraturan = true, jenis = $3, instansi = $4, nomor = $5, tahun = $6,
-				    tentang = $7, struktur = $8, canonical_key = $9,
+				    is_peraturan = true, jenis = $3, instansi = $4, instansi_tertulis = $5,
+				    nomor = $6, nomor_urut = $7, tahun = $8,
+				    tentang = $9, struktur = $10, canonical_key = $11,
 				    classified_at = now(), updated_at = now()
 				WHERE id = $1`, id, *existing, nullIfEmpty(m.Jenis), nullIfEmpty(m.Instansi),
-				nullIfEmpty(m.Nomor), nullIfEmpty(m.Tahun), nullIfEmpty(m.Tentang),
+				nullIfEmpty(m.InstansiTertulis), nullIfEmpty(m.Nomor), nullIfZero(m.NomorUrut),
+				nullIfEmpty(m.Tahun), nullIfEmpty(m.Tentang),
 				nullIfEmpty(m.Struktur), canonicalKey)
 			return true, err
 		}
@@ -445,11 +439,13 @@ func (s *Store) ApplyMetaAndCheckDuplicate(ctx context.Context, id string, m Doc
 
 	_, err := s.pool.Exec(ctx, `
 		UPDATE documents
-		SET is_peraturan = true, jenis = $2, instansi = $3, nomor = $4, tahun = $5,
-		    tentang = $6, struktur = $7, canonical_key = $8,
+		SET is_peraturan = true, jenis = $2, instansi = $3, instansi_tertulis = $4,
+		    nomor = $5, nomor_urut = $6, tahun = $7,
+		    tentang = $8, struktur = $9, canonical_key = $10,
 		    classified_at = now(), updated_at = now()
 		WHERE id = $1`, id, nullIfEmpty(m.Jenis), nullIfEmpty(m.Instansi),
-		nullIfEmpty(m.Nomor), nullIfEmpty(m.Tahun), nullIfEmpty(m.Tentang),
+		nullIfEmpty(m.InstansiTertulis), nullIfEmpty(m.Nomor), nullIfZero(m.NomorUrut),
+		nullIfEmpty(m.Tahun), nullIfEmpty(m.Tentang),
 		nullIfEmpty(m.Struktur), nullIfEmpty(canonicalKey))
 	return false, err
 }
@@ -579,6 +575,13 @@ func (s *Store) InsertRelation(ctx context.Context, documentID, relType, key, je
 		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
 		documentID, relType, key, jenis, instansi, nomor, tahun, tentang, confidence, kutipan)
 	return err
+}
+
+func nullIfZero(v int) *int {
+	if v == 0 {
+		return nil
+	}
+	return &v
 }
 
 func nullIfEmpty(s string) *string {

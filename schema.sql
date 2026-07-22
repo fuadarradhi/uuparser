@@ -69,9 +69,30 @@ CREATE TABLE IF NOT EXISTS documents (
     is_peraturan      boolean,
     jenis             text,
     instansi          text,
-    nomor             text,
+    -- nomor DISIMPAN DUA BENTUK. Nomor keputusan kerap bukan angka tunggal,
+    -- mis. "300.2/ 69 /2026": menyimpannya sebagai angka saja akan
+    -- menghilangkan nomor aslinya, sedangkan menyimpannya sebagai teks saja
+    -- membuat pengurutan salah ("10" sebelum "2").
+    nomor             text,   -- persis seperti tertulis: "300.2/ 69 /2026"
+    nomor_urut        int,    -- angka pertama untuk pengurutan: 300
     tahun             text,
     tentang           text,
+
+    -- Bagian penetapan & pengundangan. Diisi oleh model teks HANYA ketika
+    -- parser menemukan penandanya ("Ditetapkan di" / "Diundangkan di") tetapi
+    -- tidak dapat menguraikannya secara deterministik.
+    ditetapkan_di        text,
+    ditetapkan_tanggal   text,
+    ditetapkan_oleh      text,
+    diundangkan_di       text,
+    diundangkan_tanggal  text,
+    diundangkan_oleh     text,
+
+    -- instansi_tertulis menyimpan apa yang benar-benar tertulis di dokumen
+    -- ("GUBERNUR ACEH"), sedangkan instansi di atas menyimpan hasil pemetaan
+    -- ke badan pemerintahannya ("PEMERINTAH ACEH"). Pemetaan itu dilakukan
+    -- kode secara deterministik, bukan oleh model.
+    instansi_tertulis text,
     struktur          text,     -- 'pasal_ayat' | 'diktum' | 'unknown'
 
     -- Kunci kanonik untuk deteksi duplikat berbasis identitas peraturan,
@@ -101,11 +122,13 @@ CREATE INDEX IF NOT EXISTS idx_documents_queue
 -- =====================================================================
 -- document_pages — hasil OCR per halaman DAN hasil perbaikan model teks.
 --   ocr_text    : mentah dari model visi, TIDAK PERNAH ditimpa
---   fixed_text  : hasil perbaikan model teks (salah ketik/struktur)
 --   edited_text : koreksi manusia lewat UI
--- Parser membaca COALESCE(edited_text, fixed_text, ocr_text).
--- Diff antara ocr_text dan fixed_text TIDAK disimpan — dihitung saat
--- dibutuhkan oleh UI (keputusan 2026-07-21: data turunan cepat basi).
+-- Parser membaca COALESCE(edited_text, ocr_text).
+--
+-- Tahap "perbaikan salah ketik oleh model teks" DIHAPUS (2026-07-21):
+-- setelah membandingkan keluaran mentah dengan hasil perbaikannya, perbaikan
+-- itu tidak memberi manfaat yang sepadan. Model teks kini hanya dipakai untuk
+-- membaca metadata yang sulit diuraikan parser.
 -- =====================================================================
 CREATE TABLE IF NOT EXISTS document_pages (
     id             bigserial PRIMARY KEY,
@@ -113,7 +136,6 @@ CREATE TABLE IF NOT EXISTS document_pages (
     page_number    int NOT NULL,
 
     ocr_text       text NOT NULL DEFAULT '',
-    fixed_text     text,
     edited_text    text,
 
     is_edited      boolean NOT NULL DEFAULT false,
@@ -124,8 +146,6 @@ CREATE TABLE IF NOT EXISTS document_pages (
     ink_ratio      real,
     cropped_pct    real,
     duration_ms    int,
-    fix_ops_count  int,      -- berapa banyak potongan teks yang diubah model
-    prompt_hash    text,     -- versi prompt perbaikan yang dipakai
     notes          jsonb NOT NULL DEFAULT '[]'::jsonb,
 
     created_at     timestamptz NOT NULL DEFAULT now(),
