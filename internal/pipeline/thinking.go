@@ -41,22 +41,26 @@ var (
 )
 
 // askJSON menjalankan satu pertanyaan dan mengurai jawabannya sebagai JSON.
+// raw (teks MENTAH sebelum diurai) dikembalikan terpisah — dipakai pemanggil
+// untuk mode debug (lihat DEBUG_RESULT), supaya jawaban model yang
+// sebenarnya (termasuk yang gagal diurai) tetap bisa ditinjau.
 func askJSON(ctx context.Context, tc *localllm.TextClient, prompt, text string,
-	p localllm.TextParams, out any) error {
+	p localllm.TextParams, out any) (raw string, err error) {
 	res, err := tc.GenerateWith(ctx, prompt, text, p)
 	if err != nil {
-		return err
+		return "", err
 	}
-	raw := strings.TrimSpace(res.Text)
+	raw = strings.TrimSpace(res.Text)
 	// Model kadang membungkus JSON dengan pagar markdown atau kalimat
 	// pengantar meski sudah dilarang; ambil objek JSON pertama yang utuh.
-	if m := reJSONObject.FindString(raw); m != "" {
-		raw = m
+	parseTarget := raw
+	if m := reJSONObject.FindString(parseTarget); m != "" {
+		parseTarget = m
 	}
-	if err := json.Unmarshal([]byte(raw), out); err != nil {
-		return fmt.Errorf("jawaban bukan JSON yang sah: %w", err)
+	if err := json.Unmarshal([]byte(parseTarget), out); err != nil {
+		return raw, fmt.Errorf("jawaban bukan JSON yang sah: %w", err)
 	}
-	return nil
+	return raw, nil
 }
 
 // ---- Tahap 1: gerbang "ini produk hukum atau bukan" ----
@@ -67,14 +71,16 @@ type gateReply struct {
 }
 
 // AskIsRegulation menanyakan SATU hal saja. Pertanyaan sempit jauh lebih
-// jarang meleset pada model kecil daripada pertanyaan gabungan.
+// jarang meleset pada model kecil daripada pertanyaan gabungan. raw adalah
+// jawaban mentah model — lihat askJSON.
 func AskIsRegulation(ctx context.Context, tc *localllm.TextClient, prompt, page string,
-	p localllm.TextParams) (ok bool, alasan string, err error) {
+	p localllm.TextParams) (ok bool, alasan, raw string, err error) {
 	var r gateReply
-	if err := askJSON(ctx, tc, prompt, page, p, &r); err != nil {
-		return false, "", err
+	raw, err = askJSON(ctx, tc, prompt, page, p, &r)
+	if err != nil {
+		return false, "", raw, err
 	}
-	return r.ProdukHukum, bersih(r.Alasan, 300), nil
+	return r.ProdukHukum, bersih(r.Alasan, 300), raw, nil
 }
 
 // ---- Tahap 2: identitas peraturan ----
@@ -88,12 +94,14 @@ type identityReply struct {
 }
 
 // AskIdentity membaca identitas peraturan lalu MEMVALIDASI dan MENORMALKAN
-// hasilnya. Model boleh salah; basis data tidak boleh ikut salah.
+// hasilnya. Model boleh salah; basis data tidak boleh ikut salah. raw adalah
+// jawaban mentah model — lihat askJSON.
 func AskIdentity(ctx context.Context, tc *localllm.TextClient, prompt, page string,
-	p localllm.TextParams) (store.DocMeta, error) {
+	p localllm.TextParams) (meta store.DocMeta, raw string, err error) {
 	var r identityReply
-	if err := askJSON(ctx, tc, prompt, page, p, &r); err != nil {
-		return store.DocMeta{}, err
+	raw, err = askJSON(ctx, tc, prompt, page, p, &r)
+	if err != nil {
+		return store.DocMeta{}, raw, err
 	}
 
 	m := store.DocMeta{
@@ -102,15 +110,15 @@ func AskIdentity(ctx context.Context, tc *localllm.TextClient, prompt, page stri
 		Nomor:            tolakPlaceholder(bersih(r.Nomor, 60)),
 		Tentang:          tolakPlaceholder(bersih(r.Tentang, 500)),
 	}
-	// Instansi baku diturunkan dari yang tertulis — secara deterministik.
-	m.Instansi = NormalizeInstansi(m.InstansiTertulis)
+	// Wilayah baku diturunkan dari yang tertulis — secara deterministik.
+	m.Wilayah = NormalizeWilayah(m.InstansiTertulis)
 	// Angka urut diturunkan dari nomor asli; nomor aslinya tetap utuh.
 	m.NomorUrut = NomorUrut(m.Nomor)
 
 	if t := bersih(r.Tahun, 4); reTahun4.MatchString(t) {
 		m.Tahun = t
 	}
-	return m, nil
+	return m, raw, nil
 }
 
 // ---- Tahap 3: penetapan & pengundangan ----
@@ -126,12 +134,13 @@ type penetapanReply struct {
 
 // AskPenetapan membaca bagian penutup dokumen. Dipanggil HANYA bila parser
 // menemukan penandanya tetapi tidak dapat menguraikannya sendiri — lihat
-// pipeline/trigger.go.
+// pipeline/trigger.go. raw adalah jawaban mentah model — lihat askJSON.
 func AskPenetapan(ctx context.Context, tc *localllm.TextClient, prompt, text string,
-	p localllm.TextParams) (store.Penetapan, error) {
+	p localllm.TextParams) (hasil store.Penetapan, raw string, err error) {
 	var r penetapanReply
-	if err := askJSON(ctx, tc, prompt, text, p, &r); err != nil {
-		return store.Penetapan{}, err
+	raw, err = askJSON(ctx, tc, prompt, text, p, &r)
+	if err != nil {
+		return store.Penetapan{}, raw, err
 	}
 	return store.Penetapan{
 		DitetapkanDi:       tolakPlaceholder(bersih(r.DitetapkanDi, 120)),
@@ -140,7 +149,7 @@ func AskPenetapan(ctx context.Context, tc *localllm.TextClient, prompt, text str
 		DiundangkanDi:      tolakPlaceholder(bersih(r.DiundangkanDi, 120)),
 		DiundangkanTanggal: tolakPlaceholder(bersih(r.DiundangkanTanggal, 60)),
 		DiundangkanOleh:    tolakPlaceholder(bersih(r.DiundangkanOleh, 120)),
-	}, nil
+	}, raw, nil
 }
 
 // ---- kunci identitas ----
@@ -154,12 +163,12 @@ func AskPenetapan(ctx context.Context, tc *localllm.TextClient, prompt, text str
 // metadatanya tidak terbaca.
 func canonicalKey(m store.DocMeta) string {
 	j := rapikan(m.Jenis)
-	i := rapikan(m.Instansi)
+	w := rapikan(m.Wilayah)
 	n := rapikan(m.Nomor)
-	if j == "" || i == "" || n == "" || m.Tahun == "" {
+	if j == "" || w == "" || n == "" || m.Tahun == "" {
 		return ""
 	}
-	return strings.Join([]string{j, i, n, m.Tahun}, "|")
+	return strings.Join([]string{j, w, n, m.Tahun}, "|")
 }
 
 // ---- pembersih nilai ----

@@ -236,8 +236,14 @@ WALI KOTA BANDA ACEH           -> KOTA BANDA ACEH
 PROPINSI DAERAH ISTIMEWA ACEH  -> PEMERINTAH ACEH
 ```
 
-Keduanya disimpan: `instansi_tertulis` (apa yang tercetak) dan `instansi`
-(hasil pemetaan), sehingga hasilnya selalu dapat ditelusuri balik.
+Keduanya disimpan: `instansi_tertulis` (apa yang tercetak) dan `wilayah`
+(hasil pemetaan ke salah satu dari 25 wilayah yang dikenal sistem — lihat
+`pipeline.WilayahList`), sehingga hasilnya selalu dapat ditelusuri balik.
+
+Jenis DAN wilayah keduanya divalidasi terhadap whitelist (`pipeline.JenisList`
+/ `pipeline.WilayahList`, 2026-07-22) — dokumen yang jenis atau wilayahnya
+tidak dikenal ditolak, baik saat identitasnya berhasil diekstrak lewat regex
+maupun lewat model.
 
 **Nomor peraturan disimpan dua bentuk.** Nomor keputusan kerap bukan angka
 tunggal, mis. `300.2/ 69 /2026`:
@@ -256,6 +262,12 @@ dapat berbagi angka pertama yang sama (`300.2/ 69 /2026` dan
 `prompts/gate.md` (produk hukum atau bukan) · `prompts/identity.md` (jenis,
 instansi, nomor, tahun, tentang) · `prompts/penetapan.md` (tempat, tanggal,
 penanda tangan).
+
+**Model hanya jalan belakang untuk identitas juga (2026-07-22).** Sama
+seperti bagian penetapan, `internal/pipeline/identity_trigger.go` mencoba
+`parser.ExtractHeader` (regex) lebih dulu; gate DAN identity model *sama
+sekali tidak dipanggil* bila regex sudah menghasilkan jenis+wilayah yang
+lolos whitelist.
 
 Alasannya konkret: satu prompt panjang yang meminta banyak hal sekaligus
 membuat model kecil kehilangan sebagian instruksi. Gejala nyatanya — model
@@ -594,35 +606,29 @@ berakhir.
 SELECT status, count(*) FROM documents GROUP BY status ORDER BY 2 DESC;
 
 -- Dokumen yang ditolak/duplikat beserta alasannya
-SELECT id, download_url, status, reject_reason, jenis, instansi, nomor, tahun
+SELECT id, download_url, status, reject_reason, jenis, wilayah, nomor, tahun
 FROM documents WHERE status IN ('rejected','duplicate') ORDER BY updated_at DESC;
 
 -- Coba lagi dokumen yang gagal (kembali ke awal: unduh ulang)
-UPDATE documents SET status='pending', attempts=0, last_error=NULL WHERE id='<uuid>';
+UPDATE documents SET status='pending', attempts=0, last_error=NULL WHERE id=<id>;
 
 -- Proses ulang OCR tanpa unduh ulang (berkas sudah ada)
-DELETE FROM document_pages WHERE document_id='<uuid>';
-UPDATE documents SET status='downloaded', attempts=0 WHERE id='<uuid>';
+DELETE FROM document_pages WHERE document_id=<id>;
+UPDATE documents SET status='downloaded', attempts=0 WHERE id=<id>;
 
 -- Batalkan tanda "bukan peraturan"/"duplikat" (Anda menilai model salah)
 UPDATE documents SET status='downloaded', reject_reason=NULL, duplicate_of=NULL,
-       is_peraturan=NULL, attempts=0 WHERE id='<uuid>';
-
--- Parse ulang saja (OCR & perbaikan dipertahankan)
-UPDATE documents SET status='ocr_done' WHERE id='<uuid>';
-
--- Setelah mengoreksi teks OCR lewat UI, minta parse ulang
-UPDATE document_pages SET edited_text='<teks koreksi>', is_edited=true, edited_at=now()
-WHERE document_id='<uuid>' AND page_number=<n>;
-UPDATE documents SET status='ocr_done' WHERE id='<uuid>';
-
--- Halaman yang diproses dengan prompt versi lama
-SELECT document_id, page_number FROM document_pages WHERE prompt_hash <> '<hash_baru>';
-
--- Halaman yang paling banyak diubah model (kandidat tinjauan manusia)
-SELECT document_id, page_number, fix_ops_count FROM document_pages
-ORDER BY fix_ops_count DESC NULLS LAST LIMIT 20;
+       is_peraturan=NULL, attempts=0 WHERE id=<id>;
 ```
+
+**Tidak ada lagi perintah "parse ulang" (2026-07-22).** Parser hanya boleh
+jalan SEKALI per dokumen — `parse_snapshots.document_id` adalah PRIMARY KEY
+tanpa `ON CONFLICT DO UPDATE`, jadi memaksa `status` kembali ke `'ocr_done'`
+untuk dokumen yang sudah `'parsed'` akan membuat `InsertParseResult` gagal
+keras (unique violation) saat coba jalan lagi, bukan diam-diam menimpa hasil
+lama. Ini disengaja: koreksi terhadap hasil parse dilakukan MANUSIA langsung
+di tabel `nodes` (drag-drop/relabel/edit `content`), bukan dengan menjalankan
+parser ulang dari OCR mentah.
 
 **Mengosongkan semua data kecuali `sources`:** jalankan `reset_data.sql`.
 

@@ -10,7 +10,6 @@
 -- sama muncul di banyak JDIH tetap satu baris.
 
 CREATE EXTENSION IF NOT EXISTS vector;
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- =====================================================================
 -- sources — daftar endpoint yang dijelajahi. Perannya kini kecil: hanya
@@ -19,7 +18,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- atau bukan", oleh model teks).
 -- =====================================================================
 CREATE TABLE IF NOT EXISTS sources (
-    id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    id             bigserial PRIMARY KEY,
     code           text NOT NULL UNIQUE,
     endpoint_url   text NOT NULL,
 
@@ -37,7 +36,7 @@ CREATE TABLE IF NOT EXISTS sources (
 -- pernah didaftarkan tidak masuk dua kali, dari sumber mana pun.
 -- =====================================================================
 CREATE TABLE IF NOT EXISTS documents (
-    id                uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    id                bigserial PRIMARY KEY,
 
     -- Identitas berkas.
     download_url      text NOT NULL UNIQUE,   -- sudah dinormalisasi (lihat downloader.NormalizeURL)
@@ -46,7 +45,7 @@ CREATE TABLE IF NOT EXISTS documents (
     file_size         bigint,
 
     -- Jejak asal (informasi saja, bukan identitas).
-    first_source_id   uuid REFERENCES sources(id) ON DELETE SET NULL,
+    first_source_id   bigint REFERENCES sources(id) ON DELETE SET NULL,
 
     -- sort_tahun / sort_nomor berasal dari metadata SUMBER dan HANYA dipakai
     -- untuk mengurutkan antrian (dokumen terbaru dikerjakan lebih dulu).
@@ -63,12 +62,16 @@ CREATE TABLE IF NOT EXISTS documents (
     attempts          int NOT NULL DEFAULT 0,
     last_error        text,
     reject_reason     text,     -- 'bukan_peraturan' | 'duplikat' | 'unduh_gagal' | ...
-    duplicate_of      uuid REFERENCES documents(id) ON DELETE SET NULL,
+    duplicate_of      bigint REFERENCES documents(id) ON DELETE SET NULL,
 
     -- Metadata hasil pembacaan model teks atas halaman 1 (bukan dari sumber).
     is_peraturan      boolean,
     jenis             text,
-    instansi          text,
+    -- wilayah adalah bentuk baku hasil pemetaan deterministik ke salah satu
+    -- dari 25 wilayah yang dikenal sistem: NASIONAL, PEMERINTAH ACEH, atau
+    -- salah satu dari 23 kabupaten/kota. Namanya sebelumnya "instansi" —
+    -- diganti karena isinya memang selalu nama wilayah administratif.
+    wilayah           text,
     -- nomor DISIMPAN DUA BENTUK. Nomor keputusan kerap bukan angka tunggal,
     -- mis. "300.2/ 69 /2026": menyimpannya sebagai angka saja akan
     -- menghilangkan nomor aslinya, sedangkan menyimpannya sebagai teks saja
@@ -89,14 +92,14 @@ CREATE TABLE IF NOT EXISTS documents (
     diundangkan_oleh     text,
 
     -- instansi_tertulis menyimpan apa yang benar-benar tertulis di dokumen
-    -- ("GUBERNUR ACEH"), sedangkan instansi di atas menyimpan hasil pemetaan
-    -- ke badan pemerintahannya ("PEMERINTAH ACEH"). Pemetaan itu dilakukan
-    -- kode secara deterministik, bukan oleh model.
+    -- ("GUBERNUR ACEH"), sedangkan wilayah di atas menyimpan hasil pemetaan
+    -- ke wilayah bakunya ("PEMERINTAH ACEH"). Pemetaan itu dilakukan kode
+    -- secara deterministik, bukan oleh model.
     instansi_tertulis text,
     struktur          text,     -- 'pasal_ayat' | 'diktum' | 'unknown'
 
     -- Kunci kanonik untuk deteksi duplikat berbasis identitas peraturan,
-    -- diisi kode dari metadata di atas: jenis|instansi|nomor|tahun.
+    -- diisi kode dari metadata di atas: jenis|wilayah|nomor|tahun.
     canonical_key     text,
 
     total_pages       int,
@@ -132,7 +135,7 @@ CREATE INDEX IF NOT EXISTS idx_documents_queue
 -- =====================================================================
 CREATE TABLE IF NOT EXISTS document_pages (
     id             bigserial PRIMARY KEY,
-    document_id    uuid NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    document_id    bigint NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
     page_number    int NOT NULL,
 
     ocr_text       text NOT NULL DEFAULT '',
@@ -145,6 +148,14 @@ CREATE TABLE IF NOT EXISTS document_pages (
     is_truncated   boolean NOT NULL DEFAULT false,
     ink_ratio      real,
     cropped_pct    real,
+    -- dpi_pakai adalah DPI render yang SUNGGUH dipakai untuk halaman ini
+    -- (2026-07-22). DPI dipilih otomatis lewat skor ketajaman HANYA di
+    -- halaman 1 dokumen (lihat raster.blurScore, extractor.renderAdaptif);
+    -- halaman-halaman berikutnya mengikuti DPI halaman 1 — tidak dihitung
+    -- ulang per halaman. Kolom ini tetap diisi di SETIAP halaman (bukan
+    -- cuma halaman 1) supaya selalu jelas dari data render mana teks OCR
+    -- suatu halaman berasal, tanpa perlu join balik ke halaman 1.
+    dpi_pakai      int,
     duration_ms    int,
     notes          jsonb NOT NULL DEFAULT '[]'::jsonb,
 
@@ -155,10 +166,16 @@ CREATE TABLE IF NOT EXISTS document_pages (
 CREATE INDEX IF NOT EXISTS idx_pages_doc ON document_pages (document_id, page_number);
 
 -- =====================================================================
--- parse_snapshots — SATU baris per dokumen (upsert), bukan riwayat.
+-- parse_snapshots — SATU baris per dokumen. Parser hanya boleh jalan SEKALI
+-- per dokumen (2026-07-22): tidak ada mekanisme reparse lagi — koreksi
+-- sesudahnya dilakukan manusia langsung di tabel `nodes` (drag-drop/
+-- relabel), bukan dengan menjalankan parser ulang. document_id sebagai
+-- PRIMARY KEY (bukan bigserial tersendiri) menegakkan ini: INSERT kedua
+-- untuk dokumen yang sama gagal keras (unique violation), bukan menimpa
+-- diam-diam.
 -- =====================================================================
 CREATE TABLE IF NOT EXISTS parse_snapshots (
-    document_id       uuid PRIMARY KEY REFERENCES documents(id) ON DELETE CASCADE,
+    document_id       bigint PRIMARY KEY REFERENCES documents(id) ON DELETE CASCADE,
     status            text NOT NULL,
     report            jsonb NOT NULL DEFAULT '{}'::jsonb,
     extraction_notes  jsonb NOT NULL DEFAULT '[]'::jsonb,
@@ -166,11 +183,13 @@ CREATE TABLE IF NOT EXISTS parse_snapshots (
 );
 
 -- =====================================================================
--- nodes — hasil parse siap-edit (drag-drop/relabel di UI).
+-- nodes — hasil parse siap-edit (drag-drop/relabel di UI). Diisi SEKALI
+-- oleh parser (lihat parse_snapshots di atas); koreksi sesudahnya adalah
+-- edit manusia langsung ke baris di sini, bukan reparse.
 -- =====================================================================
 CREATE TABLE IF NOT EXISTS nodes (
     id                 bigserial PRIMARY KEY,
-    document_id        uuid NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    document_id        bigint NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
     parent_id          bigint REFERENCES nodes(id) ON DELETE CASCADE,
 
     section            text NOT NULL,
@@ -314,7 +333,7 @@ CREATE TABLE IF NOT EXISTS node_embeddings (
 -- =====================================================================
 CREATE TABLE IF NOT EXISTS relations (
     id                 bigserial PRIMARY KEY,
-    document_id        uuid NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    document_id        bigint NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
     type               text NOT NULL,
     key                text,
     jenis              text,
@@ -324,7 +343,7 @@ CREATE TABLE IF NOT EXISTS relations (
     tentang            text,
     confidence         text,
     kutipan            text,
-    target_document_id uuid REFERENCES documents(id) ON DELETE SET NULL,
+    target_document_id bigint REFERENCES documents(id) ON DELETE SET NULL,
     created_at         timestamptz NOT NULL DEFAULT now()
 );
 

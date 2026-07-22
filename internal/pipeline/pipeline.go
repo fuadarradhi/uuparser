@@ -38,10 +38,22 @@ type Deps struct {
 	Text    *localllm.TextClient // model teks: klasifikasi + perbaikan
 	Prompts prompts.Set
 	DataDir string
-	DPI     int
+
+	// Render adaptif per halaman: lihat config.Config.DPIJelas dkk.
+	DPIJelas     int
+	DPISedang    int
+	DPIBlur      int
+	AmbangJelas  float64
+	AmbangSedang float64
 
 	// LowMemory: jalankan kedua model bergantian, bukan berdampingan.
 	LowMemory bool
+
+	// MinTahun: lihat config.Config.MinTahun — 0 berarti tanpa saringan.
+	MinTahun int
+
+	// DebugResult: lihat config.Config.DebugResult.
+	DebugResult bool
 }
 
 func Run(ctx context.Context, deps Deps) {

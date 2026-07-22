@@ -34,8 +34,23 @@ type PageResult struct {
 	IsTruncated bool
 	InkRatio    float64
 	CroppedPct  float64
-	DurationMS  int
-	Notes       []string
+	// DPI adalah resolusi render yang SUNGGUH dipakai untuk halaman ini —
+	// diputuskan sekali di halaman 1 (lihat renderAdaptif), diwariskan ke
+	// halaman-halaman berikutnya.
+	DPI int
+	// BlurScoreProbe hanya terisi (>0) pada halaman yang MEMUTUSKAN DPI-nya
+	// sendiri (biasanya halaman 1) — nol pada halaman yang mewarisi
+	// keputusan halaman itu, supaya pemanggil tahu skor mana yang benar-benar
+	// dipakai mengambil keputusan (bukan skor yang tidak pernah dihitung).
+	BlurScoreProbe float64
+	// PNG adalah gambar PERSIS yang dikirim ke model OCR — hanya diisi bila
+	// pemanggil memerlukannya (mis. mode debug: lihat pipeline.DebugResult).
+	// Dikosongkan kembali (nil) sesegera mungkin oleh pemanggil yang tak
+	// membutuhkannya, supaya tidak menahan memori PNG banyak halaman
+	// sekaligus.
+	PNG        []byte
+	DurationMS int
+	Notes      []string
 }
 
 // PageSink menerima hasil tiap halaman, satu per satu, berurutan.
@@ -59,7 +74,27 @@ type PageSink interface {
 
 // Config: hanya hal yang memang perlu ditentukan pemanggil.
 type Config struct {
-	DPI          int
+	// Render adaptif — TAPI HANYA DIPUTUSKAN SEKALI PER DOKUMEN (di halaman
+	// pertama yang benar-benar diproses, lihat Document/renderAdaptif),
+	// bukan per halaman: DPIJelas dipakai sebagai probe; kalau blurScore-nya
+	// sudah cukup tajam (>= AmbangJelas), dipakai langsung tanpa render
+	// ulang. Kalau tidak, dirender ULANG SEKALI LAGI di DPISedang (skor >=
+	// AmbangSedang) atau DPIBlur (skor lebih rendah lagi). Halaman-halaman
+	// berikutnya lalu memakai DPI yang sama — TIDAK diukur ulang.
+	DPIJelas     int
+	DPISedang    int
+	DPIBlur      int
+	AmbangJelas  float64
+	AmbangSedang float64
+
+	// DPIPaksa, bila > 0, MELEWATI seluruh logika probe/adaptif di atas dan
+	// memakai DPI ini langsung untuk setiap halaman. Dipakai saat
+	// melanjutkan dokumen yang terhenti SETELAH halaman 1 selesai: DPI
+	// halaman 1 (tersimpan di DB) diteruskan ke sini, supaya halaman
+	// berikutnya tetap konsisten dengan halaman 1 — bukan menghitung ulang
+	// seolah halaman itu "halaman pertama".
+	DPIPaksa int
+
 	AutoCrop     bool
 	OCRClient    *localllm.Client
 	OCRMaxTokens int
@@ -80,6 +115,12 @@ const defaultOCRMaxTokens = 2048
 type Extractor struct {
 	cfg  Config
 	sink PageSink
+
+	// dpiKeputusan menyimpan DPI yang sudah diputuskan untuk dokumen yang
+	// SEDANG diproses dalam satu pemanggilan Document() — diisi sekali di
+	// halaman pertama yang diproses, dipakai apa adanya untuk sisa halaman.
+	// 0 berarti belum diputuskan.
+	dpiKeputusan int
 }
 
 func New(cfg Config, sink PageSink) *Extractor {
@@ -142,33 +183,103 @@ func (e *Extractor) Document(ctx context.Context, pdfPath string) (totalPages in
 	return n, false, nil
 }
 
+// renderAdaptif merender halaman dengan DPI yang dipilih otomatis lewat skor
+// ketajaman (raster.Page.BlurScore, varians Laplacian) — TAPI HANYA SEKALI
+// PER DOKUMEN, di halaman pertama yang benar-benar diproses. Halaman
+// berikutnya memakai e.dpiKeputusan apa adanya, tanpa probe/render ulang
+// sama sekali.
+//
+// c.DPIPaksa, bila diisi pemanggil (lihat Config), melewati SEMUA logika di
+// bawah dan langsung dipakai sebagai e.dpiKeputusan — dipakai saat
+// melanjutkan dokumen yang halaman 1-nya sudah diproses di penjalanan
+// sebelumnya.
+//
+// skorProbe hanya bernilai (>0) pada RENDER YANG MEMUTUSKAN — nol pada
+// halaman-halaman berikutnya yang cuma mewarisi keputusan itu, supaya
+// pemanggil tahu skor mana yang benar-benar dipakai mengambil keputusan.
+// SELALU dari render di DPIJelas (bukan dari render akhir bila terjadi
+// render ulang): mencampur skor dari DPI berbeda akan menyesatkan kalibrasi,
+// karena varians Laplacian ikut membesar sekadar karena resolusinya naik,
+// bukan karena halamannya makin tajam.
+func (e *Extractor) renderAdaptif(doc *raster.Doc, pageNum int) (pg raster.Page, dpiPakai int, skorProbe float64, err error) {
+	c := e.cfg
+
+	// Sudah diputuskan (baik oleh probe di halaman sebelumnya, atau
+	// dipaksakan pemanggil lewat DPIPaksa) — pakai apa adanya.
+	if e.dpiKeputusan > 0 {
+		pg, err = doc.Render(pageNum, raster.Opts{DPI: e.dpiKeputusan, AutoCrop: c.AutoCrop})
+		return pg, e.dpiKeputusan, 0, err
+	}
+	if c.DPIPaksa > 0 {
+		e.dpiKeputusan = c.DPIPaksa
+		pg, err = doc.Render(pageNum, raster.Opts{DPI: e.dpiKeputusan, AutoCrop: c.AutoCrop})
+		return pg, e.dpiKeputusan, 0, err
+	}
+
+	dpiJelas, dpiSedang, dpiBlur := c.DPIJelas, c.DPISedang, c.DPIBlur
+	if dpiJelas <= 0 {
+		dpiJelas = 100
+	}
+	if dpiSedang <= 0 {
+		dpiSedang = 150
+	}
+	if dpiBlur <= 0 {
+		dpiBlur = 200
+	}
+
+	probe, err := doc.Render(pageNum, raster.Opts{DPI: dpiJelas, AutoCrop: c.AutoCrop})
+	if err != nil {
+		return raster.Page{}, 0, 0, err
+	}
+	skorProbe = probe.BlurScore
+
+	switch {
+	case skorProbe >= c.AmbangJelas:
+		e.dpiKeputusan = dpiJelas
+		return probe, dpiJelas, skorProbe, nil
+	case skorProbe >= c.AmbangSedang:
+		e.dpiKeputusan = dpiSedang
+	default:
+		e.dpiKeputusan = dpiBlur
+	}
+	pg, err = doc.Render(pageNum, raster.Opts{DPI: e.dpiKeputusan, AutoCrop: c.AutoCrop})
+	return pg, e.dpiKeputusan, skorProbe, err
+}
+
 // ocrPage merender lalu meng-OCR SATU halaman.
 func (e *Extractor) ocrPage(ctx context.Context, doc *raster.Doc, pageNum, total int) (PageResult, error) {
 	c := e.cfg
-	dpi := c.DPI
-	if dpi == 0 {
-		dpi = 200
-	}
 	maxTokens := c.OCRMaxTokens
 	if maxTokens <= 0 {
 		maxTokens = defaultOCRMaxTokens
 	}
 
-	pg, err := doc.Render(pageNum, raster.Opts{DPI: dpi, AutoCrop: c.AutoCrop})
+	pg, dpiPakai, skorProbe, err := e.renderAdaptif(doc, pageNum)
 	if err != nil {
 		return PageResult{}, fmt.Errorf("rasterisasi: %w", err)
+	}
+	// Ke log info.log — dipakai mengalibrasi AmbangJelas/AmbangSedang: lihat
+	// sebaran skor mentahnya di korpus nyata sebelum menyesuaikan ambang di
+	// .env. skorProbe nol berarti halaman ini mewarisi keputusan halaman
+	// sebelumnya (tidak diukur ulang).
+	if skorProbe > 0 {
+		logx.Info("hal %d/%d — blur_score=%.0f -> DPI=%d", pageNum, total, skorProbe, dpiPakai)
 	}
 
 	if pg.InkRatio < blankInkRatio {
 		logx.Skip("hal %d/%d — kosong, dilewati", pageNum, total)
 		return PageResult{
 			Page: pageNum, Total: total, W: pg.W, H: pg.H, IsEmpty: true, InkRatio: pg.InkRatio,
+			DPI: dpiPakai, BlurScoreProbe: skorProbe, PNG: pg.PNG,
 			Notes: []string{"halaman kosong (tanpa teks) — OCR dilewati"},
 		}, nil
 	}
 
 	started := time.Now()
-	dims := fmt.Sprintf("%dx%d px", pg.W, pg.H)
+	// DPI TAMPIL DI KONSOL (permintaan user, 2026-07-22) — sebelumnya cuma
+	// masuk log/info.log. Dimensi & DPI sama-sama berguna dipantau langsung
+	// selagi proses jalan, bukan cuma ditinjau belakangan dari berkas log.
+	dims := fmt.Sprintf("DPI %d · %dx%d px", dpiPakai, pg.W, pg.H)
 	params := localllm.Params{
 		MaxTokens: maxTokens,
 		OnStage: func(stage string) {
@@ -233,6 +344,7 @@ func (e *Extractor) ocrPage(ctx context.Context, doc *raster.Doc, pageNum, total
 		Page: pageNum, Total: total, W: pg.W, H: pg.H,
 		Text: text, IsTruncated: truncated,
 		InkRatio: pg.InkRatio, CroppedPct: croppedPct,
+		DPI: dpiPakai, BlurScoreProbe: skorProbe, PNG: pg.PNG,
 		DurationMS: int(time.Since(started).Milliseconds()), Notes: notes,
 	}, nil
 }

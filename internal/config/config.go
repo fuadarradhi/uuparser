@@ -56,10 +56,46 @@ type Config struct {
 	// menimbulkan galat.
 	ChatTemplate string
 
-	// DPI render halaman sebelum OCR. Satu-satunya parameter render yang
-	// dapat diubah: nilai terbaiknya bergantung mutu pindaian korpus Anda
-	// dan hanya bisa ditentukan dengan mengukur (lihat CATATAN-MIGRASI.md).
-	DPI int
+	// Render adaptif per halaman (2026-07-22): DPI dipilih otomatis lewat
+	// skor ketajaman (varians Laplacian, lihat raster.blurScore), bukan satu
+	// angka tetap untuk seluruh dokumen. Halaman JELAS dirender di DPIJelas
+	// SEKALIGUS dipakai sebagai probe pengukur ketajaman — kalau skornya
+	// sudah cukup, tidak ada render ulang (kasus paling murah & paling
+	// sering: dokumen bersih). Halaman kurang tajam dirender ULANG di
+	// DPISedang; yang benar-benar blur di DPIBlur.
+	//
+	// AmbangJelas/AmbangSedang HARUS dikalibrasi terhadap korpus Anda —
+	// setiap halaman mencatat skor mentahnya ke log/info.log
+	// ("blur_score=..."), jadi jalankan dulu dengan nilai bawaan, lihat
+	// sebaran skornya di log, baru sesuaikan ambangnya. Angka bawaan di sini
+	// sekadar titik awal, bukan hasil pengukuran — beda dari nilai bawaan
+	// lain di berkas ini yang sudah pernah diuji.
+	DPIJelas     int
+	DPISedang    int
+	DPIBlur      int
+	AmbangJelas  float64
+	AmbangSedang float64
+
+	// MinTahun menyaring dokumen SAAT DIDAFTARKAN dari sumber: hanya yang
+	// sort_tahun-nya (metadata JDIH, HANYA untuk urutan — lihat
+	// downloader.RemoteDoc) >= MinTahun yang didaftarkan. 0 berarti tanpa
+	// saringan. Ini KEBALIKAN dari filosofi "tombol yang jawabannya sudah
+	// pasti tidak perlu jadi .env": jawabannya justru BELUM pasti secara
+	// sengaja — dipakai untuk memperkecil cakupan uji coba parser
+	// (mis. MIN_TAHUN=2020 dulu, diperbesar bertahap) sambil mengamati tahun
+	// berapa parser sudah bagus dan tahun berapa masih perlu perbaikan.
+	// Dokumen tanpa sort_tahun (metadata sumber tak menyediakannya) TETAP
+	// didaftarkan — lebih baik diproses daripada hilang karena tak
+	// terverifikasi.
+	MinTahun int
+
+	// DebugResult (2026-07-22): saat true, tiap dokumen menulis
+	// data/debug/<id>/render.pdf (gambar yang dikirim ke OCR, berlabel DPI)
+	// + ocr.txt + parse.txt — sekadar mempermudah menyalin hasil OCR/parse
+	// untuk dikirim ke Claude untuk dipelajari. TIDAK untuk dinyalakan terus
+	// (menulis berkas tambahan per dokumen); nyalakan sebentar saat memang
+	// perlu meninjau, matikan lagi sesudahnya.
+	DebugResult bool
 
 	// ---- log ----
 	LogDir string
@@ -107,7 +143,13 @@ func Load(path string) (Config, error) {
 		PromptDir:    get("PROMPT_DIR", filepath.Join(cwd, "prompts")),
 		ChatTemplate: get("CHAT_TEMPLATE", ""),
 		LowMemory:    boolean(get("LOW_MEMORY", "false")),
-		DPI:       num(get("DPI", "200"), 200),
+		DPIJelas:     num(get("DPI_JELAS", "100"), 100),
+		DPISedang:    num(get("DPI_SEDANG", "150"), 150),
+		DPIBlur:      num(get("DPI_BLUR", "200"), 200),
+		AmbangJelas:  floatNum(get("BLUR_AMBANG_JELAS", "5e8"), 5e8),
+		AmbangSedang: floatNum(get("BLUR_AMBANG_SEDANG", "5e7"), 5e7),
+		MinTahun:     num(get("MIN_TAHUN", "0"), 0),
+		DebugResult:  boolean(get("DEBUG_RESULT", "false")),
 
 		LogDir: get("LOG_DIR", filepath.Join(cwd, "log")),
 	}
@@ -171,6 +213,17 @@ func parseEnvFile(path string) (map[string]string, error) {
 func num(s string, def int) int {
 	v, err := strconv.Atoi(strings.TrimSpace(s))
 	if err != nil || v <= 0 {
+		return def
+	}
+	return v
+}
+
+// floatNum mem-parse angka pecahan dari env — dipakai untuk ambang skor blur
+// (varians Laplacian), yang tidak masuk akal dibatasi ">0 saja seperti int
+// (skor 0 itu sah: berarti halaman kosong/putih polos).
+func floatNum(s string, def float64) float64 {
+	v, err := strconv.ParseFloat(strings.TrimSpace(s), 64)
+	if err != nil || v < 0 {
 		return def
 	}
 	return v

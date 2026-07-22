@@ -73,7 +73,7 @@ func drainOCR(ctx context.Context, deps Deps) (workedAny bool) {
 // apakah proses diteruskan.
 type docSink struct {
 	deps    Deps
-	docID   string
+	docID   int64
 	prompts prompts.Set
 	stopped string // alasan berhenti, kosong bila lanjut
 	ocred   int    // halaman yang sudah selesai di-OCR
@@ -82,6 +82,10 @@ type docSink struct {
 	// classified menandai bahwa pemeriksaan "ini peraturan atau bukan" sudah
 	// dijalankan untuk dokumen ini, sehingga tidak diulang tiap halaman.
 	classified bool
+
+	// debug menulis keluaran mode-debug (DEBUG_RESULT=true) — nil bila mode
+	// itu tidak aktif. Aman dipanggil methodnya meski nil (lihat debug_writer.go).
+	debug *debugWriter
 }
 
 // OnProgress mencetak baris kemajuan [diperbaiki/di-OCR/total]. Dipanggil
@@ -99,15 +103,19 @@ func (d *docSink) OnPage(ctx context.Context, r extractor.PageResult) (bool, err
 	// 1) Simpan hasil OCR MENTAH lebih dulu — apa pun yang terjadi setelah
 	//    ini, teks asli sudah aman dan tidak akan pernah ditimpa.
 	if err := d.deps.Store.SavePage(ctx, d.docID, r.Page, r.Text, r.IsEmpty, r.IsTruncated,
-		r.InkRatio, r.CroppedPct, r.DurationMS, r.Notes); err != nil {
+		r.InkRatio, r.CroppedPct, r.DPI, r.DurationMS, r.Notes); err != nil {
 		return false, err
 	}
+	d.debug.tambahHalaman(r)
+
 	// Baris kemajuan SETELAH OCR, SEBELUM perbaikan: angka pertama (sudah
 	// diperbaiki) memang tertinggal satu dari angka kedua (sudah di-OCR).
+	// DPI ikut ditampilkan (permintaan user, 2026-07-22) supaya gampang
+	// dipantau langsung dari konsol, bukan cuma dari log/info.log.
 	d.ocred = r.Page
 	d.total = r.Total
-	logx.Progress(d.ocred, r.Total, "hal %d · %dx%d px%s · %s",
-		r.Page, r.W, r.H, cropNote(r.CroppedPct), durText(r.DurationMS))
+	logx.Progress(d.ocred, r.Total, "hal %d · DPI %d · %dx%d px%s · %s",
+		r.Page, r.DPI, r.W, r.H, cropNote(r.CroppedPct), durText(r.DurationMS))
 
 	if r.IsEmpty {
 		// Halaman kosong tidak bisa diklasifikasi. Klasifikasi TIDAK
@@ -138,17 +146,41 @@ func (d *docSink) OnPage(ctx context.Context, r extractor.PageResult) (bool, err
 	return false, nil
 }
 
-// classify membaca halaman 1 lewat model teks lalu memutuskan: tolak (bukan
-// peraturan), tandai duplikat, atau lanjutkan ke halaman berikutnya.
+// classify membaca halaman 1 dan memutuskan: tolak (bukan peraturan / jenis
+// atau wilayah tak dikenal), tandai duplikat, atau lanjutkan ke halaman
+// berikutnya.
+//
+// Tahap 0 — regex dulu (parser.ExtractHeader lewat CobaIdentitasDeterministik,
+// lihat identity_trigger.go). Bila jenis DAN wilayah sudah lolos whitelist,
+// model TIDAK DIPANGGIL SAMA SEKALI — baik gerbang maupun identitas — karena
+// judul resmi yang polanya cocok dan jenis/wilayahnya dikenal sudah cukup
+// jadi bukti dokumen ini peraturan. Model hanya jadi jalan belakang untuk
+// dokumen yang formatnya menyimpang.
 func (d *docSink) classify(ctx context.Context, halaman string) (bool, error) {
+	if det := CobaIdentitasDeterministik(halaman); det.Lolos {
+		meta := store.DocMeta{
+			IsPeraturan:      true,
+			Jenis:            det.Jenis,
+			Wilayah:          det.Wilayah,
+			InstansiTertulis: det.InstansiTertulis,
+			Nomor:            det.Nomor,
+			Tahun:            det.Tahun,
+			Tentang:          det.Tentang,
+			Struktur:         det.Struktur,
+		}
+		meta.NomorUrut = NomorUrut(meta.Nomor)
+		return d.finishClassify(ctx, meta, "regex (deterministik, tanpa model)")
+	}
+
 	// Tahap 1 — gerbang. Pertanyaan tunggal yang sempit: produk hukum atau
 	// bukan. Dipisah dari pembacaan identitas karena model kecil lebih andal
 	// menjawab satu hal daripada banyak hal sekaligus.
 	if d.deps.LowMemory {
 		d.deps.Vision.Release()
 	}
-	produkHukum, alasan, err := AskIsRegulation(ctx, d.deps.Text, d.prompts.Gate, halaman,
+	produkHukum, alasan, rawGate, err := AskIsRegulation(ctx, d.deps.Text, d.prompts.Gate, halaman,
 		d.textProgress(d.ocred, d.total, "memeriksa jenis dokumen"))
+	d.debug.catatModel("GERBANG (gate.md)", d.prompts.Gate, halaman, rawGate, err)
 	if err != nil {
 		if d.deps.LowMemory {
 			d.deps.Text.Release()
@@ -171,9 +203,10 @@ func (d *docSink) classify(ctx context.Context, halaman string) (bool, error) {
 	}
 
 	// Tahap 2 — identitas. Model hanya menyalin apa yang tertulis; pemetaan
-	// instansi dan penurunan angka urut dikerjakan kode (lihat normalize.go).
-	meta, err := AskIdentity(ctx, d.deps.Text, d.prompts.Identity, halaman,
+	// wilayah dan penurunan angka urut dikerjakan kode (lihat normalize.go).
+	meta, rawIdentity, err := AskIdentity(ctx, d.deps.Text, d.prompts.Identity, halaman,
 		d.textProgress(d.ocred, d.total, "membaca identitas"))
+	d.debug.catatModel("IDENTITAS (identity.md)", d.prompts.Identity, halaman, rawIdentity, err)
 	if d.deps.LowMemory {
 		d.deps.Text.Release()
 	}
@@ -182,6 +215,32 @@ func (d *docSink) classify(ctx context.Context, halaman string) (bool, error) {
 	}
 	meta.IsPeraturan = true
 
+	// Jenis/wilayah hasil MODEL juga wajib lolos whitelist yang sama —
+	// model boleh salah menyalin, basis data tidak boleh menyimpan jenis/
+	// wilayah yang bentuknya tidak terjamin konsisten.
+	if !IsJenisValid(meta.Jenis) || !IsWilayahValid(meta.Wilayah) {
+		if d.deps.LowMemory {
+			d.deps.Text.Release()
+		}
+		alasanTolak := fmt.Sprintf("jenis atau wilayah tidak dikenal: jenis=%q wilayah=%q",
+			meta.Jenis, meta.Wilayah)
+		if err := d.deps.Store.RejectNotRegulation(ctx, d.docID, alasanTolak); err != nil {
+			return true, err
+		}
+		d.stopped = alasanTolak
+		return true, nil
+	}
+
+	return d.finishClassify(ctx, meta, "model teks (gate.md + identity.md)")
+}
+
+// finishClassify menyimpan metadata & memeriksa duplikat — dipakai baik oleh
+// jalur deterministik maupun jalur model, sehingga logika duplikat-checking
+// tidak dobel. sumber menjelaskan MANA yang memutuskan (dicatat ke mode
+// debug — lihat DEBUG_RESULT — supaya kalau jenis/wilayah keliru, jelas dulu
+// apakah salahnya di regex atau di model).
+func (d *docSink) finishClassify(ctx context.Context, meta store.DocMeta, sumber string) (bool, error) {
+	d.debug.catatIdentitas(sumber, meta)
 	dup, err := d.deps.Store.ApplyMetaAndCheckDuplicate(ctx, d.docID, meta, canonicalKey(meta))
 	if err != nil {
 		return true, err
@@ -193,9 +252,9 @@ func (d *docSink) classify(ctx context.Context, halaman string) (bool, error) {
 
 	d.classified = true
 	logx.Info("dokumen dikenali: %s %s Nomor %s Tahun %s — %s",
-		meta.Jenis, meta.Instansi, meta.Nomor, meta.Tahun, meta.Tentang)
-	if meta.InstansiTertulis != meta.Instansi {
-		logx.Info("instansi dipetakan: %q -> %q", meta.InstansiTertulis, meta.Instansi)
+		meta.Jenis, meta.Wilayah, meta.Nomor, meta.Tahun, meta.Tentang)
+	if meta.InstansiTertulis != meta.Wilayah {
+		logx.Info("wilayah dipetakan: %q -> %q", meta.InstansiTertulis, meta.Wilayah)
 	}
 	return false, nil
 }
@@ -222,8 +281,9 @@ func (d *docSink) uraiPenetapan(ctx context.Context, r extractor.PageResult) err
 		if d.deps.LowMemory {
 			d.deps.Vision.Release()
 		}
-		mp, err := AskPenetapan(ctx, d.deps.Text, d.prompts.Penetapan, r.Text,
+		mp, rawPenetapan, err := AskPenetapan(ctx, d.deps.Text, d.prompts.Penetapan, r.Text,
 			d.textProgress(r.Page, r.Total, "membaca bagian penetapan"))
+		d.debug.catatModel("PENETAPAN (penetapan.md)", d.prompts.Penetapan, r.Text, rawPenetapan, err)
 		if d.deps.LowMemory {
 			d.deps.Text.Release()
 		}
@@ -259,6 +319,10 @@ func gabungPenetapan(pasti, model store.Penetapan) store.Penetapan {
 
 func processDocument(ctx context.Context, deps Deps, job store.OCRJob) {
 	sink := &docSink{deps: deps, docID: job.ID, prompts: deps.Prompts}
+	if deps.DebugResult {
+		sink.debug = newDebugWriter(deps.DataDir, job.ID)
+	}
+	defer sink.debug.tutup()
 
 	// Jumlah halaman diambil lebih dulu supaya baris kemajuan sudah punya
 	// angka total sejak tahap melanjutkan, bukan menunggu halaman pertama
@@ -281,8 +345,20 @@ func processDocument(ctx context.Context, deps Deps, job store.OCRJob) {
 		return
 	}
 
+	// dpiPaksa: bila halaman 1 SUDAH diproses (dokumen ini dilanjutkan
+	// setelah terhenti di tengah jalan), pakai DPI yang sama untuk sisa
+	// halaman — jangan menghitung ulang skor ketajaman seolah halaman
+	// pertama yang diproses sekarang adalah "halaman pertama" dokumen.
+	dpiPaksa, err := deps.Store.DPIPage1(ctx, job.ID)
+	if err != nil {
+		logx.Warn("ocr: baca DPI halaman 1: %v", err)
+	}
+
 	ex := extractor.New(extractor.Config{
-		DPI: deps.DPI, AutoCrop: ocrAutoCrop,
+		DPIJelas: deps.DPIJelas, DPISedang: deps.DPISedang, DPIBlur: deps.DPIBlur,
+		AmbangJelas: deps.AmbangJelas, AmbangSedang: deps.AmbangSedang,
+		DPIPaksa:  dpiPaksa,
+		AutoCrop:  ocrAutoCrop,
 		OCRClient: deps.Vision, OCRMaxTokens: ocrMaxTokens,
 	}, sink)
 
@@ -309,7 +385,7 @@ func processDocument(ctx context.Context, deps Deps, job store.OCRJob) {
 // Pembedaan ini penting: menekan Ctrl+C beberapa kali seharusnya tidak boleh
 // membuat dokumen yang sehat berakhir berstatus 'failed' dan tak pernah
 // diproses lagi.
-func finishInterrupted(deps Deps, docID, what string, err error) {
+func finishInterrupted(deps Deps, docID int64, what string, err error) {
 	if isTransient(err) {
 		// Kembalikan ke antrian apa adanya; dilanjutkan pada penjalanan
 		// berikutnya, dari halaman tempatnya berhenti.
@@ -319,7 +395,7 @@ func finishInterrupted(deps Deps, docID, what string, err error) {
 		logx.Skip("%s dihentikan (%v) — dokumen dikembalikan ke antrian, akan dilanjutkan", what, err)
 		return
 	}
-	logx.Fail(docID, "%s gagal: %v", what, err)
+	logx.Fail(fmt.Sprintf("dokumen %d", docID), "%s gagal: %v", what, err)
 	_ = deps.Store.MarkOCRFailed(context.Background(), docID, err.Error(), maxAttempts)
 }
 
@@ -374,7 +450,6 @@ func (d *docSink) resume(ctx context.Context) (stop bool, err error) {
 	}
 	return d.classify(ctx, text)
 }
-
 
 // textProgress membuat pelapor kemajuan untuk pekerjaan model teks, sehingga
 // konsol tetap bergerak selama tahap yang paling lama diam.

@@ -46,6 +46,14 @@ type Page struct {
 	// CroppedFrom adalah jumlah piksel halaman sebelum pemotongan/pengecilan,
 	// untuk melaporkan berapa banyak yang dihemat.
 	CroppedFrom int
+	// BlurScore adalah varians Laplacian halaman (dihitung pada gambar yang
+	// SUDAH dipotong marginnya, bila AutoCrop aktif) — metrik ketajaman: makin
+	// tinggi makin tajam, makin rendah makin blur. Dipakai pemanggil (lihat
+	// extractor.go) untuk memutuskan DPI: halaman jelas cukup DPI rendah,
+	// halaman blur perlu DPI tinggi supaya OCR punya cukup detail piksel.
+	// NILAI MENTAH, belum dikalikan/dinormalisasi apa pun — ambangnya perlu
+	// dikalibrasi terhadap korpus nyata, bukan angka baku universal.
+	BlurScore float64
 }
 
 // Opts mengatur pengolahan gambar halaman.
@@ -95,7 +103,7 @@ func (d *Doc) Render(page int, o Opts) (Page, error) {
 		return Page{}, err
 	}
 	b := img.Bounds()
-	pg := Page{PNG: buf.Bytes(), W: b.Dx(), H: b.Dy(), InkRatio: inkRatio(img)}
+	pg := Page{PNG: buf.Bytes(), W: b.Dx(), H: b.Dy(), InkRatio: inkRatio(img), BlurScore: blurScore(img)}
 	if fullPx := full.Dx() * full.Dy(); fullPx > 0 {
 		pg.CroppedFrom = fullPx
 	}
@@ -135,6 +143,48 @@ func inkRatio(img image.Image) float64 {
 
 // Close melepaskan sumber daya dokumen.
 func (d *Doc) Close() error { return d.doc.Close() }
+
+// blurScore mengukur ketajaman lewat VARIANS LAPLACIAN — metode umum & murah
+// untuk deteksi blur (dipakai luas, mis. di OpenCV). Prinsipnya: gambar tajam
+// punya banyak tepi kontras tinggi, sehingga turunan keduanya (Laplacian)
+// bernilai besar di banyak tempat -> variansnya besar. Gambar blur
+// menghaluskan tepi -> variansnya kecil.
+//
+// Piksel dicuplik (langkah 2 pada gambar besar) agar biayanya tetap murah,
+// sama seperti inkRatio di atas. Skor TIDAK dinormalisasi ke rentang 0..1 —
+// nilainya bergantung resolusi & kontras gambar, jadi ambang keputusannya
+// (lihat extractor.go) perlu dikalibrasi terhadap korpus nyata.
+func blurScore(img image.Image) float64 {
+	b := img.Bounds()
+	w, h := b.Dx(), b.Dy()
+	if w < 3 || h < 3 {
+		return 0
+	}
+	step := 1
+	if w*h > 400_000 {
+		step = 2
+	}
+	gray := func(x, y int) float64 {
+		r, g, bl, _ := img.At(x, y).RGBA()
+		return float64(r)*0.299 + float64(g)*0.587 + float64(bl)*0.114
+	}
+	var sum, sumSq float64
+	var n int64
+	for y := b.Min.Y + step; y < b.Max.Y-step; y += step {
+		for x := b.Min.X + step; x < b.Max.X-step; x += step {
+			// Kernel Laplacian 4-tetangga: pusat dikurangi rata-rata sekitar.
+			lap := gray(x-step, y) + gray(x+step, y) + gray(x, y-step) + gray(x, y+step) - 4*gray(x, y)
+			sum += lap
+			sumSq += lap * lap
+			n++
+		}
+	}
+	if n == 0 {
+		return 0
+	}
+	mean := sum / float64(n)
+	return sumSq/float64(n) - mean*mean
+}
 
 // cropMargins memotong margin kosong di sekeliling isi halaman.
 //

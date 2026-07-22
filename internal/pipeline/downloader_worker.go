@@ -75,8 +75,18 @@ func registerNewURLs(ctx context.Context, deps Deps) {
 			continue
 		}
 		baru := 0
+		lewati := 0
 		for _, d := range docs {
-			isNew, err := deps.Store.RegisterURL(ctx, row.IDStr, d.FileURL, d.SortTahun, d.SortNomor)
+			// MinTahun menyaring SEBELUM didaftarkan — dokumen yang lolos
+			// tetap dipakai sort_tahun-nya untuk urutan seperti biasa.
+			// Dokumen TANPA sort_tahun (nil) tidak disaring: lebih baik
+			// diproses daripada hilang karena metadata sumber tak
+			// menyediakannya. Lihat config.Config.MinTahun.
+			if deps.MinTahun > 0 && d.SortTahun != nil && *d.SortTahun < deps.MinTahun {
+				lewati++
+				continue
+			}
+			isNew, err := deps.Store.RegisterURL(ctx, row.ID, d.FileURL, d.SortTahun, d.SortNomor)
 			if err != nil {
 				logx.Warn("downloader: daftar tautan: %v", err)
 				continue
@@ -89,6 +99,9 @@ func registerNewURLs(ctx context.Context, deps Deps) {
 		// bukan tahap yang perlu dipantau di konsol (permintaan user).
 		if baru > 0 {
 			logx.Info("%s: %d tautan baru", row.Code, baru)
+		}
+		if lewati > 0 {
+			logx.Info("%s: %d tautan dilewati (tahun < MIN_TAHUN)", row.Code, lewati)
 		}
 	}
 }

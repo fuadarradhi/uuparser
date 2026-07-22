@@ -142,8 +142,11 @@ func run() int {
 
 	pipeline.Run(ctx, pipeline.Deps{
 		Store: st, Vision: vision, Text: text,
-		Prompts: pset, DataDir: cfg.DataDir, DPI: cfg.DPI,
-		LowMemory: cfg.LowMemory,
+		Prompts: pset, DataDir: cfg.DataDir,
+		DPIJelas: cfg.DPIJelas, DPISedang: cfg.DPISedang, DPIBlur: cfg.DPIBlur,
+		AmbangJelas: cfg.AmbangJelas, AmbangSedang: cfg.AmbangSedang,
+		LowMemory: cfg.LowMemory, MinTahun: cfg.MinTahun,
+		DebugResult: cfg.DebugResult,
 	})
 	return 0
 }

@@ -3,6 +3,7 @@ package pipeline
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/fuadarradhi/uuparser/internal/logx"
@@ -13,12 +14,11 @@ import (
 const parserIdleInterval = 15 * time.Second
 
 func parserWorker(ctx context.Context, deps Deps) {
-	st := deps.Store
 	for {
 		if ctx.Err() != nil {
 			return
 		}
-		processed := drainParse(ctx, st)
+		processed := drainParse(ctx, deps)
 		if !processed {
 			select {
 			case <-ctx.Done():
@@ -29,7 +29,8 @@ func parserWorker(ctx context.Context, deps Deps) {
 	}
 }
 
-func drainParse(ctx context.Context, st *store.Store) (processedAny bool) {
+func drainParse(ctx context.Context, deps Deps) (processedAny bool) {
+	st := deps.Store
 	for {
 		if ctx.Err() != nil {
 			return processedAny
@@ -43,11 +44,12 @@ func drainParse(ctx context.Context, st *store.Store) (processedAny bool) {
 			return processedAny
 		}
 		processedAny = true
-		processOneParse(ctx, st, job)
+		processOneParse(ctx, deps, job)
 	}
 }
 
-func processOneParse(ctx context.Context, st *store.Store, job store.ParseJob) {
+func processOneParse(ctx context.Context, deps Deps, job store.ParseJob) {
+	st := deps.Store
 	pages := make([]string, 0, job.NumPages)
 	for i := 1; i <= job.NumPages; i++ {
 		text, err := st.GetPageText(ctx, job.ID, i)
@@ -76,13 +78,16 @@ func processOneParse(ctx context.Context, st *store.Store, job store.ParseJob) {
 		}
 		notesJSON, _ = json.Marshal(notes)
 		nodeRows = mapNodesToInserts(res.Nodes)
+		if deps.DebugResult {
+			tulisDebugParse(deps.DataDir, job.ID, formatNodesUntukDebug(status, res.Nodes))
+		}
 	}
 
-	if err := st.ReplaceParseResult(ctx, job.ID, status, reportJSON, notesJSON, nodeRows); err != nil {
-		logx.Fail(job.ID, "simpan hasil parse: %v", err)
+	if err := st.InsertParseResult(ctx, job.ID, status, reportJSON, notesJSON, nodeRows); err != nil {
+		logx.Fail(fmt.Sprintf("dokumen %d", job.ID), "simpan hasil parse: %v", err)
 		return
 	}
-	logx.OK("parse selesai · %s · status=%s · %d node", job.ID, status, len(nodeRows))
+	logx.OK("parse selesai · dokumen %d · status=%s · %d node", job.ID, status, len(nodeRows))
 }
 
 // mapNodesToInserts memetakan parser.Node (flat, per-baris, konteks label

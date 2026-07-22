@@ -4,6 +4,14 @@
 // `documents`, diidentifikasi tautan unduhnya (unik) dan hash isinya. Sumber
 // hanyalah tempat tautan itu ditemukan, bukan bagian identitas.
 //
+// Seluruh primary key memakai bigserial/bigint (2026-07-22) — BUKAN UUID.
+// Sebelumnya `sources`/`documents` memakai UUID sementara tabel anak
+// (document_pages/nodes/relations) memakai bigserial; user meminta
+// konsistensi satu skema ID di semua tabel. Tipe PK tidak mempengaruhi
+// kecepatan filter WHERE (itu urusan index pada kolom yang difilter, sudah
+// ada untuk status/wilayah/canonical_key/dst) — bigint dipilih di sini
+// semata untuk konsistensi, bukan optimasi.
+//
 // Worker berkoordinasi lewat `SELECT ... FOR UPDATE SKIP LOCKED` — idiom
 // antrian Postgres yang aman dipakai banyak goroutine (atau banyak proses)
 // tanpa penguncian manual di sisi Go.
@@ -13,6 +21,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -53,7 +62,7 @@ func (s *Store) Close() { s.pool.Close() }
 // ---- Sumber ----
 
 type SourceRow struct {
-	IDStr           string
+	ID              int64
 	Code            string
 	EndpointURL     string
 	SourceType      string
@@ -62,7 +71,7 @@ type SourceRow struct {
 
 func (s *Store) ListSources(ctx context.Context) ([]SourceRow, error) {
 	rows, err := s.pool.Query(ctx, `
-		SELECT id::text, code, endpoint_url, source_type, source_config
+		SELECT id, code, endpoint_url, source_type, source_config
 		FROM sources ORDER BY code`)
 	if err != nil {
 		return nil, err
@@ -71,7 +80,7 @@ func (s *Store) ListSources(ctx context.Context) ([]SourceRow, error) {
 	var out []SourceRow
 	for rows.Next() {
 		var r SourceRow
-		if err := rows.Scan(&r.IDStr, &r.Code, &r.EndpointURL, &r.SourceType, &r.SourceConfigRaw); err != nil {
+		if err := rows.Scan(&r.ID, &r.Code, &r.EndpointURL, &r.SourceType, &r.SourceConfigRaw); err != nil {
 			return nil, err
 		}
 		out = append(out, r)
@@ -84,7 +93,7 @@ func (s *Store) ListSources(ctx context.Context) ([]SourceRow, error) {
 // RegisterURL mendaftarkan satu tautan unduh. download_url UNIK: tautan yang
 // sudah pernah didaftarkan — dari sumber mana pun — diabaikan diam-diam.
 // Mengembalikan true bila baris benar-benar baru.
-func (s *Store) RegisterURL(ctx context.Context, sourceID, downloadURL string, sortTahun, sortNomor *int) (bool, error) {
+func (s *Store) RegisterURL(ctx context.Context, sourceID int64, downloadURL string, sortTahun, sortNomor *int) (bool, error) {
 	tag, err := s.pool.Exec(ctx, `
 		INSERT INTO documents (download_url, first_source_id, sort_tahun, sort_nomor, status)
 		VALUES ($1, $2, $3, $4, 'pending')
@@ -98,14 +107,14 @@ func (s *Store) RegisterURL(ctx context.Context, sourceID, downloadURL string, s
 // ---- Tahap 1: unduh ----
 
 type DownloadJob struct {
-	ID          string
+	ID          int64
 	DownloadURL string
-	SourceID    string
+	SourceID    int64 // 0 bila first_source_id NULL
 }
 
 func (s *Store) ClaimForDownload(ctx context.Context) (DownloadJob, error) {
 	var j DownloadJob
-	var srcID *string
+	var srcID *int64
 	err := s.pool.QueryRow(ctx, `
 		UPDATE documents SET status = 'downloading', updated_at = now()
 		WHERE id = (
@@ -125,7 +134,7 @@ func (s *Store) ClaimForDownload(ctx context.Context) (DownloadJob, error) {
 			         d.created_at
 			LIMIT 1 FOR UPDATE OF d SKIP LOCKED
 		)
-		RETURNING id::text, download_url, first_source_id::text`,
+		RETURNING id, download_url, first_source_id`,
 	).Scan(&j.ID, &j.DownloadURL, &srcID)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return DownloadJob{}, ErrNoWork
@@ -139,10 +148,10 @@ func (s *Store) ClaimForDownload(ctx context.Context) (DownloadJob, error) {
 // MarkDownloaded menyimpan lokasi & hash berkas. Bila berkas dengan hash sama
 // SUDAH ada (dokumen identik dari sumber lain), dokumen ini ditandai duplikat
 // dan tidak diproses lebih lanjut. Mengembalikan true bila duplikat.
-func (s *Store) MarkDownloaded(ctx context.Context, id, pdfPath, sha string, size int64) (bool, error) {
-	var existing *string
+func (s *Store) MarkDownloaded(ctx context.Context, id int64, pdfPath, sha string, size int64) (bool, error) {
+	var existing *int64
 	err := s.pool.QueryRow(ctx, `
-		SELECT id::text FROM documents
+		SELECT id FROM documents
 		WHERE pdf_sha256 = $1 AND id <> $2 AND status NOT IN ('rejected','duplicate')
 		LIMIT 1`, sha, id).Scan(&existing)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
@@ -167,7 +176,7 @@ func (s *Store) MarkDownloaded(ctx context.Context, id, pdfPath, sha string, siz
 	return false, err
 }
 
-func (s *Store) MarkDownloadFailed(ctx context.Context, id, errMsg string, maxAttempts int) error {
+func (s *Store) MarkDownloadFailed(ctx context.Context, id int64, errMsg string, maxAttempts int) error {
 	_, err := s.pool.Exec(ctx, `
 		UPDATE documents
 		SET attempts = attempts + 1, last_error = $2,
@@ -189,7 +198,7 @@ func (s *Store) MarkDownloadFailed(ctx context.Context, id, errMsg string, maxAt
 //
 // Memakai konteksnya sendiri karena biasanya dipanggil setelah konteks utama
 // dibatalkan.
-func (s *Store) RequeueDocument(id, status string) error {
+func (s *Store) RequeueDocument(id int64, status string) error {
 	ctx, cancel := cleanupCtx()
 	defer cancel()
 	_, err := s.pool.Exec(ctx, `
@@ -200,7 +209,7 @@ func (s *Store) RequeueDocument(id, status string) error {
 // ---- Tahap 2: OCR + perbaikan + klasifikasi ----
 
 type OCRJob struct {
-	ID      string
+	ID      int64
 	PDFPath string
 }
 
@@ -227,7 +236,7 @@ func (s *Store) ClaimForOCR(ctx context.Context) (OCRJob, error) {
 			         d.created_at
 			LIMIT 1 FOR UPDATE OF d SKIP LOCKED
 		)
-		RETURNING id::text, pdf_path`,
+		RETURNING id, pdf_path`,
 	).Scan(&j.ID, &j.PDFPath)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return OCRJob{}, ErrNoWork
@@ -235,7 +244,7 @@ func (s *Store) ClaimForOCR(ctx context.Context) (OCRJob, error) {
 	return j, err
 }
 
-func (s *Store) MarkOCRFailed(ctx context.Context, id, errMsg string, maxAttempts int) error {
+func (s *Store) MarkOCRFailed(ctx context.Context, id int64, errMsg string, maxAttempts int) error {
 	_, err := s.pool.Exec(ctx, `
 		UPDATE documents
 		SET attempts = attempts + 1, last_error = $2,
@@ -247,24 +256,50 @@ func (s *Store) MarkOCRFailed(ctx context.Context, id, errMsg string, maxAttempt
 
 // SavePage menyimpan hasil OCR satu halaman. ocr_text tidak pernah diubah
 // setelahnya; koreksi manusia ditulis ke edited_text lewat UI.
-func (s *Store) SavePage(ctx context.Context, documentID string, page int, ocrText string,
-	isEmpty, isTruncated bool, inkRatio, croppedPct float64, durationMS int, notes []string) error {
+func (s *Store) SavePage(ctx context.Context, documentID int64, page int, ocrText string,
+	isEmpty, isTruncated bool, inkRatio, croppedPct float64, dpiPakai, durationMS int, notes []string) error {
 	notesJSON, _ := json.Marshal(notes)
 	_, err := s.pool.Exec(ctx, `
 		INSERT INTO document_pages
 			(document_id, page_number, ocr_text, is_empty, is_truncated,
-			 ink_ratio, cropped_pct, duration_ms, notes)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+			 ink_ratio, cropped_pct, dpi_pakai, duration_ms, notes)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
 		ON CONFLICT (document_id, page_number) DO UPDATE SET
 			ocr_text = EXCLUDED.ocr_text, is_empty = EXCLUDED.is_empty,
 			is_truncated = EXCLUDED.is_truncated, ink_ratio = EXCLUDED.ink_ratio,
-			cropped_pct = EXCLUDED.cropped_pct, duration_ms = EXCLUDED.duration_ms,
-			notes = EXCLUDED.notes`,
-		documentID, page, ocrText, isEmpty, isTruncated, inkRatio, croppedPct, durationMS, notesJSON)
+			cropped_pct = EXCLUDED.cropped_pct, dpi_pakai = EXCLUDED.dpi_pakai,
+			duration_ms = EXCLUDED.duration_ms, notes = EXCLUDED.notes`,
+		documentID, page, ocrText, isEmpty, isTruncated, inkRatio, croppedPct, dpiPakai, durationMS, notesJSON)
 	return err
 }
 
-func (s *Store) HasPage(ctx context.Context, documentID string, page int) (bool, error) {
+// DPIPage1 mengembalikan DPI yang SUDAH dipakai untuk halaman 1 dokumen ini,
+// atau 0 bila halaman 1 belum diproses.
+//
+// Dipakai saat MELANJUTKAN dokumen yang terhenti SETELAH halaman 1 selesai:
+// tanpa ini, extractor akan mengira halaman berikutnya (yang diproses
+// pertama pada penjalanan yang dilanjutkan) adalah "halaman pertama" dan
+// menghitung ulang skor ketajaman dari situ — padahal keputusan DPI
+// seharusnya SELALU mengikuti halaman 1 aslinya (lihat
+// extractor.renderAdaptif).
+func (s *Store) DPIPage1(ctx context.Context, documentID int64) (int, error) {
+	var dpi *int
+	err := s.pool.QueryRow(ctx, `
+		SELECT dpi_pakai FROM document_pages
+		WHERE document_id = $1 AND page_number = 1`, documentID).Scan(&dpi)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return 0, nil
+	}
+	if err != nil {
+		return 0, err
+	}
+	if dpi == nil {
+		return 0, nil
+	}
+	return *dpi, nil
+}
+
+func (s *Store) HasPage(ctx context.Context, documentID int64, page int) (bool, error) {
 	var ok bool
 	err := s.pool.QueryRow(ctx, `
 		SELECT EXISTS(SELECT 1 FROM document_pages WHERE document_id = $1 AND page_number = $2)`,
@@ -278,7 +313,7 @@ func (s *Store) HasPage(ctx context.Context, documentID string, page int) (bool,
 // kosong karena artefak pindaian (lembar sampul terpindai polos, halaman
 // tergeser). Memaksakan halaman 1 pada kasus itu berarti model diberi teks
 // kosong, dan dokumen yang sebenarnya sah ikut tertolak.
-func (s *Store) FirstNonEmptyPage(ctx context.Context, documentID string) (page int, text string, ok bool, err error) {
+func (s *Store) FirstNonEmptyPage(ctx context.Context, documentID int64) (page int, text string, ok bool, err error) {
 	err = s.pool.QueryRow(ctx, `
 		SELECT page_number, COALESCE(edited_text, ocr_text)
 		FROM document_pages
@@ -298,7 +333,7 @@ func (s *Store) FirstNonEmptyPage(ctx context.Context, documentID string) (page 
 // sudah diperbaiki. Dipakai saat melanjutkan dokumen supaya baris kemajuan
 // meneruskan hitungan sebelumnya, bukan mulai dari nol seolah belum ada
 // pekerjaan yang selesai.
-func (s *Store) CountPagesDone(ctx context.Context, documentID string) (ocred, done int, err error) {
+func (s *Store) CountPagesDone(ctx context.Context, documentID int64) (ocred, done int, err error) {
 	err = s.pool.QueryRow(ctx, `
 		SELECT COUNT(*), COUNT(*) FROM document_pages WHERE document_id = $1`,
 		documentID).Scan(&ocred, &done)
@@ -307,7 +342,7 @@ func (s *Store) CountPagesDone(ctx context.Context, documentID string) (ocred, d
 
 // IsClassified melaporkan apakah metadata halaman 1 sudah pernah dibaca,
 // sehingga dokumen yang dilanjutkan tidak diklasifikasi ulang percuma.
-func (s *Store) IsClassified(ctx context.Context, documentID string) (bool, error) {
+func (s *Store) IsClassified(ctx context.Context, documentID int64) (bool, error) {
 	var done bool
 	err := s.pool.QueryRow(ctx, `
 		SELECT classified_at IS NOT NULL FROM documents WHERE id = $1`, documentID).Scan(&done)
@@ -316,7 +351,7 @@ func (s *Store) IsClassified(ctx context.Context, documentID string) (bool, erro
 
 // GetPageText mengembalikan teks yang berlaku untuk satu halaman:
 // koreksi manusia > perbaikan model > OCR mentah.
-func (s *Store) GetPageText(ctx context.Context, documentID string, page int) (string, error) {
+func (s *Store) GetPageText(ctx context.Context, documentID int64, page int) (string, error) {
 	var t string
 	err := s.pool.QueryRow(ctx, `
 		SELECT COALESCE(edited_text, ocr_text) FROM document_pages
@@ -324,7 +359,7 @@ func (s *Store) GetPageText(ctx context.Context, documentID string, page int) (s
 	return t, err
 }
 
-func (s *Store) ReadPageRange(ctx context.Context, documentID string, a, b int) ([]string, error) {
+func (s *Store) ReadPageRange(ctx context.Context, documentID int64, a, b int) ([]string, error) {
 	rows, err := s.pool.Query(ctx, `
 		SELECT COALESCE(edited_text, ocr_text) FROM document_pages
 		WHERE document_id = $1 AND page_number BETWEEN $2 AND $3
@@ -348,11 +383,15 @@ func (s *Store) ReadPageRange(ctx context.Context, documentID string, a, b int) 
 type DocMeta struct {
 	IsPeraturan bool
 	Jenis       string
-	// Instansi adalah bentuk baku hasil pemetaan deterministik
-	// ("PEMERINTAH ACEH"); InstansiTertulis menyimpan apa yang benar-benar
-	// tercetak di dokumen ("GUBERNUR ACEH"). Keduanya disimpan supaya hasil
-	// pemetaan selalu dapat ditelusuri balik ke sumbernya.
-	Instansi         string
+	// Wilayah adalah bentuk baku hasil pemetaan deterministik ke salah satu
+	// dari 25 wilayah yang dikenal sistem ("PEMERINTAH ACEH", "KABUPATEN
+	// ACEH BARAT", "NASIONAL", dst — lihat pipeline.WilayahList);
+	// InstansiTertulis menyimpan apa yang benar-benar tercetak di dokumen
+	// ("GUBERNUR ACEH"). Keduanya disimpan supaya hasil pemetaan selalu
+	// dapat ditelusuri balik ke sumbernya. Nama kolom sebelumnya "instansi" —
+	// diganti "wilayah" karena isinya memang selalu nama wilayah
+	// administratif, bukan instansi generik.
+	Wilayah          string
 	InstansiTertulis string
 	// Nomor disimpan apa adanya ("300.2/ 69 /2026"); NomorUrut adalah angka
 	// pertamanya (300) semata untuk pengurutan.
@@ -377,7 +416,7 @@ type Penetapan struct {
 // SavePenetapan menyimpan bagian penetapan & pengundangan. Hanya kolom yang
 // terisi yang ditimpa, sehingga hasil penguraian deterministik tidak terhapus
 // oleh pemanggilan berikutnya yang kebetulan mengembalikan nilai kosong.
-func (s *Store) SavePenetapan(ctx context.Context, id string, p Penetapan) error {
+func (s *Store) SavePenetapan(ctx context.Context, id int64, p Penetapan) error {
 	_, err := s.pool.Exec(ctx, `
 		UPDATE documents SET
 			ditetapkan_di       = COALESCE(NULLIF($2,''), ditetapkan_di),
@@ -395,7 +434,7 @@ func (s *Store) SavePenetapan(ctx context.Context, id string, p Penetapan) error
 
 // RejectNotRegulation menandai dokumen bukan peraturan; sisa halaman tidak
 // akan di-OCR.
-func (s *Store) RejectNotRegulation(ctx context.Context, id, alasan string) error {
+func (s *Store) RejectNotRegulation(ctx context.Context, id int64, alasan string) error {
 	_, err := s.pool.Exec(ctx, `
 		UPDATE documents
 		SET status = 'rejected', is_peraturan = false, reject_reason = 'bukan_peraturan',
@@ -411,11 +450,11 @@ func (s *Store) RejectNotRegulation(ctx context.Context, id, alasan string) erro
 // canonicalKey kosong (identitas tidak lengkap terbaca) berarti pemeriksaan
 // duplikat dilewati — lebih baik memproses dua kali daripada membuang dokumen
 // sah karena metadatanya tak terbaca.
-func (s *Store) ApplyMetaAndCheckDuplicate(ctx context.Context, id string, m DocMeta, canonicalKey string) (bool, error) {
+func (s *Store) ApplyMetaAndCheckDuplicate(ctx context.Context, id int64, m DocMeta, canonicalKey string) (bool, error) {
 	if canonicalKey != "" {
-		var existing *string
+		var existing *int64
 		err := s.pool.QueryRow(ctx, `
-			SELECT id::text FROM documents
+			SELECT id FROM documents
 			WHERE canonical_key = $1 AND id <> $2 AND status NOT IN ('rejected','duplicate')
 			LIMIT 1`, canonicalKey, id).Scan(&existing)
 		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
@@ -425,11 +464,11 @@ func (s *Store) ApplyMetaAndCheckDuplicate(ctx context.Context, id string, m Doc
 			_, err := s.pool.Exec(ctx, `
 				UPDATE documents
 				SET status = 'duplicate', reject_reason = 'duplikat_peraturan', duplicate_of = $2,
-				    is_peraturan = true, jenis = $3, instansi = $4, instansi_tertulis = $5,
+				    is_peraturan = true, jenis = $3, wilayah = $4, instansi_tertulis = $5,
 				    nomor = $6, nomor_urut = $7, tahun = $8,
 				    tentang = $9, struktur = $10, canonical_key = $11,
 				    classified_at = now(), updated_at = now()
-				WHERE id = $1`, id, *existing, nullIfEmpty(m.Jenis), nullIfEmpty(m.Instansi),
+				WHERE id = $1`, id, *existing, nullIfEmpty(m.Jenis), nullIfEmpty(m.Wilayah),
 				nullIfEmpty(m.InstansiTertulis), nullIfEmpty(m.Nomor), nullIfZero(m.NomorUrut),
 				nullIfEmpty(m.Tahun), nullIfEmpty(m.Tentang),
 				nullIfEmpty(m.Struktur), canonicalKey)
@@ -439,18 +478,18 @@ func (s *Store) ApplyMetaAndCheckDuplicate(ctx context.Context, id string, m Doc
 
 	_, err := s.pool.Exec(ctx, `
 		UPDATE documents
-		SET is_peraturan = true, jenis = $2, instansi = $3, instansi_tertulis = $4,
+		SET is_peraturan = true, jenis = $2, wilayah = $3, instansi_tertulis = $4,
 		    nomor = $5, nomor_urut = $6, tahun = $7,
 		    tentang = $8, struktur = $9, canonical_key = $10,
 		    classified_at = now(), updated_at = now()
-		WHERE id = $1`, id, nullIfEmpty(m.Jenis), nullIfEmpty(m.Instansi),
+		WHERE id = $1`, id, nullIfEmpty(m.Jenis), nullIfEmpty(m.Wilayah),
 		nullIfEmpty(m.InstansiTertulis), nullIfEmpty(m.Nomor), nullIfZero(m.NomorUrut),
 		nullIfEmpty(m.Tahun), nullIfEmpty(m.Tentang),
 		nullIfEmpty(m.Struktur), nullIfEmpty(canonicalKey))
 	return false, err
 }
 
-func (s *Store) MarkOCRDone(ctx context.Context, id string, totalPages int) error {
+func (s *Store) MarkOCRDone(ctx context.Context, id int64, totalPages int) error {
 	_, err := s.pool.Exec(ctx, `
 		UPDATE documents
 		SET status = 'ocr_done', total_pages = $2, ocr_completed_at = now(), updated_at = now()
@@ -458,10 +497,10 @@ func (s *Store) MarkOCRDone(ctx context.Context, id string, totalPages int) erro
 	return err
 }
 
-// ---- Tahap 3: parse ----
+// ---- Tahap 3: parse (SEKALI SAJA — lihat InsertParseResult) ----
 
 type ParseJob struct {
-	ID       string
+	ID       int64
 	NumPages int
 }
 
@@ -479,7 +518,7 @@ func (s *Store) ClaimForParse(ctx context.Context) (ParseJob, error) {
 			         d.ocr_completed_at
 			LIMIT 1 FOR UPDATE OF d SKIP LOCKED
 		)
-		RETURNING id::text,
+		RETURNING id,
 			(SELECT COUNT(*) FROM document_pages WHERE document_id = documents.id)`,
 	).Scan(&j.ID, &j.NumPages)
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -509,9 +548,19 @@ type NodeInsert struct {
 	Citation         *string
 }
 
-// ReplaceParseResult mengganti TOTAL nodes & snapshot dokumen ini dalam satu
-// transaksi. Bukan riwayat: reparse berkali-kali berbiaya penyimpanan tetap.
-func (s *Store) ReplaceParseResult(ctx context.Context, documentID, status string,
+// InsertParseResult menyimpan hasil parse PERTAMA (dan SATU-SATUNYA) untuk
+// dokumen ini, dalam satu transaksi.
+//
+// Reparse DIHAPUS (2026-07-22, permintaan user): parser hanya boleh jalan
+// sekali per dokumen — koreksi sesudahnya dilakukan MANUSIA langsung di
+// tabel `nodes` (drag-drop/relabel via UI), bukan dengan menjalankan parser
+// ulang. Sebelumnya fungsi ini bernama ReplaceParseResult dan melakukan
+// DELETE lalu INSERT ulang (dirancang supaya reparse berkali-kali tidak
+// menumpuk baris) — DELETE itu sudah dibuang. Memanggil fungsi ini untuk
+// dokumen yang SUDAH punya parse_snapshot sekarang GAGAL KERAS lewat
+// constraint PRIMARY KEY (document_id) di parse_snapshots — kesalahan
+// pemrograman, bukan alur normal, dan sengaja tidak ditangkap diam-diam.
+func (s *Store) InsertParseResult(ctx context.Context, documentID int64, status string,
 	report, extractionNotes []byte, nodes []NodeInsert) error {
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
@@ -519,17 +568,11 @@ func (s *Store) ReplaceParseResult(ctx context.Context, documentID, status strin
 	}
 	defer tx.Rollback(ctx) //nolint:errcheck
 
-	if _, err := tx.Exec(ctx, `DELETE FROM nodes WHERE document_id = $1`, documentID); err != nil {
-		return err
-	}
 	if _, err := tx.Exec(ctx, `
 		INSERT INTO parse_snapshots (document_id, status, report, extraction_notes, parsed_at)
-		VALUES ($1,$2,$3,$4, now())
-		ON CONFLICT (document_id) DO UPDATE SET
-			status = EXCLUDED.status, report = EXCLUDED.report,
-			extraction_notes = EXCLUDED.extraction_notes, parsed_at = now()`,
+		VALUES ($1,$2,$3,$4, now())`,
 		documentID, status, report, extractionNotes); err != nil {
-		return err
+		return fmt.Errorf("simpan parse_snapshot (dokumen sudah pernah di-parse?): %w", err)
 	}
 
 	ids := make([]int64, len(nodes))
@@ -567,7 +610,7 @@ func (s *Store) ReplaceParseResult(ctx context.Context, documentID, status strin
 	return tx.Commit(ctx)
 }
 
-func (s *Store) InsertRelation(ctx context.Context, documentID, relType, key, jenis,
+func (s *Store) InsertRelation(ctx context.Context, documentID int64, relType, key, jenis,
 	instansi, nomor, tahun, tentang, confidence, kutipan string) error {
 	_, err := s.pool.Exec(ctx, `
 		INSERT INTO relations (document_id, type, key, jenis, instansi, nomor, tahun,

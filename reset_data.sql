@@ -5,8 +5,9 @@
 --
 -- TRUNCATE ... CASCADE dipilih daripada DELETE: jauh lebih cepat, sekaligus
 -- mengosongkan tabel yang berelasi. RESTART IDENTITY mengembalikan penghitung
--- bigserial (nodes.id, document_pages.id, relations.id) ke 1 — aman karena
--- tidak ada lagi baris yang menunjuk ke nilai lama.
+-- bigserial (documents.id, nodes.id, document_pages.id, relations.id) ke 1 —
+-- aman karena tidak ada lagi baris yang menunjuk ke nilai lama. sources.id
+-- TIDAK ikut reset (tabelnya tidak di-TRUNCATE, baris sources dipertahankan).
 --
 -- CATATAN: berkas PDF di data/pdf/ TIDAK ikut terhapus. Karena nama berkas
 -- diturunkan dari hash isinya, mengunduh ulang akan menghasilkan nama yang
