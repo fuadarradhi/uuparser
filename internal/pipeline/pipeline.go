@@ -54,6 +54,10 @@ type Deps struct {
 
 	// DebugResult: lihat config.Config.DebugResult.
 	DebugResult bool
+	// DebugDir: lihat config.Config.DebugDir — folder TERPISAH dari
+	// DataDir, sengaja di luar data/ (yang di-gitignore) supaya bisa
+	// di-commit ke git.
+	DebugDir string
 }
 
 func Run(ctx context.Context, deps Deps) {

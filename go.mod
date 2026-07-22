@@ -4,11 +4,6 @@ go 1.26.0
 
 require github.com/gen2brain/go-fitz v1.23.7
 
-// go-pdf/fpdf: dipakai HANYA saat DEBUG_RESULT=true (lihat
-// internal/pipeline/debug_writer.go) untuk menulis PDF berlabel DPI, murni
-// Go tanpa cgo — tidak menambah beban build untuk pemakaian normal.
-require github.com/go-pdf/fpdf v0.9.0
-
 require (
 	github.com/hybridgroup/yzma v1.19.0
 	github.com/jackc/pgx/v5 v5.10.0

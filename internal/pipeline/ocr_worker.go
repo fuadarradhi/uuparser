@@ -325,7 +325,7 @@ func gabungPenetapan(pasti, model store.Penetapan) store.Penetapan {
 func processDocument(ctx context.Context, deps Deps, job store.OCRJob) {
 	sink := &docSink{deps: deps, docID: job.ID, prompts: deps.Prompts}
 	if deps.DebugResult {
-		sink.debug = newDebugWriter(deps.DataDir, job.ID)
+		sink.debug = newDebugWriter(deps.DebugDir, job.ID)
 	}
 	defer sink.debug.tutup()
 

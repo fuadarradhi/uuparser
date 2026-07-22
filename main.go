@@ -146,7 +146,7 @@ func run() int {
 		DPIJelas: cfg.DPIJelas, DPISedang: cfg.DPISedang, DPIBlur: cfg.DPIBlur,
 		AmbangJelas: cfg.AmbangJelas, AmbangSedang: cfg.AmbangSedang,
 		LowMemory: cfg.LowMemory, MinTahun: cfg.MinTahun,
-		DebugResult: cfg.DebugResult,
+		DebugResult: cfg.DebugResult, DebugDir: cfg.DebugDir,
 	})
 	return 0
 }

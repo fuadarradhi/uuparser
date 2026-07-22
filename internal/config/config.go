@@ -93,12 +93,22 @@ type Config struct {
 	MinTahun int
 
 	// DebugResult (2026-07-22): saat true, tiap dokumen menulis
-	// data/debug/<id>/render.pdf (gambar yang dikirim ke OCR, berlabel DPI)
-	// + ocr.txt + parse.txt — sekadar mempermudah menyalin hasil OCR/parse
-	// untuk dikirim ke Claude untuk dipelajari. TIDAK untuk dinyalakan terus
-	// (menulis berkas tambahan per dokumen); nyalakan sebentar saat memang
-	// perlu meninjau, matikan lagi sesudahnya.
+	// <DebugDir>/<id>/ocr.txt + thinking.txt (jika ada panggilan model) +
+	// parse.txt + parse_tree.json — sekadar mempermudah menyalin hasil
+	// OCR/parse untuk dikirim ke Claude untuk dipelajari. TIDAK untuk
+	// dinyalakan terus (menulis berkas tambahan per dokumen); nyalakan
+	// sebentar saat memang perlu meninjau, matikan lagi sesudahnya.
+	//
+	// render.pdf DIHAPUS (2026-07-22) — sudah tidak diperlukan, ocr.txt
+	// sudah cukup untuk peninjauan tanpa perlu render gambar per halaman.
 	DebugResult bool
+
+	// DebugDir (2026-07-22): folder TERPISAH dari DataDir — sengaja BUKAN
+	// sub-folder data/ (yang seluruhnya di-gitignore, lihat .gitignore),
+	// supaya isi debug BISA di-commit ke git (mis. untuk ditempelkan ke
+	// percakapan dengan Claude tanpa perlu menyalin manual). Bawaan
+	// "debug", sejajar dengan data/log/models/libs.
+	DebugDir string
 
 	// ---- log ----
 	LogDir string
@@ -153,6 +163,7 @@ func Load(path string) (Config, error) {
 		AmbangSedang: floatNum(get("BLUR_AMBANG_SEDANG", "5e7"), 5e7),
 		MinTahun:     num(get("MIN_TAHUN", "0"), 0),
 		DebugResult:  boolean(get("DEBUG_RESULT", "false")),
+		DebugDir:     get("DEBUG_DIR", "debug"),
 
 		LogDir: get("LOG_DIR", filepath.Join(cwd, "log")),
 	}

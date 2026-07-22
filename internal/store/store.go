@@ -535,6 +535,27 @@ func (s *Store) ClaimForParse(ctx context.Context) (ParseJob, error) {
 	return j, err
 }
 
+// RequeueStuckParsing mengembalikan dokumen yang macet berstatus 'parsing'
+// (proses mati mendadak di tengah parse, ATAU reset_parser.sql baru saja
+// mengembalikan dokumen ke 'ocr_done' sementara worker sedang tidak
+// menyadarinya) kembali dapat diklaim. Dipanggil SEKALI saat parserWorker
+// mulai (lihat pipeline/parser_worker.go). Bukan skenario kegagalan data
+// (prinsip "interruption != data failure") — tidak menambah attempts, dan
+// tidak perlu dipanggil manual setelah reset_parser.sql: skrip itu sendiri
+// sudah men-set status ke 'ocr_done', jadi ClaimForParse otomatis
+// mengambilnya lagi pada polling berikutnya. Fungsi ini murni jaring
+// pengaman untuk kasus proses mati di TENGAH parse (status nyangkut di
+// 'parsing', tidak pernah sampai 'ocr_done' lagi tanpa ini).
+func (s *Store) RequeueStuckParsing(ctx context.Context) (int64, error) {
+	tag, err := s.pool.Exec(ctx, `
+		UPDATE documents SET status = 'ocr_done', updated_at = now()
+		WHERE status = 'parsing'`)
+	if err != nil {
+		return 0, err
+	}
+	return tag.RowsAffected(), nil
+}
+
 type NodeInsert struct {
 	ParentIdx        int // indeks ke NodeInsert lain dalam slice yang sama, -1 = akar
 	Section          string

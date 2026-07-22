@@ -24,6 +24,14 @@ var (
 	reHuruf = regexp.MustCompile(`^([a-z]{1,2}|[A-Z])\.\s+(.*)$`)
 	// Angka: "1." "12)" — sub dari huruf pada batang tubuh, atau item Mengingat.
 	reAngka = regexp.MustCompile(`^([0-9]+)[.\)]\s+(.*)$`)
+	// Diktum: "KESATU :", "KEDUA :", dst — header batang tubuh dokumen jenis
+	// Keputusan/Instruksi (bukan Pasal/Ayat). Katanya divalidasi lewat
+	// ordinalWord (map yang sama dipakai "Bagian Kesatu" di bawah), BUKAN
+	// daftar terpisah, supaya cakupannya konsisten sampai "kedua puluh" dan
+	// tidak perlu dua tempat dirawat. Beda nama dengan reDiktum di header.go
+	// (punya cakupan sengaja sempit KESATU/KEDUA/KETIGA — cukup untuk gate
+	// deteksi StructureType di halaman 1) supaya tidak bentrok deklarasi.
+	reDiktumHead = regexp.MustCompile(`^([A-Za-z]+(?:\s+[A-Za-z]+)?)\s*:\s*(.*)$`)
 )
 
 // ---- Kata kunci macro-section (dipakai classify & segment). ----
@@ -57,6 +65,7 @@ const (
 	mkAyat
 	mkHuruf
 	mkAngka
+	mkDiktum
 )
 
 // lineMatch hasil klasifikasi satu baris oleh detectStructural.
@@ -95,6 +104,14 @@ func detectStructural(line string) lineMatch {
 	}
 	if m := reAngka.FindStringSubmatch(line); m != nil {
 		return lineMatch{kind: mkAngka, label: m[1], text: strings.TrimSpace(m[2])}
+	}
+	// Diktum dicek TERAKHIR (paling longgar: "kata apa saja diikuti ':'") —
+	// divalidasi lewat ordinalWord supaya baris biasa yang kebetulan berupa
+	// "Kata :" (mis. label formulir) tidak salah tertangkap.
+	if m := reDiktumHead.FindStringSubmatch(line); m != nil {
+		if ord := ordinalWord(m[1]); ord != "" {
+			return lineMatch{kind: mkDiktum, label: strings.ToUpper(strings.TrimSpace(m[1])), text: strings.TrimSpace(m[2])}
+		}
 	}
 	return lineMatch{kind: mkNone}
 }

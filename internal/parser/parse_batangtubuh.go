@@ -47,17 +47,20 @@ func parseBatangTubuh(lines []Line) *builder {
 			b.openPasal(m.label)
 		case mkAyat:
 			b.openAyat(m.label, m.text)
+		case mkDiktum:
+			b.openDiktum(m.label, m.text)
 		case mkHuruf:
-			// hanya valid bila sudah ada Pasal aktif; jika tidak, ini kemungkinan
-			// teks biasa (mis. daftar dalam kalimat) -> perlakukan sebagai lanjutan.
-			if b.curPasal == "" {
+			// hanya valid bila sudah ada Pasal ATAU Diktum aktif (keduanya
+			// eksklusif); jika tidak, ini kemungkinan teks biasa (mis. daftar
+			// dalam kalimat) -> perlakukan sebagai lanjutan.
+			if b.curPasal == "" && b.curDiktum == "" {
 				b.appendText(line)
 			} else {
 				b.foldHuruf(m.label, m.text)
 			}
 		case mkAngka:
 			// angka sub-huruf hanya valid bila ada Huruf aktif; jika tidak, lanjutan.
-			if b.curPasal == "" || b.curHuruf == "" {
+			if (b.curPasal == "" && b.curDiktum == "") || b.curHuruf == "" {
 				b.appendText(line)
 			} else {
 				b.foldAngka(m.label, m.text)

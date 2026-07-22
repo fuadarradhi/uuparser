@@ -14,6 +14,14 @@ import (
 const parserIdleInterval = 15 * time.Second
 
 func parserWorker(ctx context.Context, deps Deps) {
+	// Jaring pengaman: dokumen yang macet di status 'parsing' (proses mati
+	// di tengah parse) tidak akan pernah terambil lagi oleh ClaimForParse
+	// (yang mencari status='ocr_done') tanpa ini. Lihat RequeueStuckParsing.
+	if n, err := deps.Store.RequeueStuckParsing(ctx); err != nil {
+		logx.Warn("parser: requeue status 'parsing' macet gagal: %v", err)
+	} else if n > 0 {
+		logx.Info("parser: %d dokumen berstatus 'parsing' macet, dikembalikan ke 'ocr_done'", n)
+	}
 	for {
 		if ctx.Err() != nil {
 			return
@@ -79,7 +87,11 @@ func processOneParse(ctx context.Context, deps Deps, job store.ParseJob) {
 		notesJSON, _ = json.Marshal(notes)
 		nodeRows = mapNodesToInserts(res.Nodes)
 		if deps.DebugResult {
-			tulisDebugParse(deps.DataDir, job.ID, formatNodesUntukDebug(status, res.Nodes))
+			tulisDebugParse(deps.DebugDir, job.ID, formatNodesUntukDebug(status, res.Nodes))
+			// parse_tree.json: pohon parent-child eksplisit dari nodeRows
+			// yang sama persis dikirim ke InsertParseResult di bawah —
+			// lihat catatan di buildDebugTree (debug_writer.go).
+			tulisDebugParseTree(deps.DebugDir, job.ID, formatNodeTreeJSON(status, nodeRows))
 		}
 	}
 
@@ -129,6 +141,11 @@ func mapNodesToInserts(nodes []parser.Node) []store.NodeInsert {
 			Section:   string(n.Section), NodeType: string(n.NodeType),
 			BabNumber: n.Bab, BagianLabel: n.Bagian, ParagrafLabel: n.Paragraf,
 			PasalNumber: n.Pasal, AyatNumber: n.Ayat, HurufLabel: n.Huruf, AngkaLabel: n.Angka,
+			// Diktum TIDAK butuh field terpisah di sini: Label (di bawah,
+			// lewat ownLevelLabel) sudah membawa "KESATU"/"KEDUA"/dst untuk
+			// node_type=diktum, dan trigger DB nodes_recompute_own_labels
+			// menurunkan diktum_number darinya — pola identik pasal_number/
+			// ayat_number, tidak perlu kolom Go tambahan.
 			// Label WAJIB diisi dari field level node itu sendiri: trigger
 			// BEFORE INSERT di DB (nodes_recompute_own_labels) menghitung
 			// bab_number/bagian_label/paragraf_label/pasal_number dari
@@ -173,6 +190,8 @@ func ownLevelLabel(n parser.Node) *string {
 		return n.Pasal
 	case parser.NodeAyat:
 		return n.Ayat
+	case parser.NodeDiktum:
+		return n.Diktum
 	}
 	return nil
 }

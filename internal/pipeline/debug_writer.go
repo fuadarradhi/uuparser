@@ -1,7 +1,7 @@
 package pipeline
 
 import (
-	"bytes"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -12,18 +12,28 @@ import (
 	"github.com/fuadarradhi/uuparser/internal/logx"
 	"github.com/fuadarradhi/uuparser/internal/parser"
 	"github.com/fuadarradhi/uuparser/internal/store"
-	"github.com/go-pdf/fpdf"
 )
 
 // debug_writer.go menulis keluaran mode-debug (env DEBUG_RESULT=true) untuk
-// SATU dokumen: sebuah PDF berisi PERSIS gambar yang dikirim ke model OCR
-// (berlabel DPI & skor ketajaman), dan dump teks hasil OCR + hasil parse.
+// SATU dokumen ke <DebugDir>/<id>/: ocr.txt + thinking.txt (jika ada
+// panggilan model) + parse.txt + parse_tree.json.
 //
 // TUJUANNYA CUMA SATU (permintaan user, 2026-07-22): mempermudah menyalin
 // hasil OCR/parse untuk dikirim ke Claude untuk dipelajari. Bukan fitur untuk
 // pengguna akhir biasa — formatnya sengaja teks polos berpenanda jelas per
 // bagian, dipilih supaya gampang dibaca ulang oleh Claude saat ditempelkan
 // ke percakapan, bukan supaya enak dilihat di UI.
+//
+// DebugDir SENGAJA folder terpisah dari DataDir (2026-07-22, permintaan
+// user) — sebelumnya berada di data/debug/<id>/, tapi data/* seluruhnya
+// di-gitignore sehingga isi debug tidak pernah bisa ikut ter-commit. Bawaan
+// DebugDir adalah "debug" (sejajar dengan data/log/models/libs), yang TIDAK
+// masuk pola gitignore mana pun, jadi bisa langsung "git add" bila memang
+// ingin disertakan di repo.
+//
+// render.pdf DIHAPUS (2026-07-22) — sudah tidak diperlukan lagi; ocr.txt
+// saja sudah cukup untuk peninjauan. Dependensi github.com/go-pdf/fpdf ikut
+// dilepas dari berkas ini.
 //
 // Kegagalan menulis debug output TIDAK BOLEH menghentikan pipeline utama —
 // ini cuma alat bantu, bukan bagian dari alur data yang harus benar. Karena
@@ -32,27 +42,26 @@ import (
 
 type debugWriter struct {
 	dir       string
-	pdf       *fpdf.Fpdf
 	ocr       strings.Builder
 	thinking  strings.Builder
 	identitas string // ringkasan identitas dokumen, diisi sekali oleh finishClassify
 	n         int    // jumlah halaman yang sudah masuk (untuk header)
 }
 
-// newDebugWriter menyiapkan folder data/debug/<docID>/ untuk SATU dokumen.
+// newDebugWriter menyiapkan folder <debugDir>/<docID>/ untuk SATU dokumen.
 // Mengembalikan nil (bukan struct kosong) bila gagal membuat foldernya,
 // supaya nil-safety di seluruh method (lihat di bawah) cukup satu pola.
-func newDebugWriter(dataDir string, docID int64) *debugWriter {
-	dir := filepath.Join(dataDir, "debug", strconv.FormatInt(docID, 10))
+func newDebugWriter(debugDir string, docID int64) *debugWriter {
+	dir := filepath.Join(debugDir, strconv.FormatInt(docID, 10))
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		logx.Warn("debug: buat folder %s: %v", dir, err)
 		return nil
 	}
-	return &debugWriter{dir: dir, pdf: fpdf.New("P", "mm", "A4", "")}
+	return &debugWriter{dir: dir}
 }
 
-// tambahHalaman menambah SATU halaman ke PDF debug (gambar + label DPI) dan
-// ke dump teks OCR. Aman dipanggil pada w == nil (mode debug tidak aktif).
+// tambahHalaman menambah SATU halaman ke dump teks OCR. Aman dipanggil pada
+// w == nil (mode debug tidak aktif).
 func (w *debugWriter) tambahHalaman(r extractor.PageResult) {
 	if w == nil {
 		return
@@ -66,19 +75,6 @@ func (w *debugWriter) tambahHalaman(r extractor.PageResult) {
 		label += " (DPI mengikuti halaman 1)"
 	}
 
-	if len(r.PNG) > 0 {
-		w.pdf.AddPage()
-		w.pdf.SetFont("Helvetica", "", 10)
-		w.pdf.SetXY(10, 8)
-		w.pdf.CellFormat(190, 6, label, "", 1, "L", false, 0, "")
-		opt := fpdf.ImageOptions{ImageType: "PNG"}
-		name := fmt.Sprintf("hal%d", r.Page)
-		w.pdf.RegisterImageOptionsReader(name, opt, bytes.NewReader(r.PNG))
-		// Lebar 190mm (margin A4 wajar kiri-kanan 10mm), tinggi 0 = ikuti
-		// rasio gambar aslinya — supaya proporsi halaman tidak gepeng/molor.
-		w.pdf.ImageOptions(name, 10, 16, 190, 0, false, opt, 0, "")
-	}
-
 	fmt.Fprintf(&w.ocr, "--- %s ---\n", label)
 	if r.IsEmpty {
 		w.ocr.WriteString("(halaman kosong — OCR dilewati)\n\n")
@@ -88,19 +84,16 @@ func (w *debugWriter) tambahHalaman(r extractor.PageResult) {
 	w.ocr.WriteString("\n\n")
 }
 
-// tutup menulis render.pdf dan ocr.txt ke disk. Dipanggil SEKALI di akhir
-// pemrosesan dokumen (lewat defer di processDocument) — apa pun hasilnya
-// (selesai, ditolak, gagal), supaya halaman yang sempat diproses tetap bisa
-// ditinjau. Aman dipanggil pada w == nil.
+// tutup menulis ocr.txt (+ thinking.txt bila ada) ke disk. Dipanggil SEKALI
+// di akhir pemrosesan dokumen (lewat defer di processDocument) — apa pun
+// hasilnya (selesai, ditolak, gagal), supaya halaman yang sempat diproses
+// tetap bisa ditinjau. Aman dipanggil pada w == nil.
 func (w *debugWriter) tutup() {
 	if w == nil {
 		return
 	}
 	if w.n == 0 {
 		return // tidak ada halaman sama sekali — tidak ada yang perlu ditulis
-	}
-	if err := w.pdf.OutputFileAndClose(filepath.Join(w.dir, "render.pdf")); err != nil {
-		logx.Warn("debug: tulis render.pdf: %v", err)
 	}
 
 	header := fmt.Sprintf("=== HASIL OCR — %d halaman ===\n\n", w.n)
@@ -190,8 +183,8 @@ func (w *debugWriter) catatModel(tahap, promptTerpakai, masukan, jawabanMentah s
 // isi sudah dalam bentuk teks jadi (lihat formatNodesUntukDebug) — fungsi ini
 // cuma menulisnya ke lokasi yang benar. Tidak menulis apa pun (diam-diam)
 // bila DEBUG_RESULT tidak aktif — dicek oleh pemanggil, bukan di sini.
-func tulisDebugParse(dataDir string, docID int64, isi string) {
-	dir := filepath.Join(dataDir, "debug", strconv.FormatInt(docID, 10))
+func tulisDebugParse(debugDir string, docID int64, isi string) {
+	dir := filepath.Join(debugDir, strconv.FormatInt(docID, 10))
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		logx.Warn("debug: buat folder %s: %v", dir, err)
 		return
@@ -210,6 +203,7 @@ var nodeIndentLevel = map[parser.NodeType]int{
 	parser.NodeParagraf: 2,
 	parser.NodePasal:    2,
 	parser.NodeAyat:     3,
+	parser.NodeDiktum:   0, // level akar — dokumen Keputusan tak punya Bab/Pasal di atasnya
 }
 
 // formatNodesUntukDebug menyusun hasil parse jadi teks polos beri-indentasi —
@@ -224,7 +218,13 @@ func formatNodesUntukDebug(status string, nodes []parser.Node) string {
 		depth := nodeIndentLevel[n.NodeType]
 		indent := strings.Repeat("  ", depth)
 		label := labelUntukDebug(n)
-		fmt.Fprintf(&b, "%s[%s] %s (hal %d-%d)\n", indent, n.NodeType, label, n.StartPage, n.EndPage)
+		// Section DITAMPILKAN eksplisit di sini (2026-07-22, permintaan
+		// user) — sebelumnya dump ini hanya print NodeType, sehingga poin
+		// Menimbang dan Mengingat (sama-sama node_type "item") terlihat
+		// tercampur jadi satu kategori padahal Section-nya sudah benar
+		// berbeda sejak semula. Ini murni perbaikan tampilan; datanya
+		// sendiri sudah benar terpisah di parse_snapshot/nodes.
+		fmt.Fprintf(&b, "%s[%s/%s] %s (hal %d-%d)\n", indent, n.Section, n.NodeType, label, n.StartPage, n.EndPage)
 		if n.Text != "" {
 			for _, line := range strings.Split(n.Text, "\n") {
 				fmt.Fprintf(&b, "%s  %s\n", indent, line)
@@ -255,9 +255,91 @@ func labelUntukDebug(n parser.Node) string {
 		p = n.Pasal
 	case parser.NodeAyat:
 		p = n.Ayat
+	case parser.NodeDiktum:
+		p = n.Diktum
 	}
 	if p == nil {
 		return ""
 	}
 	return *p
+}
+
+// ---- parse_tree.json: dump berpohon (parent-child eksplisit) ----
+//
+// formatNodesUntukDebug di atas sudah pakai indentasi visual, tapi tetap
+// berupa daftar DATAR — hubungan parent-child harus ditebak dari indentasi.
+// debugTreeNode di bawah membangun POHON SUNGGUHAN dari ParentIdx yang sama
+// persis dipakai untuk INSERT ke DB (lihat mapNodesToInserts di
+// parser_worker.go), supaya siapa-anak-siapa langsung terlihat dari
+// struktur JSON-nya sendiri, bukan dari indentasi teks — berguna saat
+// meninjau dokumen dengan hierarki dalam (Bab > Bagian > Paragraf > Pasal >
+// Ayat) di mana indentasi teks saja mudah disalahbaca.
+type debugTreeNode struct {
+	Section   string           `json:"section"`
+	NodeType  string           `json:"node_type"`
+	Label     string           `json:"label,omitempty"`
+	Content   string           `json:"content,omitempty"`
+	StartPage int              `json:"start_page"`
+	EndPage   int              `json:"end_page"`
+	Warnings  json.RawMessage  `json:"warnings,omitempty"`
+	Children  []*debugTreeNode `json:"children,omitempty"`
+}
+
+// buildDebugTree menyusun ulang nodeRows (flat, dengan ParentIdx relatif ke
+// slice yang sama) menjadi pohon. TIDAK menghitung ulang parent — memakai
+// PERSIS ParentIdx yang sama yang sudah dipakai InsertParseResult, supaya
+// pohon di parse_tree.json dijamin sama dengan yang benar-benar tersimpan
+// di kolom parent_id database.
+func buildDebugTree(rows []store.NodeInsert) []*debugTreeNode {
+	nodes := make([]*debugTreeNode, len(rows))
+	for i, r := range rows {
+		lbl := ""
+		if r.Label != nil {
+			lbl = *r.Label
+		}
+		nodes[i] = &debugTreeNode{
+			Section: r.Section, NodeType: r.NodeType, Label: lbl,
+			Content: r.Content, StartPage: r.StartPage, EndPage: r.EndPage,
+			Warnings: json.RawMessage(r.Warnings),
+		}
+	}
+	var roots []*debugTreeNode
+	for i, r := range rows {
+		if r.ParentIdx >= 0 && r.ParentIdx < len(nodes) {
+			nodes[r.ParentIdx].Children = append(nodes[r.ParentIdx].Children, nodes[i])
+		} else {
+			roots = append(roots, nodes[i])
+		}
+	}
+	return roots
+}
+
+// formatNodeTreeJSON menghasilkan teks JSON siap-tulis dari buildDebugTree.
+// Kegagalan marshal (seharusnya tak pernah terjadi — semua field sudah
+// bertipe aman) dilaporkan sebagai objek JSON kosong, bukan panik, karena
+// ini cuma alat bantu debug (lihat catatan di kepala berkas).
+func formatNodeTreeJSON(status string, rows []store.NodeInsert) string {
+	payload := struct {
+		Status string           `json:"status"`
+		Nodes  []*debugTreeNode `json:"nodes"`
+	}{Status: status, Nodes: buildDebugTree(rows)}
+	b, err := json.MarshalIndent(payload, "", "  ")
+	if err != nil {
+		logx.Warn("debug: marshal parse_tree.json: %v", err)
+		return "{}"
+	}
+	return string(b)
+}
+
+// tulisDebugParseTree menulis parse_tree.json ke folder debug dokumen ini —
+// dipanggil bersamaan dengan tulisDebugParse dari parser_worker.go.
+func tulisDebugParseTree(debugDir string, docID int64, isi string) {
+	dir := filepath.Join(debugDir, strconv.FormatInt(docID, 10))
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		logx.Warn("debug: buat folder %s: %v", dir, err)
+		return
+	}
+	if err := os.WriteFile(filepath.Join(dir, "parse_tree.json"), []byte(isi), 0o644); err != nil {
+		logx.Warn("debug: tulis parse_tree.json: %v", err)
+	}
 }

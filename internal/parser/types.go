@@ -39,6 +39,15 @@ const (
 	NodePasal       NodeType = "pasal"
 	NodeAyat        NodeType = "ayat"
 	NodeParagrafIsi NodeType = "paragraf_isi" // paragraf naratif tanpa penomoran (mis. Penjelasan Umum)
+	// NodeDiktum ditambahkan 2026-07-22 setelah ditemukan bug: dokumen jenis
+	// Keputusan/Instruksi tidak berstruktur Pasal/Ayat, melainkan Diktum
+	// bernomor kata (KESATU/KEDUA/KETIGA/dst). Sebelum ini, baris "KESATU :"
+	// tidak dikenali sama sekali oleh parseBatangTubuh (hanya kenal Bab/
+	// Bagian/Paragraf/Pasal/Ayat/Huruf/Angka), jatuh ke default->appendText
+	// tanpa node aktif untuk ditempeli, sehingga SELURUH isi diktum (justru
+	// substansi keputusannya) hilang dan hanya muncul sebagai warning
+	// generik "Teks tidak dikenali struktur". Lihat parse_batangtubuh.go.
+	NodeDiktum NodeType = "diktum"
 	// NodeHuruf/NodeAngka SENGAJA DIHAPUS (2026-07-20): huruf/angka pada batang
 	// tubuh tidak lagi jadi node terpisah — teksnya dilipat ke dalam Node Ayat
 	// (atau Pasal bila belum ada Ayat) oleh builder.foldHuruf/foldAngka, supaya
@@ -77,6 +86,7 @@ type Node struct {
 	Ayat     *string `json:"ayat,omitempty"`
 	Huruf    *string `json:"huruf,omitempty"`
 	Angka    *string `json:"angka,omitempty"`
+	Diktum   *string `json:"diktum,omitempty"` // "KESATU"/"KEDUA"/dst — hanya untuk dokumen berstruktur Diktum
 
 	// StartPage/EndPage = halaman OCR (1-indexed) tempat node ini mulai/berakhir.
 	// StartPage == EndPage bila node tidak melintasi batas halaman.

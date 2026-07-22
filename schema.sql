@@ -213,7 +213,12 @@ CREATE TABLE IF NOT EXISTS nodes (
     parent_id          bigint REFERENCES nodes(id) ON DELETE CASCADE,
 
     section            text NOT NULL,
-    node_type          text NOT NULL,   -- bab|bagian|paragraf|pasal|ayat|judul|item|penetapan|paragraf_isi|catatan
+    -- 2026-07-22: ditambahkan "diktum" — dokumen jenis Keputusan/Instruksi
+    -- berstruktur Diktum (KESATU/KEDUA/dst), bukan Pasal/Ayat. Sebelum ini
+    -- node_type tidak pernah benar-benar bernilai "diktum" di kode (lihat
+    -- bug yang diperbaiki di internal/parser/parse_batangtubuh.go) meski
+    -- sudah direncanakan sejak desain awal.
+    node_type          text NOT NULL,   -- bab|bagian|paragraf|pasal|ayat|diktum|judul|item|penetapan|paragraf_isi|catatan
 
     bab_number         text,
     bagian_label       text,
@@ -222,6 +227,13 @@ CREATE TABLE IF NOT EXISTS nodes (
     ayat_number        text,
     huruf_label        text,
     angka_label        text,
+    -- diktum_number: label diktum APA ADANYA seperti tertulis ("KESATU",
+    -- bukan "1") — dokumen Keputusan biasa mengutip "Diktum KESATU", bukan
+    -- nomor urutnya, jadi bentuk tertulis lebih berguna untuk sitasi.
+    -- Selalu NULL untuk dokumen berstruktur pasal_ayat (lihat trigger
+    -- nodes_recompute_own_labels di bawah — diktum tidak pernah campur
+    -- dengan bab_number/pasal_number dkk dalam satu dokumen).
+    diktum_number      text,
 
     label              text,            -- sumber kebenaran label level ini (dipakai trigger)
     content            text NOT NULL DEFAULT '',
@@ -238,8 +250,14 @@ CREATE TABLE IF NOT EXISTS nodes (
     created_at         timestamptz NOT NULL DEFAULT now()
 );
 
+-- Untuk database yang sudah dibuat SEBELUM kolom diktum_number ditambahkan
+-- (2026-07-22) — pola sama seperti content_tsv di bawah, aman dijalankan
+-- ulang lewat IF NOT EXISTS.
+ALTER TABLE nodes ADD COLUMN IF NOT EXISTS diktum_number text;
+
 CREATE INDEX IF NOT EXISTS idx_nodes_doc_order ON nodes (document_id, order_index);
 CREATE INDEX IF NOT EXISTS idx_nodes_doc_pasal_ayat ON nodes (document_id, pasal_number, ayat_number);
+CREATE INDEX IF NOT EXISTS idx_nodes_doc_diktum ON nodes (document_id, diktum_number);
 CREATE INDEX IF NOT EXISTS idx_nodes_parent ON nodes (parent_id);
 CREATE INDEX IF NOT EXISTS idx_nodes_doc_page ON nodes (document_id, start_page);
 
@@ -268,6 +286,12 @@ BEGIN
         NEW.pasal_number := p.pasal_number;
     END IF;
 
+    -- diktum_number TIDAK diwarisi dari parent seperti bab/bagian/dst di
+    -- atas: node Diktum selalu akar (parent_id NULL — dokumen Keputusan tak
+    -- punya Bab/Bagian/Paragraf/Pasal di atasnya), jadi cukup diisi
+    -- langsung dari label sendiri, bukan dari lookup parent.
+    NEW.diktum_number := NULL;
+
     CASE NEW.node_type
         WHEN 'bab' THEN
             NEW.bab_number := NEW.label;
@@ -282,6 +306,8 @@ BEGIN
             NEW.pasal_number := NEW.label;
         WHEN 'ayat' THEN
             NEW.ayat_number := NEW.label;
+        WHEN 'diktum' THEN
+            NEW.diktum_number := NEW.label;
         ELSE NULL;
     END CASE;
 

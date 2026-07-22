@@ -27,6 +27,7 @@ type builder struct {
 	curPasal    string
 	curAyat     string
 	curHuruf    string // bookkeeping saja sejak huruf tak lagi jadi node (lihat foldHuruf)
+	curDiktum   string // "KESATU"/"KEDUA"/dst — eksklusif dgn curPasal (satu dokumen tak pernah pakai keduanya)
 
 	// order lokal per level (di-reset saat parent berganti)
 	oiBab, oiBagian, oiParagraf, oiPasal, oiAyat, oiHuruf, oiAngka float64
@@ -67,6 +68,7 @@ func (b *builder) emit(nt NodeType, oi float64, text string) {
 		Pasal:      ptr(b.curPasal),
 		Ayat:       ptr(b.curAyat),
 		Huruf:      ptr(b.curHuruf),
+		Diktum:     ptr(b.curDiktum),
 		OrderIndex: oi,
 		DocOrder:   b.nextDoc(),
 		Text:       text,
@@ -171,7 +173,7 @@ func (b *builder) warnActive(sev Severity, msg string) {
 
 func (b *builder) openBab(label, title string) {
 	b.curBab = "BAB " + label
-	b.curBagian, b.curParagraf, b.curPasal, b.curAyat, b.curHuruf = "", "", "", "", ""
+	b.curBagian, b.curParagraf, b.curPasal, b.curAyat, b.curHuruf, b.curDiktum = "", "", "", "", "", ""
 	b.oiBab += orderStep
 	b.oiBagian, b.oiParagraf, b.oiPasal, b.oiAyat, b.oiHuruf, b.oiAngka = 0, 0, 0, 0, 0, 0
 	b.emit(NodeBab, b.oiBab, title)
@@ -179,7 +181,7 @@ func (b *builder) openBab(label, title string) {
 
 func (b *builder) openBagian(label, title string) {
 	b.curBagian = "Bagian " + label
-	b.curParagraf, b.curPasal, b.curAyat, b.curHuruf = "", "", "", ""
+	b.curParagraf, b.curPasal, b.curAyat, b.curHuruf, b.curDiktum = "", "", "", "", ""
 	b.oiBagian += orderStep
 	b.oiParagraf, b.oiPasal, b.oiAyat, b.oiHuruf, b.oiAngka = 0, 0, 0, 0, 0
 	b.emit(NodeBagian, b.oiBagian, title)
@@ -187,7 +189,7 @@ func (b *builder) openBagian(label, title string) {
 
 func (b *builder) openParagraf(label, title string) {
 	b.curParagraf = label
-	b.curPasal, b.curAyat, b.curHuruf = "", "", ""
+	b.curPasal, b.curAyat, b.curHuruf, b.curDiktum = "", "", "", ""
 	b.oiParagraf += orderStep
 	b.oiPasal, b.oiAyat, b.oiHuruf, b.oiAngka = 0, 0, 0, 0
 	b.emit(NodeParagraf, b.oiParagraf, title)
@@ -195,10 +197,25 @@ func (b *builder) openParagraf(label, title string) {
 
 func (b *builder) openPasal(label string) {
 	b.curPasal = label
-	b.curAyat, b.curHuruf = "", ""
+	b.curAyat, b.curHuruf, b.curDiktum = "", "", ""
 	b.oiPasal += orderStep
 	b.oiAyat, b.oiHuruf, b.oiAngka = 0, 0, 0
 	b.emit(NodePasal, b.oiPasal, "")
+}
+
+// openDiktum membuka satu poin Diktum (KESATU/KEDUA/dst) — padanan openPasal
+// untuk dokumen Keputusan/Instruksi yang tak berstruktur Bab/Pasal/Ayat.
+// Memakai kanal order yang sama dengan Pasal (oiPasal) karena keduanya
+// EKSKLUSIF dalam satu dokumen (tidak pernah campur), sehingga tidak perlu
+// kanal order baru. curPasal/curAyat/curHuruf direset supaya folding
+// huruf/angka di bawah (lihat parseBatangTubuh) menempel ke Diktum aktif,
+// bukan ke Pasal basi dari segmen lain.
+func (b *builder) openDiktum(label, text string) {
+	b.curDiktum = label
+	b.curPasal, b.curAyat, b.curHuruf = "", "", ""
+	b.oiPasal += orderStep
+	b.oiAyat, b.oiHuruf, b.oiAngka = 0, 0, 0
+	b.emit(NodeDiktum, b.oiPasal, text)
 }
 
 func (b *builder) openAyat(label, text string) {
