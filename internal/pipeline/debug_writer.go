@@ -129,9 +129,13 @@ func (w *debugWriter) tutup() {
 	}
 }
 
-// catatIdentitas mencatat KESIMPULAN classify (jenis/wilayah/nomor/tahun/
-// tentang) beserta SUMBER keputusannya (regex atau model) — ditulis ke
-// bagian atas ocr.txt lewat tutup(). Aman dipanggil pada w == nil.
+// catatIdentitas mencatat KESIMPULAN classify — diterima (jenis/wilayah/
+// nomor/tahun/tentang lengkap) ATAU ditolak (lihat sumber="DITOLAK — ...")
+// — beserta SUMBER keputusannya (regex atau model). Ditulis ke bagian atas
+// ocr.txt lewat tutup(). Dipanggil dari finishClassify (diterima/duplikat)
+// MAUPUN langsung dari classify() di kedua titik penolakan — supaya dokumen
+// yang ditolak pun punya ringkasan di ocr.txt, bukan cuma pesan generik
+// "belum sampai tahap classify". Aman dipanggil pada w == nil.
 //
 // Ini bagian yang paling penting ditinjau kalau parser salah menyimpulkan
 // sesuatu: mempertemukan teks OCR mentah dengan kesimpulan akhirnya dalam

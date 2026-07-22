@@ -405,12 +405,18 @@ type DocMeta struct {
 
 // Penetapan memuat bagian penutup dokumen.
 type Penetapan struct {
-	DitetapkanDi       string
-	DitetapkanTanggal  string
-	DitetapkanOleh     string
-	DiundangkanDi      string
-	DiundangkanTanggal string
-	DiundangkanOleh    string
+	DitetapkanDi      string
+	DitetapkanTanggal string
+	DitetapkanOleh    string
+	// DitetapkanOlehNama adalah NAMA orang penanda tangan (mis. "MUZAKIR
+	// MANAF"), terpisah dari DitetapkanOleh yang jabatannya saja (mis.
+	// "GUBERNUR ACEH") — permintaan user, 2026-07-22.
+	DitetapkanOlehNama string
+
+	DiundangkanDi       string
+	DiundangkanTanggal  string
+	DiundangkanOleh     string
+	DiundangkanOlehNama string
 }
 
 // SavePenetapan menyimpan bagian penetapan & pengundangan. Hanya kolom yang
@@ -419,16 +425,18 @@ type Penetapan struct {
 func (s *Store) SavePenetapan(ctx context.Context, id int64, p Penetapan) error {
 	_, err := s.pool.Exec(ctx, `
 		UPDATE documents SET
-			ditetapkan_di       = COALESCE(NULLIF($2,''), ditetapkan_di),
-			ditetapkan_tanggal  = COALESCE(NULLIF($3,''), ditetapkan_tanggal),
-			ditetapkan_oleh     = COALESCE(NULLIF($4,''), ditetapkan_oleh),
-			diundangkan_di      = COALESCE(NULLIF($5,''), diundangkan_di),
-			diundangkan_tanggal = COALESCE(NULLIF($6,''), diundangkan_tanggal),
-			diundangkan_oleh    = COALESCE(NULLIF($7,''), diundangkan_oleh),
+			ditetapkan_di         = COALESCE(NULLIF($2,''), ditetapkan_di),
+			ditetapkan_tanggal    = COALESCE(NULLIF($3,''), ditetapkan_tanggal),
+			ditetapkan_oleh       = COALESCE(NULLIF($4,''), ditetapkan_oleh),
+			ditetapkan_oleh_nama  = COALESCE(NULLIF($5,''), ditetapkan_oleh_nama),
+			diundangkan_di        = COALESCE(NULLIF($6,''), diundangkan_di),
+			diundangkan_tanggal   = COALESCE(NULLIF($7,''), diundangkan_tanggal),
+			diundangkan_oleh      = COALESCE(NULLIF($8,''), diundangkan_oleh),
+			diundangkan_oleh_nama = COALESCE(NULLIF($9,''), diundangkan_oleh_nama),
 			updated_at = now()
 		WHERE id = $1`, id,
-		p.DitetapkanDi, p.DitetapkanTanggal, p.DitetapkanOleh,
-		p.DiundangkanDi, p.DiundangkanTanggal, p.DiundangkanOleh)
+		p.DitetapkanDi, p.DitetapkanTanggal, p.DitetapkanOleh, p.DitetapkanOlehNama,
+		p.DiundangkanDi, p.DiundangkanTanggal, p.DiundangkanOleh, p.DiundangkanOlehNama)
 	return err
 }
 

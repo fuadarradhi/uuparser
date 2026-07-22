@@ -84,9 +84,12 @@ type Config struct {
 	// sengaja — dipakai untuk memperkecil cakupan uji coba parser
 	// (mis. MIN_TAHUN=2020 dulu, diperbesar bertahap) sambil mengamati tahun
 	// berapa parser sudah bagus dan tahun berapa masih perlu perbaikan.
-	// Dokumen tanpa sort_tahun (metadata sumber tak menyediakannya) TETAP
-	// didaftarkan — lebih baik diproses daripada hilang karena tak
-	// terverifikasi.
+	//
+	// Saat MinTahun > 0: dokumen TANPA sort_tahun (metadata sumber tak
+	// menyediakannya) IKUT disaring — tidak didaftarkan. Permintaan user:
+	// kalau MIN_TAHUN diisi, harus benar-benar ada tahun yang memenuhi,
+	// bukan lolos karena tidak diketahui. Hanya saat MinTahun == 0 (tanpa
+	// saringan sama sekali) dokumen tanpa tahun boleh masuk.
 	MinTahun int
 
 	// DebugResult (2026-07-22): saat true, tiap dokumen menulis

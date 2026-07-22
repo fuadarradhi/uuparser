@@ -124,12 +124,14 @@ func AskIdentity(ctx context.Context, tc *localllm.TextClient, prompt, page stri
 // ---- Tahap 3: penetapan & pengundangan ----
 
 type penetapanReply struct {
-	DitetapkanDi       string `json:"ditetapkan_di"`
-	DitetapkanTanggal  string `json:"ditetapkan_tanggal"`
-	DitetapkanOleh     string `json:"ditetapkan_oleh"`
-	DiundangkanDi      string `json:"diundangkan_di"`
-	DiundangkanTanggal string `json:"diundangkan_tanggal"`
-	DiundangkanOleh    string `json:"diundangkan_oleh"`
+	DitetapkanDi        string `json:"ditetapkan_di"`
+	DitetapkanTanggal   string `json:"ditetapkan_tanggal"`
+	DitetapkanOleh      string `json:"ditetapkan_oleh"`
+	DitetapkanOlehNama  string `json:"ditetapkan_oleh_nama"`
+	DiundangkanDi       string `json:"diundangkan_di"`
+	DiundangkanTanggal  string `json:"diundangkan_tanggal"`
+	DiundangkanOleh     string `json:"diundangkan_oleh"`
+	DiundangkanOlehNama string `json:"diundangkan_oleh_nama"`
 }
 
 // AskPenetapan membaca bagian penutup dokumen. Dipanggil HANYA bila parser
@@ -143,12 +145,14 @@ func AskPenetapan(ctx context.Context, tc *localllm.TextClient, prompt, text str
 		return store.Penetapan{}, raw, err
 	}
 	return store.Penetapan{
-		DitetapkanDi:       tolakPlaceholder(bersih(r.DitetapkanDi, 120)),
-		DitetapkanTanggal:  tolakPlaceholder(bersih(r.DitetapkanTanggal, 60)),
-		DitetapkanOleh:     tolakPlaceholder(bersih(r.DitetapkanOleh, 120)),
-		DiundangkanDi:      tolakPlaceholder(bersih(r.DiundangkanDi, 120)),
-		DiundangkanTanggal: tolakPlaceholder(bersih(r.DiundangkanTanggal, 60)),
-		DiundangkanOleh:    tolakPlaceholder(bersih(r.DiundangkanOleh, 120)),
+		DitetapkanDi:        tolakPlaceholder(bersih(r.DitetapkanDi, 120)),
+		DitetapkanTanggal:   tolakPlaceholder(bersih(r.DitetapkanTanggal, 60)),
+		DitetapkanOleh:      tolakPlaceholder(bersih(r.DitetapkanOleh, 120)),
+		DitetapkanOlehNama:  tolakPlaceholder(bersih(r.DitetapkanOlehNama, 120)),
+		DiundangkanDi:       tolakPlaceholder(bersih(r.DiundangkanDi, 120)),
+		DiundangkanTanggal:  tolakPlaceholder(bersih(r.DiundangkanTanggal, 60)),
+		DiundangkanOleh:     tolakPlaceholder(bersih(r.DiundangkanOleh, 120)),
+		DiundangkanOlehNama: tolakPlaceholder(bersih(r.DiundangkanOlehNama, 120)),
 	}, raw, nil
 }
 

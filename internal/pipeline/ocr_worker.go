@@ -195,6 +195,7 @@ func (d *docSink) classify(ctx context.Context, halaman string) (bool, error) {
 		if alasan == "" {
 			alasan = "model menilai dokumen ini bukan produk hukum"
 		}
+		d.debug.catatIdentitas("DITOLAK — bukan produk hukum: "+alasan, store.DocMeta{})
 		if err := d.deps.Store.RejectNotRegulation(ctx, d.docID, alasan); err != nil {
 			return true, err
 		}
@@ -224,6 +225,7 @@ func (d *docSink) classify(ctx context.Context, halaman string) (bool, error) {
 		}
 		alasanTolak := fmt.Sprintf("jenis atau wilayah tidak dikenal: jenis=%q wilayah=%q",
 			meta.Jenis, meta.Wilayah)
+		d.debug.catatIdentitas("DITOLAK — "+alasanTolak, meta)
 		if err := d.deps.Store.RejectNotRegulation(ctx, d.docID, alasanTolak); err != nil {
 			return true, err
 		}
@@ -272,8 +274,9 @@ func (d *docSink) uraiPenetapan(ctx context.Context, r extractor.PageResult) err
 
 	p := store.Penetapan{
 		DitetapkanDi: h.DitetapkanDi, DitetapkanTanggal: h.DitetapkanTanggal,
-		DitetapkanOleh: h.DitetapkanOleh, DiundangkanDi: h.DiundangkanDi,
-		DiundangkanTanggal: h.DiundangkanTanggal, DiundangkanOleh: h.DiundangkanOleh,
+		DitetapkanOleh: h.DitetapkanOleh, DitetapkanOlehNama: h.DitetapkanOlehNama,
+		DiundangkanDi: h.DiundangkanDi, DiundangkanTanggal: h.DiundangkanTanggal,
+		DiundangkanOleh: h.DiundangkanOleh, DiundangkanOlehNama: h.DiundangkanOlehNama,
 	}
 
 	if h.PerluModel {
@@ -308,12 +311,14 @@ func gabungPenetapan(pasti, model store.Penetapan) store.Penetapan {
 		return b
 	}
 	return store.Penetapan{
-		DitetapkanDi:       pilih(pasti.DitetapkanDi, model.DitetapkanDi),
-		DitetapkanTanggal:  pilih(pasti.DitetapkanTanggal, model.DitetapkanTanggal),
-		DitetapkanOleh:     pilih(pasti.DitetapkanOleh, model.DitetapkanOleh),
-		DiundangkanDi:      pilih(pasti.DiundangkanDi, model.DiundangkanDi),
-		DiundangkanTanggal: pilih(pasti.DiundangkanTanggal, model.DiundangkanTanggal),
-		DiundangkanOleh:    pilih(pasti.DiundangkanOleh, model.DiundangkanOleh),
+		DitetapkanDi:        pilih(pasti.DitetapkanDi, model.DitetapkanDi),
+		DitetapkanTanggal:   pilih(pasti.DitetapkanTanggal, model.DitetapkanTanggal),
+		DitetapkanOleh:      pilih(pasti.DitetapkanOleh, model.DitetapkanOleh),
+		DitetapkanOlehNama:  pilih(pasti.DitetapkanOlehNama, model.DitetapkanOlehNama),
+		DiundangkanDi:       pilih(pasti.DiundangkanDi, model.DiundangkanDi),
+		DiundangkanTanggal:  pilih(pasti.DiundangkanTanggal, model.DiundangkanTanggal),
+		DiundangkanOleh:     pilih(pasti.DiundangkanOleh, model.DiundangkanOleh),
+		DiundangkanOlehNama: pilih(pasti.DiundangkanOlehNama, model.DiundangkanOlehNama),
 	}
 }
 

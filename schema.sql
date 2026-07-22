@@ -31,6 +31,18 @@ CREATE TABLE IF NOT EXISTS sources (
     created_at     timestamptz NOT NULL DEFAULT now()
 );
 
+-- Sumber baku (2026-07-22): didaftarkan langsung di sini, bukan lewat
+-- ENDPOINTS/.env atau INSERT manual terpisah, supaya sekali schema.sql
+-- dijalankan sumbernya sudah ada. ON CONFLICT DO NOTHING membuat baris ini
+-- aman dijalankan berkali-kali (mis. schema.sql dipakai ulang) — tidak akan
+-- menimpa baris yang sudah ada atau menduplikasi.
+--
+-- Tambahkan sumber lain di sini juga saat didaftarkan (bukan lewat SQL
+-- terpisah), supaya schema.sql tetap satu-satunya sumber kebenaran.
+INSERT INTO sources (code, endpoint_url, source_type, priority) VALUES
+    ('acehprov', 'http://jdih.acehprov.go.id/integrasi', 'integrasi', 1)
+ON CONFLICT (code) DO NOTHING;
+
 -- =====================================================================
 -- documents — satu baris per BERKAS. download_url unik: tautan yang sudah
 -- pernah didaftarkan tidak masuk dua kali, dari sumber mana pun.
@@ -81,15 +93,23 @@ CREATE TABLE IF NOT EXISTS documents (
     tahun             text,
     tentang           text,
 
-    -- Bagian penetapan & pengundangan. Diisi oleh model teks HANYA ketika
-    -- parser menemukan penandanya ("Ditetapkan di" / "Diundangkan di") tetapi
-    -- tidak dapat menguraikannya secara deterministik.
-    ditetapkan_di        text,
-    ditetapkan_tanggal   text,
-    ditetapkan_oleh      text,
-    diundangkan_di       text,
-    diundangkan_tanggal  text,
-    diundangkan_oleh     text,
+    -- Bagian penetapan & pengundangan. Diisi deterministik lewat regex bila
+    -- polanya baku (lihat pipeline/trigger.go); model teks HANYA dipanggil
+    -- ketika parser menemukan penandanya ("Ditetapkan di" / "Diundangkan
+    -- di") tetapi tidak dapat menguraikannya sendiri.
+    --
+    -- *_oleh adalah JABATAN penanda tangan ("GUBERNUR ACEH"); *_oleh_nama
+    -- adalah NAMA orangnya ("MUZAKIR MANAF") — dipisah sengaja (permintaan
+    -- user, 2026-07-22) karena keduanya diambil dari baris cetak yang
+    -- berbeda (jabatan lalu, biasanya setelah "Ttd.", nama).
+    ditetapkan_di          text,
+    ditetapkan_tanggal     text,
+    ditetapkan_oleh        text,
+    ditetapkan_oleh_nama   text,
+    diundangkan_di         text,
+    diundangkan_tanggal    text,
+    diundangkan_oleh       text,
+    diundangkan_oleh_nama  text,
 
     -- instansi_tertulis menyimpan apa yang benar-benar tertulis di dokumen
     -- ("GUBERNUR ACEH"), sedangkan wilayah di atas menyimpan hasil pemetaan

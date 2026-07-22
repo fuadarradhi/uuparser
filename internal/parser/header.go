@@ -105,7 +105,59 @@ var reDiktum = regexp.MustCompile(`(?im)^\s*(KESATU|KEDUA|KETIGA)\s*:`)
 // ExtractHeader membaca teks halaman PERTAMA (sudah di-OCR) dan mengekstrak
 // identitas peraturan secara deterministik (regex, BUKAN LLM — lihat alasan
 // yang sama seperti relations.go: LLM berisiko mengarang nomor/instansi).
+// judulSaja memotong teks halaman 1 sampai SEBELUM "Menimbang" (reMenimbang
+// didefinisikan di patterns.go, dipakai bersama) — hanya blok Judul (dan
+// jabatan pembentuk yang menyertainya) yang boleh dijadikan sumber identitas
+// dokumen. Daftar Mengingat/Memperhatikan dan seluruh batang tubuh SELALU
+// berada setelah "Menimbang", jadi tidak akan pernah ikut tercari. Bila
+// "Menimbang" tidak ditemukan (format menyimpang/OCR gagal menangkapnya),
+// teks utuh dipakai apa adanya — lebih baik mencoba pada teks penuh
+// daripada gagal total karena satu kata penanda hilang.
+//
+// Bug yang melatarbelakangi ini (ditemukan dari uji dokumen sungguhan,
+// 2026-07-22): tanpa batas ini, "Undang-Undang Nomor 24 Tahun 1956 tentang
+// ..." di dalam daftar Mengingat (kutipan peraturan LAIN yang jadi dasar
+// hukum) ikut cocok pola judul dan MENIMPA identitas dokumen ini sendiri —
+// sebuah Keputusan Gubernur 2026 salah teridentifikasi sebagai "UNDANG-
+// UNDANG NOMOR 24 TAHUN 1956" karena judul aslinya tidak punya klausa
+// "TAHUN" eksplisit (gagal di reHeaderJudulDenganTahun), sehingga pencarian
+// berlanjut ke bawah sampai ketemu kutipan di Mengingat yang kebetulan
+// cocok pola itu.
+func judulSaja(s string) string {
+	if loc := reMenimbang.FindStringIndex(s); loc != nil {
+		return s[:loc[0]]
+	}
+	return s
+}
+
 func ExtractHeader(page1Text string) HeaderInfo {
+	// Keamanan tambahan (permintaan user, 2026-07-22, menyusul bug hari
+	// ini): regex HANYA dipercaya kalau "Menimbang" (reMenimbang, sudah ada
+	// di patterns.go) ditemukan di teks — itu satu-satunya penanda yang
+	// benar-benar menjamin keamanan jendela "sebelum Menimbang" (judulSaja)
+	// sebagai blok Judul, karena Mengingat/Memperhatikan/batang tubuh
+	// SELALU berada setelah Menimbang, di mana pun letak persisnya.
+	//
+	// SEBELUMNYA sempat juga mensyaratkan "Memutuskan" ada di teks yang
+	// sama — user mengoreksi (2026-07-22): itu keliru, karena "MEMUTUSKAN"
+	// bisa saja jatuh di HALAMAN LAIN kalau Menimbang/Mengingat/
+	// Memperhatikan-nya panjang (classify() hanya membaca halaman pertama
+	// yang berisi teks), padahal keberadaannya di halaman lain TIDAK
+	// mempengaruhi keamanan jendela "sebelum Menimbang" sama sekali —
+	// mensyaratkannya cuma memaksa banyak dokumen sah jatuh ke model
+	// tanpa alasan.
+	//
+	// Kalau "Menimbang" tidak ditemukan sama sekali — dokumen menyimpang,
+	// atau OCR gagal menangkap katanya — REGEX SAMA SEKALI TIDAK DICOBA;
+	// pemanggil (CobaIdentitasDeterministik) akan melihat Found=false dan
+	// beralih sepenuhnya ke model teks. Lebih aman mengaku tidak tahu
+	// daripada mencari pola judul pada teks yang jendelanya tidak bisa
+	// dipastikan aman — itu persis penyebab bug 2026-07-22 (kutipan di
+	// badan teks tertangkap sebagai judul dokumen ini sendiri).
+	if !reMenimbang.MatchString(page1Text) {
+		return HeaderInfo{}
+	}
+
 	// Peraturan JARANG memakai singkatan (beda dari kebiasaan sehari-hari) —
 	// dokumen sungguhan lebih mungkin menulis sebutan LENGKAP dewan
 	// perwakilan rakyat ("Dewan Perwakilan Rakyat Aceh", "...Kabupaten/Kota
@@ -114,7 +166,7 @@ func ExtractHeader(page1Text string) HeaderInfo {
 	// logika DPRA/DPRK yang sudah ada (di reHeaderJudulDenganTahun,
 	// reJabatanPembentuk, dan pipeline.wilayahDariJenisInstansi/
 	// resolveKabKota) tetap berfungsi tanpa duplikasi pola.
-	raw := ringkasSebutanDPR(page1Text)
+	raw := ringkasSebutanDPR(judulSaja(page1Text))
 
 	var info HeaderInfo
 
@@ -124,14 +176,14 @@ func ExtractHeader(page1Text string) HeaderInfo {
 		info.Instansi = normalizeSpace(m[2])
 		info.Nomor = strings.TrimSpace(m[3])
 		info.Tahun = strings.TrimSpace(m[4])
-		info.Tentang = strings.TrimSpace(firstLine(m[5]))
+		info.Tentang = blokTentang(m[5])
 	} else if m := reHeaderJudulTanpaTahun.FindStringSubmatch(raw); m != nil {
 		info.Found = true
 		info.Jenis = normalizeSpace(m[1])
 		info.Instansi = normalizeSpace(m[2])
 		info.Nomor = strings.TrimSpace(m[3])
 		info.Tahun = ambilTahunDariNomor(info.Nomor)
-		info.Tentang = strings.TrimSpace(firstLine(m[4]))
+		info.Tentang = blokTentang(m[4])
 	} else if m := reJabatanPembentuk.FindStringSubmatch(raw); m != nil {
 		// fallback: Judul tak tertangkap (rusak/OCR), tapi Jabatan Pembentuk ada.
 		info.Found = true
@@ -157,11 +209,28 @@ func ExtractHeader(page1Text string) HeaderInfo {
 	return info
 }
 
-func firstLine(s string) string {
-	if i := strings.IndexAny(s, "\r\n"); i >= 0 {
-		s = s[:i]
+// reBarisKosong menandai baris kosong (pemisah paragraf) — dipakai
+// blokTentang untuk mengambil blok "TENTANG ..." secara UTUH meski judulnya
+// melebar ke lebih dari satu baris cetak, tanpa ikut menelan baris
+// berikutnya (jabatan pembentuk, "Menimbang", dst) yang di dokumen asli
+// SELALU dipisah baris kosong dari judul.
+var reBarisKosong = regexp.MustCompile(`\r?\n\s*\r?\n`)
+
+// blokTentang mengambil "TENTANG ..." sampai baris kosong PERTAMA
+// setelahnya — BUKAN cuma baris cetak pertama (itu bug nyata yang
+// ditemukan dari uji dokumen sungguhan, 2026-07-22: judul yang melebar ke
+// baris cetak kedua terpotong oleh firstLine, hanya separuh tersimpan).
+// Baris-baris di dalam blok itu disatukan jadi satu kalimat mengalir,
+// karena baris cetak bukan akhir kalimat.
+func blokTentang(s string) string {
+	if loc := reBarisKosong.FindStringIndex(s); loc != nil {
+		s = s[:loc[0]]
 	}
-	return s
+	lines := strings.Split(s, "\n")
+	for i, l := range lines {
+		lines[i] = strings.TrimSpace(l)
+	}
+	return strings.TrimSpace(strings.Join(lines, " "))
 }
 
 // Catatan: daftar wilayah kanonik & pencocokan jurisdiksi dulu ada di sini
