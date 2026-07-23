@@ -1,0 +1,224 @@
+=== PANGGILAN MODEL TEKS (gate.md / identity.md / penetapan.md) ===
+
+=== GERBANG (gate.md) ===
+--- PROMPT ---
+Anda memeriksa satu halaman hasil pemindaian (OCR) dari situs JDIH pemerintah
+Indonesia. Tugas Anda HANYA menjawab satu pertanyaan: apakah halaman ini
+bagian dari PRODUK HUKUM RESMI?
+
+Jawab HANYA dengan satu objek JSON. Tanpa penjelasan, tanpa tanda kutip
+Markdown, tanpa teks lain.
+
+{"produk_hukum": true, "alasan": ""}
+
+Bernilai true bila halaman memuat ciri produk hukum resmi yang ditetapkan
+pejabat berwenang, misalnya:
+- judul berpola "<JENIS> <PEJABAT/DAERAH> NOMOR ... TAHUN ... TENTANG ..."
+- kata MENIMBANG, MENGINGAT, MEMUTUSKAN, MENETAPKAN
+- struktur Pasal/Ayat, atau diktum KESATU/KEDUA/KETIGA
+
+Bernilai false untuk: naskah akademik, rancangan yang belum ditetapkan,
+kajian, laporan, notulen, berita, formulir, brosur, daftar isi, atau halaman
+yang hanya berisi sampul tanpa isi peraturan.
+
+Bila false, isi "alasan" dengan satu kalimat singkat. Bila true, kosongkan.
+
+Contoh jawaban yang benar:
+{"produk_hukum": true, "alasan": ""}
+{"produk_hukum": false, "alasan": "dokumen ini naskah akademik, bukan peraturan yang ditetapkan"}
+
+--- TEKS YANG DIKIRIM ---
+GUBERNUR ACEH
+PERATURAN GUBERNUR ACEH
+NOMOR 25 TAHUN 2025
+
+TENTANG
+
+PEMBEBASAN PAJAK ATAS KENDARAAN BERMOTOR
+
+DENGAN RAHMAT ALLAH YANG MAHA KUASA
+
+GUBERNUR ACEH,
+
+Menimbing : bahwa berdasarkan ketentuan Pasal 80 ayat (4) Qanun Aceh Nomor 4 Tahun 2024 tentang Pajak Aceh dan Retribusi Aceh, perlu menetapkan Peraturan Gubernur tentang Pembebasan Pajak Atas Kendaraan Bermotor;
+
+Mengingat : 1. Pasal 18 ayat (6) Undang-Undang Dasar Negara Republik Indonesia Tahun 1945;
+2. Undang-Undang Nomor 24 Tahun 1956 tentang Pembentukan Daerah Otonom Propinsi Atjeh dan Perubahan Peraturan Pembentukan Propinsi Sumatera Utara (Lembaran Negara Republik Indonesia Tahun 1956 Nomor 64, Tambahan Lembaran Negara Republik Indonesia Nomor 1103);
+3. Undang-Undang Nomor 11 Tahun 2006 tentang Pemerintahan Aceh (Lembaran Negara Republik Indonesia Tahun 2006 Nomor 62, Tambahan Lembaran Negara Republik Indonesia Nomor 4633);
+4. Undang-Undang Nomor 22 Tahun 2009 tentang Lalu Lintas dan Angkutan Jalan (Lembaran Negara Republik Indonesia Tahun 2009 Nomor 96, Tambahan Lembaran Negara Republik Indonesia Nomor 5025) sebagaimana telah beberapa kali diubah terakhir dengan Undang-Undang Nomor 6 Tahun 2023 tentang Penetapan Peraturan Pemerintah Pengganti Undang-Undang Nomor 2 Tahun 2022 tentang Cipta Kerja Menjadi Undang-Undang (Lembaran Negara Republik Indonesia Tahun 2023 Nomor 41, Tambahan Lembaran Negara Republik Indonesia Nomor 6856);
+5. Undang-Undang Nomor 23 Tahun 2014 tentang Pemerintahan Daerah (Lembaran Negara Republik Indonesia Tahun 2014 Nomor 244, Tambahan Lembaran Negara Republik Indonesia Nomor 5587) sebagaimana telah beberapa kali diubah terakhir dengan Undang-Undang Nomor 6 Tahun 2023 tentang Penetapan Peraturan Pemerintah Pengganti Undang-Undang Nomor 2 Tahun 2022 tentang Cipta Kerja Menjadi Undang-Undang (Lembaran Negara Republik Indonesia Tahun 2023 Nomor 41, Tambahan Lembaran Negara Republik Indonesia Nomor 6856);
+6. Undang-Undang Nomor 1 Tahun 2022 tentang Hubungan Keuangan antara Pemerintah Pusat dan Pemerintahan Daerah (Lembaran Negara Republik Indonesia Tahun 2022 Nomor 4, Tambahan Lembaran Negara Republik Indonesia Nomor 6757);
+7. Peraturan Pemerintah Nomor 35 Tahun 2023 tentang Ketentuan Umum Pajak Daerah dan Retribusi Daerah (Lembaran Negara Republik Indonesia Tahun 2023 Nomor 85, Tambahan Lembaran Negara Republik Indonesia Nomor 6881);
+8. Qanun Aceh Nomor 4 Tahun 2024 tentang Pajak Aceh dan Retribusi Aceh (Lembaran Aceh Tahun 2024 Nomor 4, Tambahan Lembaran Aceh Nomor 142);
+
+9. Peraturan.../2
+
+--- JAWABAN MENTAH MODEL ---
+{"produk_hukum": true, "alasan": ""}
+
+=== IDENTITAS (identity.md) ===
+--- PROMPT ---
+Anda membaca halaman pertama sebuah produk hukum Indonesia. Salin identitasnya
+APA ADANYA dari teks.
+
+Jawab HANYA dengan satu objek JSON. Tanpa penjelasan, tanpa tanda kutip
+Markdown, tanpa teks lain.
+
+{"jenis": "", "instansi_tertulis": "", "nomor": "", "tahun": "", "tentang": ""}
+
+Keterangan tiap isian:
+
+- "jenis": nama jenis peraturannya saja, TANPA nama daerah atau pejabat.
+  Contoh: "PERATURAN DAERAH", "QANUN", "PERATURAN GUBERNUR",
+  "KEPUTUSAN GUBERNUR", "PERATURAN BUPATI", "KEPUTUSAN BUPATI",
+  "PERATURAN WALI KOTA", "UNDANG-UNDANG", "PERATURAN PEMERINTAH".
+
+- "instansi_tertulis": nama daerah ATAU jabatan PERSIS seperti tertulis di
+  dokumen. Jangan diubah, jangan diterjemahkan, jangan dilengkapi.
+  Contoh yang benar: "ACEH", "GUBERNUR ACEH", "KABUPATEN ACEH BARAT",
+  "BUPATI ACEH BARAT", "KOTA BANDA ACEH", "PROPINSI DAERAH ISTIMEWA ACEH".
+
+- "nomor": nomor peraturan PERSIS seperti tertulis, termasuk garis miring,
+  titik, dan spasi. JANGAN disederhanakan menjadi angka saja.
+  Contoh yang benar: "5", "12A", "300.2/ 69 /2026", "188.44/123/2020".
+
+- "tahun": empat angka saja. Contoh: "2015", "1979".
+
+- "tentang": judul lengkap setelah kata TENTANG, apa adanya.
+
+ATURAN YANG TIDAK BOLEH DILANGGAR:
+
+- Salin apa yang tertulis. Jangan menebak, jangan melengkapi, jangan
+  memperbaiki. Bila suatu bagian tidak terbaca, isi dengan string kosong "".
+- JANGAN menyalin contoh di atas sebagai jawaban.
+- JANGAN menulis tanda titik-titik ("...") di dalam jawaban.
+- Dokumen lama memakai ejaan lama (Propinsi, Atjeh, Dati II, Kotamadya).
+  Pertahankan apa adanya, jangan dimodernkan.
+- Jangan memakai pengetahuan Anda tentang peraturan Indonesia. Laporkan HANYA
+  yang benar-benar tertulis pada teks yang diberikan.
+
+Contoh jawaban yang benar untuk halaman berjudul
+"KEPUTUSAN GUBERNUR ACEH NOMOR 300.2/ 69 /2026 TENTANG PENETAPAN PANITIA":
+
+{"jenis": "KEPUTUSAN GUBERNUR", "instansi_tertulis": "GUBERNUR ACEH", "nomor": "300.2/ 69 /2026", "tahun": "2026", "tentang": "PENETAPAN PANITIA"}
+
+--- TEKS YANG DIKIRIM ---
+GUBERNUR ACEH
+PERATURAN GUBERNUR ACEH
+NOMOR 25 TAHUN 2025
+
+TENTANG
+
+PEMBEBASAN PAJAK ATAS KENDARAAN BERMOTOR
+
+DENGAN RAHMAT ALLAH YANG MAHA KUASA
+
+GUBERNUR ACEH,
+
+Menimbing : bahwa berdasarkan ketentuan Pasal 80 ayat (4) Qanun Aceh Nomor 4 Tahun 2024 tentang Pajak Aceh dan Retribusi Aceh, perlu menetapkan Peraturan Gubernur tentang Pembebasan Pajak Atas Kendaraan Bermotor;
+
+Mengingat : 1. Pasal 18 ayat (6) Undang-Undang Dasar Negara Republik Indonesia Tahun 1945;
+2. Undang-Undang Nomor 24 Tahun 1956 tentang Pembentukan Daerah Otonom Propinsi Atjeh dan Perubahan Peraturan Pembentukan Propinsi Sumatera Utara (Lembaran Negara Republik Indonesia Tahun 1956 Nomor 64, Tambahan Lembaran Negara Republik Indonesia Nomor 1103);
+3. Undang-Undang Nomor 11 Tahun 2006 tentang Pemerintahan Aceh (Lembaran Negara Republik Indonesia Tahun 2006 Nomor 62, Tambahan Lembaran Negara Republik Indonesia Nomor 4633);
+4. Undang-Undang Nomor 22 Tahun 2009 tentang Lalu Lintas dan Angkutan Jalan (Lembaran Negara Republik Indonesia Tahun 2009 Nomor 96, Tambahan Lembaran Negara Republik Indonesia Nomor 5025) sebagaimana telah beberapa kali diubah terakhir dengan Undang-Undang Nomor 6 Tahun 2023 tentang Penetapan Peraturan Pemerintah Pengganti Undang-Undang Nomor 2 Tahun 2022 tentang Cipta Kerja Menjadi Undang-Undang (Lembaran Negara Republik Indonesia Tahun 2023 Nomor 41, Tambahan Lembaran Negara Republik Indonesia Nomor 6856);
+5. Undang-Undang Nomor 23 Tahun 2014 tentang Pemerintahan Daerah (Lembaran Negara Republik Indonesia Tahun 2014 Nomor 244, Tambahan Lembaran Negara Republik Indonesia Nomor 5587) sebagaimana telah beberapa kali diubah terakhir dengan Undang-Undang Nomor 6 Tahun 2023 tentang Penetapan Peraturan Pemerintah Pengganti Undang-Undang Nomor 2 Tahun 2022 tentang Cipta Kerja Menjadi Undang-Undang (Lembaran Negara Republik Indonesia Tahun 2023 Nomor 41, Tambahan Lembaran Negara Republik Indonesia Nomor 6856);
+6. Undang-Undang Nomor 1 Tahun 2022 tentang Hubungan Keuangan antara Pemerintah Pusat dan Pemerintahan Daerah (Lembaran Negara Republik Indonesia Tahun 2022 Nomor 4, Tambahan Lembaran Negara Republik Indonesia Nomor 6757);
+7. Peraturan Pemerintah Nomor 35 Tahun 2023 tentang Ketentuan Umum Pajak Daerah dan Retribusi Daerah (Lembaran Negara Republik Indonesia Tahun 2023 Nomor 85, Tambahan Lembaran Negara Republik Indonesia Nomor 6881);
+8. Qanun Aceh Nomor 4 Tahun 2024 tentang Pajak Aceh dan Retribusi Aceh (Lembaran Aceh Tahun 2024 Nomor 4, Tambahan Lembaran Aceh Nomor 142);
+
+9. Peraturan.../2
+
+--- JAWABAN MENTAH MODEL ---
+{"jenis": "PERATURAN GUBERNUR", "instansi_tertulis": "GUBERNUR ACEH", "nomor": "25", "tahun": "2025", "tentang": "PEMBEBASAN PAJAK ATAS KENDARAAN BERMOTOR"}
+
+=== PENETAPAN (penetapan.md) ===
+--- PROMPT ---
+Anda membaca bagian penutup sebuah produk hukum Indonesia — bagian yang memuat
+tempat dan tanggal penetapan serta pejabat yang menandatangani.
+
+Jawab HANYA dengan satu objek JSON. Tanpa penjelasan, tanpa tanda kutip
+Markdown, tanpa teks lain.
+
+{"ditetapkan_di": "", "ditetapkan_tanggal": "", "ditetapkan_oleh": "", "ditetapkan_oleh_nama": "", "diundangkan_di": "", "diundangkan_tanggal": "", "diundangkan_oleh": "", "diundangkan_oleh_nama": ""}
+
+Keterangan tiap isian:
+
+- "ditetapkan_di": nama kota setelah kata "Ditetapkan di".
+  Contoh: "Banda Aceh", "Meulaboh".
+- "ditetapkan_tanggal": tanggal setelah "pada tanggal", APA ADANYA.
+  Contoh: "1 Januari 2015", "15 Desember 2020".
+- "ditetapkan_oleh": JABATAN penanda tangan penetapan saja, TANPA nama orang.
+  Contoh: "GUBERNUR ACEH", "BUPATI ACEH BARAT".
+- "ditetapkan_oleh_nama": NAMA ORANG penanda tangan penetapan — biasanya
+  tertulis beberapa baris di bawah jabatan, kadang didahului kata "Ttd.".
+  Contoh: "MUZAKIR MANAF", "Drs. H. Ahmad, M.Si.".
+- Empat isian "diundangkan_*" diisi dengan cara yang sama (jabatan dan nama
+  terpisah) untuk bagian "Diundangkan di", bila ada. Bagian ini biasanya
+  ditandatangani Sekretaris Daerah.
+
+ATURAN:
+
+- Salin apa adanya. Jangan mengubah bentuk tanggal, jangan menerjemahkan nama
+  bulan, jangan mengubah huruf besar/kecil, jangan melengkapi yang tidak
+  tertulis.
+- Bagian yang tidak ada di teks diisi string kosong "".
+- "ditetapkan_oleh"/"diundangkan_oleh" HANYA jabatan — jangan sisipkan nama
+  orang di situ. Nama orang HANYA masuk ke "..._oleh_nama".
+- JANGAN menyalin contoh di atas sebagai jawaban.
+
+Contoh jawaban yang benar:
+
+{"ditetapkan_di": "Banda Aceh", "ditetapkan_tanggal": "5 Maret 2026", "ditetapkan_oleh": "GUBERNUR ACEH", "ditetapkan_oleh_nama": "MUZAKIR MANAF", "diundangkan_di": "Banda Aceh", "diundangkan_tanggal": "6 Maret 2026", "diundangkan_oleh": "SEKRETARIS DAERAH ACEH", "diundangkan_oleh_nama": "BUSTAMI HAMZAH"}
+
+--- TEKS YANG DIKIRIM ---
+(2) Pembebasan tunggakan pokok PKB sebagaimana dimaksud pada ayat (1) tidak termasuk atas keterlambatan membayar PKB atas penyerahan Kendaraan Bermotor pertama dan mutasi keluar, luar Aceh.
+
+(3) Pembebasan sanksi administratif atas keterlambatan membayar PKB diberikan pembebasan sebesar 100% (seratus persen).
+
+(4) Pembebasan sanksi administratif atas keterlambatan membayar BBNKB diberikan pembebasan sebesar 100% (seratus persen).
+
+BAB IV
+MASA BERLAKU
+Pasal 5
+Pembebasan Pajak atas Kendaraan Bermotor berdasarkan Peraturan Gubernur ini berlaku sampai dengan 30 April 2026.
+
+BAB V
+KETENTUAN PENUTUP
+Pasal 6
+(1) Petunjuk pelaksanaan pembebasan Pajak atas Kendaraan Bermotor ditetapkan oleh Kepala Satuan Kerja Perangkat Aceh yang menyelenggarakan urusan penunjang bidang keuangan.
+
+(2) Satuan Kerja Perangkat Aceh yang menyelenggarakan urusan pemerintahan bidang pendapatan, wajib melakukan sosialisasi Peraturan Gubernur ini.
+
+(3) Satuan Kerja Perangkat Aceh yang menyelenggarakan urusan pemerintahan bidang pendapatan, wajib melakukan penyesuaian sistem informasi paling lama 5 (lima) hari kerja terhitung sejak Peraturan Gubernur ini diundangkan.
+
+Pasal 7
+Peraturan Gubernur ini mulai berlaku pada tanggal diundangkan.
+Agar setiap orang mengetahuinya, memerintahkan pengundangan Peraturan Gubernur ini dengan penempatannya dalam Berita Daerah Aceh.
+
+Ditetapkan di Banda Aceh
+pada tanggal, 12 November 2025
+21 Jumadil Awal 1447
+
+GUBERNUR ACEH,
+
+Ttd.
+
+MUZAKIR MANAF
+
+Diundangkan di Banda Aceh
+pada tanggal, 12 November 2025
+21 Jumadil Awal 1447
+
+Salinan sesuai dengan aslinya
+BERALA BIRO HUKUM,
+
+Ttd.
+MUHAMMAD JUNAIDI, SH, MH
+
+M. NASIR
+
+BERITA DAERAH ACEH TAHUN 2025 NOMOR 26
+
+--- JAWABAN MENTAH MODEL ---
+{"ditetapkan_di": "Banda Aceh", "ditetapkan_tanggal": "12 November 2025", "ditetapkan_oleh": "GUBERNUR ACEH", "ditetapkan_oleh_nama": "MUZAKIR MANAF", "diundangkan_di": "Banda Aceh", "diundangkan_tanggal": "12 November 2025", "diundangkan_oleh": "BERALA BIRO HUKUM", "diundangkan_oleh_nama": "MUHAMMAD JUNAIDI, SH, MH"}
+

@@ -1,0 +1,361 @@
+{
+  "status": "SUCCESS",
+  "nodes": [
+    {
+      "section": "judul",
+      "node_type": "judul",
+      "content": "GUBERNUR ACEH",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "judul",
+      "node_type": "judul",
+      "content": "PERATURAN GUBERNUR ACEH",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "judul",
+      "node_type": "judul",
+      "content": "NOMOR 08 TAHUN 2025",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "judul",
+      "node_type": "judul",
+      "content": "TENTANG",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "judul",
+      "node_type": "judul",
+      "content": "PENCEGAHAN DAN PENYELENGGARAAN KESEJAHTERAAN SOSIAL BAGI GELANDANGAN DAN PENGEMIS",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "judul",
+      "node_type": "judul",
+      "content": "GUBERNUR ACEH,",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "menimbang",
+      "node_type": "item",
+      "content": "bahwa untuk melaksanakan ketentuan Pasal 47 Qanun Aceh Nomor 11 Tahun 2013 tentang Kesejahteraan Sosial, perlu menetapkan Peraturan Gubernur tentang Pencegahan dan Penyelenggaraan Kesejahteraan Sosial Bagi Gelandangan dan Pengemis;",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Pasal 18 ayat (6) Undang-Undang Dasar Negara Republik Indonesia 1945;",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 24 Tahun 1956 tentang Pembentukan Daerah Otonom Propinsi Atjeh dan Perubahan Peraturan Pembentukan Propinsi Sumatera Utara (Lembaran Negara Republik Indonesia Tahun 1956 Nomor 64, Tambahan Lembaran Negara Republik Indonesia Nomor 1103);",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 11 Tahun 2006 tentang Pemerintahan Aceh (Lembaran Negara Republik Indonesia Tahun 2006 Nomor 62, Tambahan Lembaran Negara Republik Indonesia Nomor 4633);",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 11 Tahun 2009 tentang Kesejahteraan Sosial (Lembaran Negara Republik Indonesia Tahun 2009 Nomor 12, Tambahan Lembaran Negara Republik Indonesia Nomor 4967) sebagaimana telah diubah dengan Undang-Undang Nomor 14 Tahun 2019 tentang Pekerja Sosial (Lembaran Negara Republik Indonesia Tahun 2019 Nomor 182, Tambahan Lembaran Negara Republik Indonesia Nomor 6397);",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 25 Tahun 2009 tentang Pelayanan Publik (Lembaran Negara Republik Indonesia Tahun 2009 Nomor 112, Tambahan Lembaran Negara Republik Indonesia Nomor 5038);",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 23 Tahun 2014 tentang Pemerintahan Daerah (Lembaran Negara Republik Indonesia Tahun 2014 Nomor 244, Tambahan Lembaran Negara Nomor 5587) sebagaimana telah beberapa kali diubah terakhir dengan Undang-Undang Nomor 6 Tahun 2023 tentang Penetapan Peraturan Pemerintah Pengganti Undang-Undang Nomor 2 Tahun 2022 tentang Cipta Kerja Menjadi Undang-Undang (Lembaran Negara Republik Indonesia Tahun 2023 Nomor 41, Tambahan Lembaran Negara Republik Indonesia Nomor 5856);",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan Pemerintah Nomor 31 Tahun 1980 tentang Penanggulangan Gelandangan dan Pengemis (Lembaran Negara Republik Indonesia Tahun 1980 Nomor 51, Tambahan Lembaran Negara Republik Indonesia Nomor 3177);",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan.../2",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan Pemerintah Nomor 39 Tahun 2012 tentang Penyelenggaraan Kesejahteraan Sosial (Lembaran Negara Republik Indonesia Tahun 2012 Nomor 68, Tambahan Lembaran Negara Republik Indonesia Nomor 5294);",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan Pemerintah Nomor 2 Tahun 2018 tentang Standar Pelayanan Minimal (Lembaran Negara Republik Indonesia Tahun 2018 Nomor 2, Tambahan Lembaran Negara Republik Indonesia Nomor 6178);",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan Menteri Sosial Nomor 9 Tahun 2018 tentang Standar Teknis Pelayanan Dasar pada Standar Pelayanan Minimal Bidang Sosial di Daerah Provinsi dan Kabupaten/Kota (Berita Negara Republik Indonesia Tahun 2018 Nomor 868);",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan Menteri Sosial Nomor 16 Tahun 2019 tentang Standar Nasional Rehabilitasi Sosial (Berita Negara Republik Indonesia Tahun 2019 Nomor 1306);",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan Menteri Sosial Nomor 7 Tahun 2021 tentang Asistensi Rehabilitasi Sosial (Berita Negara Republik Indonesia Tahun 2021 Nomor 1007) sebagaimana telah diubah terakhir dengan Peraturan Menteri Sosial Nomor 2 Tahun 2024 tentang Perubahan Kedua Atas Peraturan Menteri Sosial Nomor 7 Tahun 2021 tentang Asistensi Rehabilitasi Sosial (Berita Negara Republik Indonesia Tahun 2024 Nomor 550);",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Qanun Aceh Nomor 11 Tahun 2013 tentang Kesejahteraan Sosial (Lembaran Aceh Tahun 2013 Nomor 11, Tambahan Lembaran Aceh Nomor 55);",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan Gubernur Aceh Nomor 1 Tahun 2024 tentang Kedudukan, Susunan Organisasi, Tugas, Fungsi dan Tata Kerja Satuan Kerja Perangkat Aceh, Cabang Dinas, dan Unit Pelaksana Teknis Daerah (Berita Aceh Tahun 2024 Nomor 01);",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "penetapan",
+      "node_type": "penetapan",
+      "content": "MEMUTUSKAN:",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "penetapan",
+      "node_type": "penetapan",
+      "content": "Menetapkan : PERATURAN GUBERNUR TENTANG PENCEGAHAN DAN PENYELENGGARAAN KESEJAHTERAAN SOSIAL BAGI GELANDANGAN DAN PENGEMIS.",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "batang_tubuh",
+      "node_type": "bab",
+      "label": "BAB I",
+      "content": "KETENTUAN UMUM",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null,
+      "children": [
+        {
+          "section": "batang_tubuh",
+          "node_type": "pasal",
+          "label": "1",
+          "content": "Dalam Peraturan Gubernur ini yang dimaksud dengan: 1. Penyelenggaraan Kesejahteraan Sosial adalah upaya yang terarah, terpadu, dan berkelanjutan yang dilakukan Pemerintah Pusat, Pemerintah Daerah, dan masyarakat dalam bentuk pelayanan sosial guna memenuhi kebutuhan dasar setiap warga negara, yang meliputi rehabilitasi sosial, jaminan sosial, pemberdayaan sosial, dan perlindungan sosial. 2. Kesejahteraan Sosial adalah kondisi terpenuhinya kebutuhan material, spiritual, dan sosial warga negara agar dapat hidup layak dan mampu mengembangkan diri, sehingga dapat melaksanakan fungsi sosialnya. 3. Gelandangan adalah orang yang hidup dalam keadaan tidak sesuai dengan norma kehidupan yang layak dalam masyarakat setempat serta tidak mempunyai tempat tinggal dan pekerjaan tetap di wilayah tertentu dan hidup mengembara di tempat umum. 4. Pengemis.../3 4. Pengemis adalah orang-orang yang mendapatkan penghasilan dengan meminta-minta di muka umum dengan berbagai cara dan alasan untuk mengharapkan belas kasihan dari orang lain. 5. Aceh adalah daerah provinsi yang merupak kesatuan masyarakat hukum yang bersifat istimewa dan diberi kewenangan khusus yang mengatur dan mengurus sendiri urusan pemerintahan dan kepentingan masyarakat setempat sesuai dengan peraturan perundang-undangan dalam sistem dan prinsip Negara Kesatuan Republik Indonesia berdasarkan Undang-Undang Dasar Negara Republik Indonesia Tahun 1945, yang dipimpin oleh seorang Gubernur. 6. Kabupaten/Kota adalah bagian dari daerah provinsi sebagai suatu kesatuan masyarakat hukum yang diberi kewenangan khusus untuk mengatur dan mengurus sendiri urusan pemerintahan dan kepentingan masyarakat setempat sesuai dengan peraturan perundang-undangan dalam sistem dan prinsip Negara Kesatuan Republik Indonesia berdasarkan Undang-Undang Dasar Negara Republik Indonesia Tahun 1945, yang dipimpin oleh seorang Bupati/Walikota. 7. Pemerintah Aceh adalah Gubernur dan Perangkatnya. 8. Gubernur adalah Kepala Pemerintah Aceh. 9. Satuan Kerja Perangkat Aceh yang selanjutnya disingkat dengan SKPA adalah organisasi sosial perangkat daerah pada Pemerintah Aceh. 10. Pemerintah Kabupaten/Kota adalah unsur penyelenggara Pemerintahan Daerah Kabupaten/Kota yang terdiri atas Bupati/Walikota dan Perangkat Daerah Kabupaten/Kota. 11. Satuan Kerja Perangkat Kabupaten/Kota yang selanjutnya disingkat dengan SKPK adalah organisasi Perangkat Daerah pada Pemerintahan Kabupaten/Kota. 12. Penanganan adalah suatu proses atau cara serta tindakan yang ditempuh melalui upa pencegahan, represif, rehabilitasi sosial, dan reintegrasi sosial dalam rangka melindungi dan memberdayakan gelandangan dan pengemis. 13. Pergelandangan adalah suatu tindakan pengembaraan yang dilakukan oleh individu dan/atau sekelompok orang yang tidak memiliki tempat tinggal dan pekerjaan tetap di wilayah tertentu, serta hidupnya berpindah-pindah di tempat umum. 14. Pengemisan adalah tindakan meminta-minta yang dilakukan oleh individu dan/atau sekelompok orang dengan berbagai alasan, cara dan alat untuk mengharapkan belas kasihan dari orang lain. 15. Upaya pencegahan adalah usaha secara terorganisir yang meliputi penyuluhan, bimbingan, latihan, pendidikan, pemberian bantuan sosial dan pengawasan serta pembinaan lanjut kepada berbagai pihak yang ada hubungannya dengan pergelandangan dan pengemisan. 16. Upaya represif sosial adalah pengendalian yang dilakukan setelah terjadinya penyimpangan melalui cara pemberian hukuman, sanksi, nasihat, bimbingan dan penyuluhan. 17. Upaya rehabilitasi sosial adalah usaha-usaha yang terorganisir meliputi usaha-usaha penyantunan, perawatan, pemberian latihan dan pendidikan, pemulihan kemampuan dan penyaluran kembali baik ke daerah-daerah pemuliman baru melalui transmigrasi maupun ke tengah-tengah masyarakat, pengawasan serta pembinaan lanjut sehingga para gelandangan dan/atau pengemis memiliki kemampuan untuk hidup secara layak dan bermartabat sebagai Warga Negara Republik Indonesia. 18. Reintegrasi.../4 18. Reintegrasi sosial adalah proses pengembalian kepada keluarga, dan/atau masyarakat sehingga dapat menjalankan fungsi-fungsi sosialnya dengan baik sebagaimana masyarakat pada umumnya. 19. Panti Sosial adalah unit pelayanan yang melaksanakan rehabilitasi sosial bagi satu atau beberapa jenis sasaran untuk memulihkan dan mengembangkan kemampuan seseorang yang mengalami disfungsi sosial agar dapat melaksanakan fungsi sosialnya secara wajar. 20. Rumah Singgah adalah tempat penampungan sementara gelandangan dan pengemis sebagai wahana pelayanan kesejahteraan sosial. 21. Lembaga Kesejahteraan Sosial adalah organisasi sosial atau perkumpulan sosial yang melaksanakan Penyelenggaraan Kesejahteraan Sosial yang dibentuk oleh masyarakat, baik yang berbadan hukum maupun yang tidak berbadan hukum. 22. Resosialisasi adalah proses pembelajaran norma baru, nilai, sikap dan perilaku. 23. Pekerja Sosial adalah seseorang yang telah memiliki pengetahuan, keterampilan, dan nilai praktik pekerjaan sosial yang diperoleh melalui pendidikan, pelatihan, dan/atau pengalaman di bidang kesejahteraan sosial dan/atau bidang ilmu sosial dan/atau telah disetarakan serta telah mendapatkan sertifikasi kompetensi. 24. Asesmen adalah suatu proses kegiatan pengumpulan dan analisis data untuk mengungkapkan dan memahami masalah, kebutuhan dan sumber pelayanan. 25. Rumah Sakit Umum Daerah adalah institusi pelayanan kesehatan Tingkat Provinsi dan/atau Kabupaten Kota yang menyelenggarakan pelayanan kesehatan perorangan secara paripurna yang menyediakan pelayanan rawat inap, rawat jalan, dan gawat darurat. 26. Rumah Sakit Jiwa Daerah merupakan Rumah Sakit Khusus Tingkat Provinsi dan/atau Kabupaten Kota yang merawat pasien gangguan mental. 27. Layanan Kesehatan Lainnya adalah tempat yang digunakan untuk menyelenggarakan upaya pelayanan kesehatan, baik promotif, preventif, kuratif, maupun rehabilitatif yang dilakukan oleh pemerintah pusat, pemerintah daerah, dan/atau masyarakat. 28. Pemerintah Daerah Asal adalah Pemerintah Daerah tempat berasalnya gelandangan dan pengemis yang berasal dari luar daerah Aceh. 29. Panti Sosial adalah lembaga/unit pelayanan yang melaksanakan rehabilitasi sosial bagi satu jenis sasaran untuk memulihkan dan mengembangkan kemampuan seseorang yang mengalami disfungsi sosial agar dapat melaksanakan fungsi sosialnya secara wajar. 30. Asistensi Sosial adalah bantuan berupa uang, barang, jasa pelayanan, dan/atau jaminan sosial kepada seseorang, keluarga, kelompok, atau masyarakat yang berpendapatan rendah sampai dengan berpendapatan tinggi.",
+          "start_page": 2,
+          "end_page": 4,
+          "warnings": null
+        },
+        {
+          "section": "batang_tubuh",
+          "node_type": "pasal",
+          "label": "2",
+          "content": "Ruang lingkup pengaturan pada Peraturan Gubernur ini meliputi:\na. kewenangan Pemerintah Aceh;\nb. penyelenggaraan dan prosedur penanganan Gelandangan dan Pengemis;\nc. satuan tugas.../5\nc. satuan tugas penanganan Gelandangan dan Pengemis;\nd. pengawasan dan pembinaan; dan\ne. evaluasi dan pelaporan.",
+          "start_page": 4,
+          "end_page": 5,
+          "warnings": null
+        }
+      ]
+    },
+    {
+      "section": "batang_tubuh",
+      "node_type": "bab",
+      "label": "BAB II",
+      "content": "KEWENANGAN PEMERINTAH ACEH DAN PEMERINTAH KABUPATEN/KOTA",
+      "start_page": 5,
+      "end_page": 5,
+      "warnings": null,
+      "children": [
+        {
+          "section": "batang_tubuh",
+          "node_type": "pasal",
+          "label": "3",
+          "start_page": 5,
+          "end_page": 5,
+          "warnings": null,
+          "children": [
+            {
+              "section": "batang_tubuh",
+              "node_type": "ayat",
+              "label": "1",
+              "content": "Pemerintah Aceh berwenang melakukan rehabilitasi sosial dasar bagi Gelandangan dan Pengemis di dalam Panti Sosial.",
+              "start_page": 5,
+              "end_page": 5,
+              "warnings": null
+            },
+            {
+              "section": "batang_tubuh",
+              "node_type": "ayat",
+              "label": "2",
+              "content": "Rehabilitasi sosial dasar sebagaimana dimaksud pada ayat (1) dilakukan dengan memberikan pemenuhan kebutuhan dasar yang terdiri atas: permakanan;\na. sandang;\nb. asrama/tempat tinggal yang mudah di akses;\nc. perbekalan kesehatan;\nd. bimbingan fisik, mental spiritual dan sosial;\ne. bimbingan keterampilan dasar;\nf. fasilitasi pembuatan administrasi kependudukan;\ng. akses ke layanan kesehatan dasar; dan/atau\nh. pemulangan ke daerah asal.",
+              "start_page": 5,
+              "end_page": 5,
+              "warnings": null
+            }
+          ]
+        },
+        {
+          "section": "batang_tubuh",
+          "node_type": "pasal",
+          "label": "4",
+          "start_page": 5,
+          "end_page": 5,
+          "warnings": null,
+          "children": [
+            {
+              "section": "batang_tubuh",
+              "node_type": "ayat",
+              "label": "1",
+              "content": "Pemerintah Aceh mengoordinasikan Pemerintah Kabupaten/Kota sesuai kewenangannya melakukan rehabilitasi sosial dasar Gelandangan dan Pengemis di luar Panti Sosial.",
+              "start_page": 5,
+              "end_page": 5,
+              "warnings": null
+            },
+            {
+              "section": "batang_tubuh",
+              "node_type": "ayat",
+              "label": "2",
+              "content": "Rehabilitasi sosial dasar sebagaimana dimaksud pada ayat (1) dilakukan dengan memberikan:\na. dukungan pelayanan/pendampingan kepada Gelandangan dan Pengemis dalam keluarga dan masyarakat; dan\nb. bimbingan keluarga dan masyarakat.",
+              "start_page": 5,
+              "end_page": 5,
+              "warnings": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "section": "batang_tubuh",
+      "node_type": "bab",
+      "label": "BAB III",
+      "content": "PENYELENGGARAAN DAN PROSEDUR PENANGANAN GELANDANGAN DAN PENGEMIS",
+      "start_page": 5,
+      "end_page": 5,
+      "warnings": null,
+      "children": [
+        {
+          "section": "batang_tubuh",
+          "node_type": "bagian",
+          "label": "Bagian 1",
+          "content": "Umum",
+          "start_page": 5,
+          "end_page": 5,
+          "warnings": null,
+          "children": [
+            {
+              "section": "batang_tubuh",
+              "node_type": "pasal",
+              "label": "5",
+              "start_page": 5,
+              "end_page": 5,
+              "warnings": null,
+              "children": [
+                {
+                  "section": "batang_tubuh",
+                  "node_type": "ayat",
+                  "label": "1",
+                  "content": "Penanganan gelandangan dan pengemis diselenggarakan melalui upaya yang bersifat:\na. Upaya pencegahan;\nb. Upaya represif sosial;\nc. upaya rehabilitasi; dan\nd. Reintegrasi sosial.",
+                  "start_page": 5,
+                  "end_page": 5,
+                  "warnings": null
+                },
+                {
+                  "section": "batang_tubuh",
+                  "node_type": "ayat",
+                  "label": "2",
+                  "content": "Bagan alur penanganan Gelandangan dan Pengemis tingkat provinsi tercantum dalam Lampiran I dan Lampiran II yang merupakan bagian tidak terpisahkan dari Peraturan Gubernur ini.",
+                  "start_page": 5,
+                  "end_page": 5,
+                  "warnings": null
+                },
+                {
+                  "section": "batang_tubuh",
+                  "node_type": "ayat",
+                  "label": "3",
+                  "content": "Matrik standar operasional prosedur penanganan Gelandangan dan Pengemis tercantum dalam Lampiran III yang merupakan bagian tidak terpisahkan dari Peraturan Gubernur ini.",
+                  "start_page": 5,
+                  "end_page": 5,
+                  "warnings": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "section": "batang_tubuh",
+          "node_type": "bagian",
+          "label": "Bagian 2",
+          "content": ".../6",
+          "start_page": 5,
+          "end_page": 5,
+          "warnings": null
+        }
+      ]
+    }
+  ]
+}

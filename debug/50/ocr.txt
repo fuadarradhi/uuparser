@@ -1,0 +1,250 @@
+=== HASIL OCR — 5 halaman ===
+
+--- IDENTITAS DOKUMEN (hasil classify) ---
+Diputuskan oleh  : regex (deterministik, tanpa model)
+Jenis            : PERATURAN GUBERNUR
+Wilayah          : PEMERINTAH ACEH
+Instansi tertulis: ACEH
+Nomor            : 29
+Tahun            : 2025
+Tentang          : NILAI PEROLEHAN AIR PERMUKAAN
+
+(lihat thinking.txt bila kolom KEPUTUSAN di atas = model teks — berisi PERSIS apa yang ditanyakan & dijawab)
+
+--- Halaman 1 — DPI 100 (blur_score probe: 1831276365) ---
+SALINAN
+
+GUBERNUR ACEH
+
+PERATURAN GUBERNUR ACEH
+NOMOR 29 TAHUN 2025
+
+TENTANG
+
+NILAI PEROLEHAN AIR PERMUKAAN
+
+DENGAN RAHMAT ALLAH YANG MAHA KUASA
+
+GUBERNUR ACEH,
+
+Menimbang : bahwa untuk melaksanakan ketentuan Pasal 24 ayat (5) Qanun
+Aceh Nomor 4 Tahun 2024 tentang Pajak Aceh dan Retribusi Aceh,
+perlu menetapkan Peraturan Gubernur tentang Nilai Perolehan Air
+Permukaan;
+
+Mengingat : 1. Pasal 18 ayat (6) Undang-Undang Dasar Negara Republik
+Indonesia Tahun 1945;
+
+2. Undang-Undang Nomor 24 Tahun 1956 tentang Pembentukan
+Daerah Otonom Propinsi Atjeh dan Perubahan Peraturan
+Pembentukan Propinsi Sumatera Utara (Lembaran Negara
+Republik Indonesia Tahun 1956 Nomor 64, Tambahan
+Lembaran Negara Republik Indonesia Nomor 1103);
+
+3. Undang-Undang Nomor 11 Tahun 2006 tentang Pemerintahan
+Aceh (Lembaran Negara Republik Indonesia Tahun 2006 Nomor
+62, Tambahan Lembaran Negara Republik Indonesia Nomor
+4633);
+
+4. Undang-Undang Nomor 23 Tahun 2014 tentang Pemerintahan
+Daerah (Lembaran Negara Republik Indonesia Tahun 2014
+Nomor 244, Tambahan Lembaran Negara Republik Indonesia
+Nomor 5587) sebagaimana telah beberapa kali diubah terakhir
+dengan Undang-Undang Nomor 6 Tahun 2023 tentang
+Penetapan Peraturan Pemerintah Pengganti Undang-Undang
+Nomor 2 Tahun 2022 tentang Cipta Kerja Menjadi Undang-
+Undang (Lembaran Negara Republik Indonesia Tahun 2023
+Nomor 41, Tambahan Lembaran Negara Republik Indonesia
+Nomor 6856);
+
+5. Undang-Undang Nomor 17 Tahun 2019 tentang Sumber Daya
+Air (Lembaran Negara Republik Indonesia Tahun 2019 Nomor
+190, Tambahan Lembaran Negara Republik Indonesia Nomor
+6405) sebagaimana telah beberapa kali diubah terakhir dengan
+Undang-Undang Nomor 6 Tahun 2023 tentang Penetapan
+Peraturan Pemerintah Pengganti Undang-Undang Nomor 2
+Tahun 2022 tentang Cipta Kerja Menjadi Undang-Undang
+(Lembaran Negara Republik Indonesia Tahun 2023 Nomor 41,
+Tambahan Lembaran Negara Republik Indonesia Nomor 6856);
+
+6. Undang-Undang Nomor 1 Tahun 2022 tentang Hubungan
+Keuangan antara Pemerintah Pusat dan Pemerintahan Daerah
+(Lembaran Negara Republik Indonesia Tahun 2022 Nomor 4,
+Tambahan Lembaran Negara Republik Indonesia Nomor 6757);
+
+7. Peraturan.../2
+
+--- Halaman 2 — DPI 100 (DPI mengikuti halaman 1) ---
+7. Peraturan Pemerintah Nomor 12 Tahun 2019 tentang Pengelolaan Keuangan Daerah (Lembaran Negara Republik Indonesia Tahun 2019 Nomor 42, Tambahan Lembaran Negara Republik Indonesia Nomor 6322);
+
+8. Peraturan Pemerintah Nomor 35 Tahun 2023 tentang Ketentuan Umum Pajak Daerah dan Retribusi Daerah (Lembaran Negara Republik Indonesia Tahun 2023 Nomor 85, Tambahan Lembaran Negara Republik Indonesia Tahun 2023 Nomor 6881);
+
+9. Peraturan Pemerintah Nomor 30 Tahun 2024 tentang Pengelolaan Sumber Daya Air (Lembaran Negara Republik Indonesia Tahun 2024 Nomor 167, Tambahan Lembaran Negara Republik Indonesia Tahun 2023 Nomor 6981);
+
+10. Peraturan Menteri Pekerjaan Umum dan Perumahan Rakyat Nomor 15/PRT/M/2017 tentang Tata Cara Penghitungan Besaran Nilai Perolehan Air Permukaan (Berita Negara Republik Indonesia Tahun 2017 Nomor 1195);
+
+11. Qanun Aceh Nomor 4 Tahun 2024 tentang Pajak Aceh dan Retribusi Aceh (Lembaran Daerah Aceh Nomor 4 Tahun 2024, Tambahan Lembaran Aceh Nomor 142);
+
+12. Peraturan Gubernur Aceh Nomor 1 Tahun 2024 tentang Kedudukan, Susunan Organisasi, Tugas, Fungsi dan Tata Kerja Satuan Kerja Perangkat Aceh, Cabang Dinas dan Unit Pelaksana Teknis Daerah (Berita Daerah Aceh Tahun 2024 Nomor 1);
+
+13. Peraturan Gubernur Aceh Nomor 34 Tahun 2024 tentang Petunjuk Pelaksanaan Qanun Aceh Nomor 4 Tahun 2024 tentang Pajak Aceh dan Retribusi Aceh (Berita Daerah Aceh Tahun 2024 Nomor 34);
+
+MEMUTUSKAN:
+
+Menetapkan : PERATURAN GUBERNUR TENTANG NILAI PEROLEHAN AIR PERMUKAAN.
+
+BAB I
+
+KETENTUAN UMUM
+
+Pasal 1
+
+Dalam Peraturan Gubernur ini yang dimaksud dengan:
+
+1. Nilai Perolehan Air Permukaan yang selanjutnya disingkat NPAP adalah dasar pengenaan Pajak Air Permukaan.
+
+2. Air Permukaan adalah semua air yang terdapat pada permukaan tanah.
+
+3. Aceh adalah daerah provinsi yang merupakan kesatuan masyarakat hukum yang bersifat istimewa dan diberi kewenangan khusus untuk mengatur dan mengurus sendiri urusan pemerintahan dan kepentingan masyarakat setempat sesuai dengan peraturan perundang-undangan dalam sistem dan prinsip Negara Kesatuan Republik Indonesia berdasarkan Undang-Undang Dasar Negara Republik Indonesia Tahun 1945, yang dipimpin oleh seorang Gubernur.
+
+4. Pemerintah Aceh adalah unsur penyelenggara pemerintahan Aceh yang terdiri atas Gubernur dan Perangkat Daerah Aceh.
+
+5. Gubernur adalah Kepala Pemerintah Aceh.
+
+--- Halaman 3 — DPI 100 (DPI mengikuti halaman 1) ---
+6. Pajak Aceh adalah kontribusi wajib kepada Pemerintah Aceh yang terutang oleh orang pribadi atau badan yang bersifat memaksa berdasarkan peraturan perundang-undangan, dengan tidak mendapatkan imbalan secara langsung dan digunakan untuk keperluan Aceh bagi sebesar-besarnya kemakmuran rakyat.
+
+7. Pajak Air Permukaan yang selanjutnya disingkat PAP adalah Pajak atas pengambilan dan/atau pemanfaatan Air Permukaan.
+
+8. Subjek PAP adalah orang pribadi atau Badan yang dapat dikenai PAP.
+
+9. Objek PAP adalah setiap pengambilan dan/atau pemanfaatan Air Permukaan.
+
+10. Wajib PAP adalah orang pribadi atau Badan yang melakukan pengambilan dan/atau pemanfaatan Air Permukaan.
+
+11. Harga Dasar Air Permukaan yang selanjutnya disingkat HDAP adalah harga dasar air permukaan yang pemanfaatannya untuk air minum, niaga, industri, tambang dan listrik yang digunakan sebagai satu di antara faktor untuk menghitung NPAP oleh Pemerintah Aceh.
+
+12. Faktor Ekonomi Wilayah yang selanjutnya disingkat FEW adalah faktor yang menggambarkan kondisi perekonomian dari provinsi berdasarkan pengelompokan produk domestik regional bruto Aceh.
+
+13. Faktor Nilai Perolehan Air Permukaan yang selanjutnya disingkat FNAP adalah hasil perkalian dari komponen sumber daya air yang menjadi satu di antara dasar penetapan NPAP.
+
+14. Faktor Kelompok Pengguna Air Permukaan yang selanjutnya disingkat FKPAP adalah kelompok kegiatan pengguna air permukaan yang terdiri dari kegiatan sosial, niaga, non niaga, industri penunjang produksi, pertanian, tenaga listrik dan pertambangan.
+
+15. Badan adalah sekumpulan orang dan/atau modal yang merupakan kesatuan, baik yang melakukan usaha maupun yang tidak melakukan usaha sesuai ketentuan peraturan perundang-undangan.
+
+Pasal 2
+
+Peraturan Gubernur ini bertujuan untuk mendapatkan besaran NPAP sebagai dasar pengenaan PAP.
+
+Pasal 3
+
+Ruang lingkup pengaturan dari Peraturan Gubernur ini meliputi:
+a. pajak bersifat objektif;
+b. pendataan Wajib PAP; dan
+c. pedoman NPAP.
+
+BAB II
+
+PAJAK BERSIFAT OBJEKTIF
+
+Pasal 4
+
+(1) Pajak bersifat objektif merupakan Pajak yang pengenaannya berdasarkan keadaan objek Pajak tanpa memperhatikan keadaan Wajib Pajak.
+
+(2) Setiap pengambilan dan/atau pemanfaatan Air Permukaan merupakan Objek PAP.
+
+(3) Setiap.../4
+
+--- Halaman 4 — DPI 100 (DPI mengikuti halaman 1) ---
+(3) Setiap orang pribadi dan/atau Badan yang memiliki izin atau belum memiliki izin, memenuhi kriteria sebagai Objek PAP ditetapkan sebagai Wajib PAP berdasarkan ketentuan peraturan perundang-undangan.
+
+(4) Dalam hal Wajib PAP:
+a. belum memiliki izin;
+b. telah memenuhi persyaratan subjektif dan objektif Pajak; dan
+c. telah dilakukan pendataan.
+tetap diwajibkan untuk mengurus perizinan sesuai ketentuan peraturan perundang-undangan.
+
+BAB III
+
+PENDATAAN
+
+Pasal 5
+
+(1) Pendataan sebagaimana dimaksud dalam Pasal 4 ayat (4) huruf c dilakukan oleh Pemerintah Aceh berkoordinasi dengan:
+a. kementerian yang menyelenggarakan urusan pemerintahan bidang sumber daya air;
+b. perangkat daerah kabupaten/kota di Aceh yang menyelenggarakan urusan pemerintahan bidang sumber daya air; dan
+c. perangkat daerah kabupaten/kota di Aceh yang menyelenggarakan urusan pemerintahan bidang perizinan.
+
+(2) Pendataan sebagaimana dimaksud pada ayat (1) dilakukan terhadap Wajib PAP yang memasang meter air maupun yang tidak memasang meter air, termasuk pendataan lainnya terkait dengan pengusahaan sumber daya air.
+
+Pasal 6
+
+(1) Setiap Wajib PAP sebagaimana dimaksud dalam Pasal 5 ayat (2) wajib memasang meter air dalam melakukan pengambilan dan/atau pemanfaatan air permukaan.
+
+(2) Meter air sebagaimana dimaksud pada ayat (1) wajib dipasang paling lama 1 (satu) bulan sejak dilakukan pendataan oleh unit pelaksana teknis daerah pengelolaan pendapatan Aceh pada perangkat Aceh yang menyelenggarakan fungsi penunjang urusan pemerintahan bidang pendapatan daerah secara periodik.
+
+(3) Meter air sebagaimana dimaksud pada ayat (2) digunakan oleh Wajib PAP wajib dilakukan uji dan/atau kalibrasi secara berkala oleh instansi teknis.
+
+(4) Dalam hal pengambilan dan/atau pemanfaatan air permukaan dihentikan sementara atau tidak beroperasi, maka Wajib PAP dapat melaporkan secara tertulis kepada kepala unit pelaksana teknis daerah pengelolaan pendapatan Aceh.
+
+Pasal 7
+
+Dalam hal meter air belum dimiliki oleh Wajib PAP, maka PAP terhutang ditetapkan secara jabatan melalui:
+a. besaran PAP terutang masa PAP sebelumnya; atau
+b. perkiraan wajar dalam pengambilan dan/atau pemanfaatan Air Permukaan.
+
+Pasal 8
+
+(1) Dalam hal meter air yang dimiliki oleh Wajib PAP dalam kondisi rusak, maka pengambilan dan/atau pemanfaatan air permukaan dihitung untuk:
+
+a. Wajib.../5
+
+--- Halaman 5 — DPI 100 (DPI mengikuti halaman 1) ---
+a. Wajib PAP kelompok pengguna air permukaan perusahaan daerah air minum, menggunakan data rekening ditagih; atau
+b. Wajib PAP kelompok pengguna air permukaan non perusahaan daerah air minum, mengunakan besaran PAP terutang masa PAP sebelumnya.
+
+(2) Wajib PAP sebagaimana dimaksud pada ayat (1) melaporkan kondisi kerusakan meter air secara tertulis dengan melampirkan bukti kerusakan dari meter air kepada kepala unit pelaksana teknis daerah pengelolaan pendapatan Aceh.
+
+BAB IV
+
+PEDOMAN NILAI PEROLEHAN AIR PERMUKAAN
+
+Pasal 9
+
+(1) Pedoman NPAP terdiri atas:
+a. Objek PAP yang telah memiliki izin; dan
+b. Objek PAP yang belum memiliki izin.
+
+(2) NPAP yang berasal dari Objek PAP yang telah memiliki izin sebagaimana dimaksud pada ayat (1) huruf a, diperoleh dengan mengalikan:
+a. HDAP;
+b. FEW;
+c. FNAP; dan
+d. FKPAP.
+
+Pasal 10
+
+HDAP sebagaimana dimaksud dalam Pasal 9 ayat (2) huruf a ditetapkan sesuai ketentuan peraturan perundang-undangan.
+
+Pasal 11
+
+(1) FEW sebagaimana dimaksud dalam Pasal 9 ayat (2) huruf b, merupakan faktor pengali yang dinyatakan dalam satuan persentase.
+
+(2) FEW sebagaimana dimaksud pada ayat (1) diperoleh dengan mengelompokkan nilai produk domestik regional bruto Aceh tahun sebelumnya.
+
+Pasal 12
+
+(1) FNAP sebagaimana dimaksud dalam Pasal 9 ayat (2) huruf c merupakan hasil perkalian dari komponen sumber daya air yang menjadi salah satu dasar penetapan NPAP.
+
+(2) FNAP sebagaimana dimaksud pada ayat (1) diperoleh dengan mengalikan bobot dari komponen sumber daya air sebagai berikut:
+a. jenis sumber air;
+b. lokasi sumber air;
+c. luas areal tempat pengambilan dan/atau pemanfaatan air;
+d. volume air yang diambil dan/atau dimanfaatkan;
+e. kualitas air;
+f. kondisi daerah aliran sungai; dan
+g. kewenangan pengelolaan sumber daya air.
+
+(3) FNAP dari masing-masing komponen sumber daya air sebagaimana dimaksud pada ayat (1) dinyatakan dalam satuan persentase.
+
+(4) Penentuan FNAP dari masing-masing komponen sumber daya air sebagaimana dimaksud pada ayat (2) dilaksanakan sesuai ketentuan peraturan perundang-undangan.
+

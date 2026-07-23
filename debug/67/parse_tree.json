@@ -1,0 +1,301 @@
+{
+  "status": "SUCCESS",
+  "nodes": [
+    {
+      "section": "judul",
+      "node_type": "judul",
+      "content": "SALINAN",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "judul",
+      "node_type": "judul",
+      "content": "GUBERNUR ACEH",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "judul",
+      "node_type": "judul",
+      "content": "NOMOR 500.15.14.1 /1489 / 2025",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "judul",
+      "node_type": "judul",
+      "content": "TENTANG",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "judul",
+      "node_type": "judul",
+      "content": "PENETAPAN UPAH MINIMUM SEKTORAL PROVINSI ACEH TAHUN 2026",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "menimbang",
+      "node_type": "item",
+      "content": "bahwa untuk melaksanakan ketentuan Pasal 89 ayat (3) Undang- Undang Nomor 13 Tahun 2003 tentang Ketenagakerjaan, Pasal 35A ayat (1) Peraturan Pemerintah Nomor 36 Tahun 2021 tentang Pengupahan sebagaimana telah beberapa kali diubah terakhir dengan Peraturan Pemerintah Nomor 49 Tahun 2025 tentang Perubahan Kedua Atas Peraturan Pemerintah Nomor 36 Tahun 2021 tentang Pengupahan, Pasal 6 ayat (1) huruf e Qanun Aceh Nomor 7 Tahun 2014 sebagaimana telah diubah dengan Qanun Aceh Nomor 1 Tahun 2024 tentang Perubahan Atas Qanun Aceh Nomor 7 Tahun 2014 tentang Ketenagakerjaan serta Rekomendasi Dewan Pengupahan Provinsi Aceh tanggal 24 Desember 2025, perlu menetapkan Upah Minimum Sektoral Provinsi Aceh Tahun 2026;",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "menimbang",
+      "node_type": "item",
+      "content": "bahwa berdasarkan pertimbangan sebagaimana dimaksud dalam huruf a, perlu menetapkan Keputusan Gubernur tentang Penetapan Upah Minimum Sektoral Provinsi Aceh Tahun 2026;",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 24 Tahun 1956 tentang Pembentukan Daerah Otonom Propinsi Atjeh dan Perubahan Peraturan Pembentukan Propinsi Sumatera Utara;",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 13 Tahun 2003 tentang Ketenagakerjaan;",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 11 Tahun 2006 tentang Pemerintahan Aceh;",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 24 Tahun 2007 tentang Penanggulangan Bencana;",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 23 Tahun 2014 tentang Pemerintahan Daerah sebagaimana telah beberapa kali diubah terakhir dengan Undang-Undang Nomor 6 Tahun 2023 tentang Penetapan Peraturan Pemerintah Pengganti Undang-Undang Nomor 2 Tahun 2022 tentang Cipta Kerja Menjadi Undang-Undang;",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 30 Tahun 2014 tentang Administrasi Pemerintahan Daerah;",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 6 Tahun 2023 tentang Penetapan Peraturan Pemerintah Pengganti Undang-Undang Nomor 2 Tahun 2022 tentang Cipta Kerja Menjadi Undang-Undang;",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan Pemerintah Nomor 21 Tahun 2008 tentang Penyelenggaraan Penanggulangan Bencana;",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan.../2",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan Pemerintah Nomor 36 Tahun 2021 tentang Pengupahan sebagaimana telah beberapa kali diubah terakhir dengan Peraturan Pemerintah Nomor 49 Tahun 2025 tentang Perubahan Kedua Atas Peraturan Pemerintah Nomor 36 Tahun 2021 tentang Pengupahan;",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan Menteri Ketenagakerjaan Nomor 1 Tahun 2017 tentang Struktur dan Skala Upah;",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Qanun Aceh Nomor 7 Tahun 2014 tentang Ketenagakerjaan sebagaimana telah diubah dengan Qanun Aceh Nomor 1 Tahun 2024 tentang Perubahan Atas Qanun Aceh Nomor 7 Tahun 2014 tentang Ketenagakerjaan;",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "memperhatikan",
+      "node_type": "item",
+      "content": "Berita Acara Sidang Dewan Pengupahan Provinsi Aceh tanggal 24 Desember 2025;",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "penetapan",
+      "node_type": "penetapan",
+      "content": "MEMUTUSKAN :",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "penetapan",
+      "node_type": "penetapan",
+      "content": "Menetapkan :",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "batang_tubuh",
+      "node_type": "diktum",
+      "label": "KESATU",
+      "content": "Menetapkan Upah Minimum Sektoral Provinsi (UMSP) Aceh Tahun 2026 sebagaimana tercantum dalam Lampiran yang merupakan bagian tidak terpisahkan dari Keputusan Gubernur ini.",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "batang_tubuh",
+      "node_type": "diktum",
+      "label": "KEDUA",
+      "content": "UMSP Aceh Tahun 2026 sebagaimana dimaksud pada Diktum Kesatu merupakan upah bulanan terendah dengan waktu kerja 7 (tujuh) jam per hari atau 40 (empat puluh) jam per minggu bagi sistem kerja 6 (enam) hari per minggu dan 8 (delapan) jam per hari atau 40 (empat puluh) jam per minggu bagi sistem kerja 5 (lima) hari per minggu.",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "batang_tubuh",
+      "node_type": "diktum",
+      "label": "KETIGA",
+      "content": "Perusahaan pada sektor Perkebunan Buah Kelapa Sawit, Industri Minyak Kelapa Sawit, Pertambangan Batu Bara, Pertambangan Emas dan Perak dan Pertambangan Gas Alam yang telah memberikan upah lebih tinggi dari ketentuan sebagaimana dimaksud pada Diktum Kesatu, dilarang mengurangi atau menurunkan upah.",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "batang_tubuh",
+      "node_type": "diktum",
+      "label": "KEEMPAT",
+      "content": "UMSP Aceh Tahun 2026 berlaku bagi pekerja/buruh lajang sektor Perkebunan Buah Kelapa Sawit, Industri Minyak Kelapa Sawit, Pertambangan Batu Bara, Pertambangan Emas dan Perak dan Pertambangan Gas Alam di Aceh dengan masa kerja kurang dari 1 (satu) tahun.",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "batang_tubuh",
+      "node_type": "diktum",
+      "label": "KELIMA",
+      "content": "Bagi pekerja/buruh pada sektor Perkebunan Buah Kelapa Sawit, Industri Minyak Kelapa Sawit, Pertambangan Batu Bara, Pertambangan Emas dan Perak dan Pertambangan Gas Alam dengan masa kerja lebih dari 1 (satu) tahun dilakukan peninjaauan besaran upah berdasarkan kesepakatan tertulis yang dicapai melalui perundingan bipartit antara pekerja/buruh dan/atau serikat pekerja/serikat buruh dengan pengusaha di perusahaan dan diatur dalam struktur dan skala upah.",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "batang_tubuh",
+      "node_type": "diktum",
+      "label": "KEENAM",
+      "content": "Pengusaha di sektor Perkebunan Buah Kelapa Sawit, Industri Minyak Kelapa Sawit, Pertambangan Batu Bara, Pertambangan Emas dan Perak dan Pertambangan Gas Alam dilarang membayar upah lebih rendah dari UMSP Aceh Tahun 2026 sebagaimana dimaksud pada Diktum Kesatu.",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "batang_tubuh",
+      "node_type": "diktum",
+      "label": "KETUJUH",
+      "content": "UMSP Aceh Tahun 2026 berlaku terhitung mulai tanggal 1 Januari 2026.",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null
+    },
+    {
+      "section": "batang_tubuh",
+      "node_type": "diktum",
+      "label": "KEDELAPAN",
+      "content": "Keputusan Gubernur ini mulai berlaku pada tanggal ditetapkan.",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null
+    },
+    {
+      "section": "penutup",
+      "node_type": "paragraf_isi",
+      "content": "Ditetapkan di Banda Aceh pada tanggal, 30 Desember 2025 10 Rajab 1447",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null
+    },
+    {
+      "section": "penutup",
+      "node_type": "paragraf_isi",
+      "content": "SALINAN - dari Keputusan ini disampaikan kepada",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null
+    },
+    {
+      "section": "penutup",
+      "node_type": "paragraf_isi",
+      "content": "1. Menteri Dalam Negeri RI; 2. Menteri Ketenagakerjaan RI; 3. Ketua Dewan Perwakilan Rakyat Aceh; 4. Para Bupati/Walikota Se Aceh; 5. Inspektur Aceh; 6. Kepala Dinas Tenaga Kerja dan Mobilitas Penduduk Aceh; 7. Kepala Biro Hukum Setda Aceh.",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null
+    },
+    {
+      "section": "lampiran",
+      "node_type": "paragraf_isi",
+      "content": "LAMPIRAN NOMOR 500.15.14.1/1489/2025 TENTANG PENETAPAN UPAH MINIMUM SEKTORAL PROVINSI ACEH TAHUN 2026",
+      "start_page": 4,
+      "end_page": 4,
+      "warnings": null
+    },
+    {
+      "section": "lampiran",
+      "node_type": "paragraf_isi",
+      "content": "DAFTAR UPAH MINIMUM SEKTORAL PROVINSI ACEH TAHUN 2026",
+      "start_page": 4,
+      "end_page": 4,
+      "warnings": null
+    },
+    {
+      "section": "lampiran",
+      "node_type": "paragraf_isi",
+      "content": "NO SEKTOR KODE KBLI UPAH MINIMUM SEKTORAL PROVINSI TAHUN 2026 SKALA USAHA 1 2 3 4 5 1 Perkebunan Buah Kelapa Sawit 01262 3.987.940 Menengah, Besar 2 Industri Minyak Kelapa Sawit 10431 3.987.940 Menengah, Besar 3 Pertambangan Batu Bara 05100 4.061.791 Menengah, Besar 4 Pertambangan Emas dan Perak 07301 4.061.791 Menengah, Besar 5 Pertambangan Gas Alam 06201 4.061.791 Menengah, Besar",
+      "start_page": 4,
+      "end_page": 4,
+      "warnings": null
+    }
+  ]
+}

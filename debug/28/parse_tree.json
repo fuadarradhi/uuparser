@@ -1,0 +1,531 @@
+{
+  "status": "SUCCESS",
+  "nodes": [
+    {
+      "section": "judul",
+      "node_type": "judul",
+      "content": "GUBERNUR ACEH",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "judul",
+      "node_type": "judul",
+      "content": "PERATURAN GUBERNUR ACEH",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "judul",
+      "node_type": "judul",
+      "content": "NOMOR 17 TAHUN 2025",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "judul",
+      "node_type": "judul",
+      "content": "TENTANG",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "judul",
+      "node_type": "judul",
+      "content": "ROADMAP SANITASI PROVINSI ACEH TAHUN 2025-2029",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "judul",
+      "node_type": "pembukaan",
+      "content": "DENGAN RAHMAT ALLAH YANG MAHA KUASA",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "judul",
+      "node_type": "judul",
+      "content": "GUBERNUR ACEH,",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "menimbang",
+      "node_type": "item",
+      "content": "bahwa masyarakat harus mendapatkan perlindungan dari faktor yang dapat menimbulkan gangguan kesehatan fisik maupun mental melalui tindakan menjaga kebersihan lingkungan dan kesehatan masyarakat;",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "menimbang",
+      "node_type": "item",
+      "content": "bahwa kondisi sanitasi, perubahan perilaku masyarakat terhadap pola hidup bersih dan sehat, serta kualitas lingkungan permukiman masih belum tercapai sesuai target dalam Dokumen Rencana Pembangunan Aceh;",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "menimbang",
+      "node_type": "item",
+      "content": "bahwa berdasarkan Peraturan Presiden Nomor 12 Tahun 2025 tentang Rencana Pembangunan Jangka Menengah Nasional Tahun 2025-2029 dalam rangka koordinasi, sinkronisasi dan integrasi percepatan layanan sanitasi perlu disusun Roadmap Sanitasi Provinsi Aceh;",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "menimbang",
+      "node_type": "item",
+      "content": "bahwa berdasarkan pertimbangan sebagaimana dimaksud dalam huruf a, huruf b, dan huruf c perlu menetapkan Peraturan Gubernur Aceh tentang Roadmap Sanitasi Provinsi Aceh Tahun 2025-2029;",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Pasal 18 ayat (6) Undang-Undang Dasar Negara Republik Indonesia Tahun 1945;",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 24 Tahun 1956 tentang Pembentukan Daerah Otonom Propinsi Atjeh dan Perubahan Peraturan Pembentukan Propinsi Sumatera Utara (Lembaran Negara Republik Indonesia Tahun 1956 Nomor 64, Tambahan Lembaran Negara Republik Indonesia Nomor 1103);",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 11 Tahun 2006 tentang Pemerintahan Aceh (Lembaran Negara Republik Indonesia Tahun 2006 Nomor 62, Tambahan Lembaran Negara Republik Indonesia Tahun 2006 Nomor 4633);",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 26 Tahun 2007 tentang Penataan Ruang (Lembaran Negara Republik Indonesia Tahun 2007 Nomor 68, Tambahan Lembaran Negara Republik Indonesia Nomor 4725);",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 18 Tahun 2008 tentang Pengelolaan Sampah (Lembaran Negara Republik Indonesia Tahun 2008 Nomor 69);",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 23 Tahun 2014 tentang Pemerintahan Daerah (Lembaran Negara Republik Indonesia Tahun 2014 Nomor 244, Tambahan Lembaran Negara Republik Indonesia Nomor 5587) sebagaimana telah beberapa kali diubah terakhir dengan Undang-Undang Nomor 6 Tahun 2023 tentang Penetapan Peraturan Pemerintah Pengganti Undang-Undang Nomor 2 Tahun 2022 tentang Cipta Kerja Menjadi Undang-Undang (Lembaran Negara Republik Indonesia Tahun 2014 Nomor 41, Tambahan Lembaran Negara Nomor 6856);",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-.../2",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 1 Tahun 2022 tentang Hubungan Keuangan antara Pemerintah Pusat dan Pemerintahan Daerah (Lembaran Negara Republik Indonesia Tahun 2022 Nomor 4);",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 17 Tahun 2023 tentang Kesehatan (Lembaran Negara Republik Indonesia Tahun 2023 Nomor 105);",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 59 Tahun 2024 tentang Rencana Pembangunan Jangka Panjang Nasional (RPJPN) 2025-2045 (Tambahan Lembaran Negara Republik Indonesia Tahun 2024 Nomor 6987);",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan Pemerintah Nomor 81 Tahun 2012 tentang Pengelolaan Sampah Rumah Tangga dan Sampah Sejenis Sampah Rumah Tangga (Tambahan Lembaran Negara Republik Indonesia Tahun 2012 Nomor 5347);",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan Pemerintah Nomor 27 Tahun 2020 tentang Pengelolaan Sampah Spesifik (Lembaran Negara Republik Indonesia Tahun 2020 Nomor 141);",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan Pemerintah Nomor 28 Tahun 2024 tentang Peraturan Pelaksanaan Undang-Undang Nomor 17 Tahun 2023 tentang Kesehatan (Lembaran Negara Republik Indonesia Tahun 2024 Nomor 135);",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan Presiden Nomor 185 Tahun 2014 tentang Percepatan Penyediaan Air Minum dan Sanitasi (Lembaran Negara Republik Indonesia Tahun 2014 Nomor 389);",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan Presiden Nomor 97 Tahun 2017 tentang Kebijakan dan Strategi Nasional Pengelolaan Sampah Rumah Tangga dan Sampah Sejenis Sampah Rumah Tangga (Lembaran Negara Republik Indonesia Tahun 2017 Nomor 223);",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan Presiden Nomor 12 Tahun 2025 tentang Rencana Pembangunan Jangka Menengah Nasional Tahun 2025-2029 (Lembaran Negara Republik Indonesia Tahun 2025 Nomor 19);",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan Menteri Pekerjaan Umum Nomor 16/PRT/M/2008 tentang Kebijakan dan Strategi Nasional Pengembangan Sistem Pengelolaan Air Limbah Permukiman;",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan Menteri Dalam Negeri Nomor 33 Tahun 2010 tentang Pedoman Pengelolaan Sampah (Berita Negara Republik Indonesia Tahun 2010 Nomor 274);",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan Menteri Pekerjaan Umum Nomor 3/PRT/M/2013 tentang Penyelenggaraan Prasarana dan Sarana Persampahan dalam Penanganan Sampah Rumah Tangga dan Sampah Sejenis Sampah Rumah Tangga (Berita Negara Republik Indonesia Tahun 2013 Nomor 470);",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan Menteri Lingkungan Hidup dan Kehutanan Nomor P.75/MENLHK/SETJEN/KUM.1/10/2019 tentang Peta Jalan Pengurangan Sampah oleh Produsen (Berita Negara Republik Indonesia Tahun 2019 Nomor 1545);",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan Menteri Lingkungan Hidup Nomor 14 Tahun 2021 tentang Pengelolaan Sampah pada Bank Sampah (Berita Negara Republik Indonesia Tahun 2021 Nomor 752);",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan Menteri Dalam Negeri Nomor 59 Tahun 2021 tentang Penerapan Standar Pelayanan Minimal (SPM) (Berita Negara Republik Indonesia Tahun 2021 Nomor 1419);",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan Menteri Pekerjaan Umum dan Perumahan Rakyat Nomor 13 Tahun 2023 tentang Standar Teknis Standar Pelayanan Minimal Pekerjaan Umum dan Perumahan Rakyat (Berita Negara Republik Indonesia Tahun 2023 Nomor 1006);",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Qanun Aceh Nomor 2 Tahun 2011 tentang Pengelolaan Lingkungan Hidup (Lembaran Daerah Aceh Tahun 2011 Nomor 07);",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Qanun Aceh Nomor 13 Tahun 2016 tentang Pembentukan dan Susunan Perangkat Aceh sebagaimana telah diubah dengan Qanun Aceh Nomor 13 Tahun 2019 tentang Perubahan Atas Qanun Aceh Nomor 13 Tahun 2016 tentang Pembentukan dan Susunan Perangkat Aceh (Lembaran Aceh Tahun 2016 Nomor 16);",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Qanun Aceh Nomor 1 Tahun 2023 tentang Rencana Perlindungan dan Pengelolaan Lingkungan Hidup (Lembaran Aceh Tahun 2023 Nomor 6);",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Qanun Aceh Nomor 8 Tahun 2025 tentang Rencana Pembangunan Jangka Panjang Aceh Tahun 2025-2045 (Lembaran Aceh Tahun 2025 Nomor 8);",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan Gubernur Aceh Nomor 55 Tahun 2016 tentang Pola Kemitraan dalam Pengelolaan Lingkungan Hidup (Berita Daerah Aceh Tahun 2016 Nomor 58);",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan Gubernur Aceh Nomor 138 Tahun 2018 tentang Kebijakan dan Strategi Provinsi Aceh-dalam Pengelolaan Sampah Rumah Tangga dan Sampah Sejenis Sampah Rumah Tangga Tahun 2017-2025 (Berita Daerah Aceh Tahun 2018 Nomor 138);",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null
+    },
+    {
+      "section": "penetapan",
+      "node_type": "penetapan",
+      "content": "MEMUTUSKAN:",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null
+    },
+    {
+      "section": "penetapan",
+      "node_type": "penetapan",
+      "content": "Menetapkan : PERATURAN GUBERNUR TENTANG ROADMAP SANITASI PROVINSI ACEH TAHUN 2025-2029.",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null
+    },
+    {
+      "section": "batang_tubuh",
+      "node_type": "bab",
+      "label": "BAB I",
+      "content": "KETENTUAN UMUM",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null,
+      "children": [
+        {
+          "section": "batang_tubuh",
+          "node_type": "pasal",
+          "label": "1",
+          "content": "Dalam Peraturan Gubernur ini yang dimaksud dengan: 1. Aceh adalah daerah provinsi yang merupakan kesatuan masyarakat hukum yang bersifat istimewa dan diberi kewenangan khusus untuk mengatur dan mengurus diri sendiri urusan pemerintahan dan kepentingan masyarakat setempat sesuai dengan Peraturan Perundang-undangan dalam sistem dan prinsip Negara Kesatuan Republik Indonesia berdasarkan Undang-Undang Dasar Negara Republik Indonesia Tahun 1945 yang dipimpin oleh seorang Gubernur. 2. Pemerintah Aceh adalah unsur penyelenggara Pemerintahan Aceh yang terdiri atas Gubernur dan Perangkat Aceh. 3. Gubernur adalah Gubernur Aceh. 4. Kabupaten/Kota adalah Kabupaten/Kota dalam wilayah Aceh. 5. Satuan Kerja Perangkat Aceh yang selanjutnya disingkat SKPA organisasi perangkat daerah pada Pemerintah Aceh. 6. Pembangunan Sanitasi adalah upaya peningkatan kualitas dan perluasan pelayanan persampahan rumah tangga dan sampah sejenis sampah rumah tangga serta pengelolaan air limbah domestik secara terpadu dan berkelanjutan. 7. Rencana Pembangunan Jangka Panjang Nasional yang selanjutnya disingkat RPJPN adalah Dokumen Perencanaan Pembangunan Nasional untuk periode 20 (dua puluh) tahun. 8. Rencana Pembangunan Jangka Menengah Nasional yang selanjutnya disingkat RPJMN adalah Dokumen Perencanaan Pembangunan Nasional untuk periode 5 (lima) tahun. 9. Rencana Pembangunan Jangka Panjang Aceh (RPJPA) adalah Dokumen Perencanaan Pembangunan Aceh untuk periode 20 (dua puluh) tahun. 10. Rencana .../4 10. Rencana Pembangunan Jangka Menengah Aceh yang selanjutnya disingkat RPJMA adalah Dokumen Perencanaan Pembangunan Aceh untuk periode 5 (lima) tahun. 11. Rencana Kerja Pemerintah Aceh yang selanjutnya disingkat RKPA adalah Dokumen Perencanaan Aceh untuk periode 1 (satu) tahun. 12. Rencana Strategis Satuan Kerja Perangkat Aceh yang selanjutnya disebut Renstra SKPA adalah Dokumen Perencanaan SKPA untuk periode 5 (lima) tahun, yang berpedoman kepada RPJMA. 13. Rencana Kerja Satuan Kerja Perangkat Aceh yang selanjutnya disebut Renja SKPA adalah Dokumen Perencanaan SKPA untuk Periode 1 (satu) tahun, yang berpedoman kepada RKPA. 14. Roadmap Sanitasi Aceh Tahun 2025-2029 yang selanjutnya disebut RSP Aceh adalah dokumen perencanaan Sanitasi Aceh yang diintegrasikan ke dalam dokumen perencanaan pembangunan Aceh. 15. Kelompok Kerja adalah kelompok kerja yang membantu Gubernur dalam melaksanakan sinkronisasi, -koordinasi, dan integrasi percepatan layanan sanitasi berkelanjutan di Aceh.",
+          "start_page": 3,
+          "end_page": 4,
+          "warnings": null
+        },
+        {
+          "section": "batang_tubuh",
+          "node_type": "pasal",
+          "label": "2",
+          "start_page": 4,
+          "end_page": 4,
+          "warnings": null,
+          "children": [
+            {
+              "section": "batang_tubuh",
+              "node_type": "ayat",
+              "label": "1",
+              "content": "RSP Aceh sebagai pedoman bagi Pemerintah Aceh, Pemerintah Kabupaten/Kota dan seluruh pemangku kepentingan mitra pembangunan dalam:\na. melaksanakan sinkronisasi, koordinasi dan integrasi pengelolaan pembangunan sanitasi dan rencana pengembangannya 5 (lima) tahun ke depan di Aceh;\nb. menetapkan arah strategi dan kebijakan dalam menyelenggarakan pengelolaan pembangunan sanitasi yang komprehensif dan terintegrasi di wilayahnya;\nc. acuan dan bahan rujukan dalam melaksanakan kewenangan dan melakukan pembinaan, pengawasan, dan pengaturan penyelarasan pembangunan sanitasi di Kabupaten/Kota;\nd. acuan dalam mengupayakan percepatan target akses sanitasi di Aceh;\ne. rujukan menentukan prioritas dukungan Pemerintah Aceh terhadap peningkatan berbagai aspek pembangunan sanitasi, termasuk penyediaan alokasi pendanaan, serta sarana dan prasarana infrastruktur sanitasi Kabupaten/Kota; dan\nf. rujukan untuk meningkatkan kesadaran pemangku kepentingan di Aceh terhadap pengarusutamaan pembangunan sanitasi.",
+              "start_page": 4,
+              "end_page": 4,
+              "warnings": null
+            },
+            {
+              "section": "batang_tubuh",
+              "node_type": "ayat",
+              "label": "2",
+              "content": "RSP Aceh sebagaimana dimaksud pada ayat (1) merupakan dokumen perencanaan yang memuat tujuan, sasaran, strategi, arah kebijakan, dan program prioritas.",
+              "start_page": 4,
+              "end_page": 4,
+              "warnings": null
+            }
+          ]
+        },
+        {
+          "section": "batang_tubuh",
+          "node_type": "pasal",
+          "label": "3",
+          "content": "Ruang lingkup pengaturan dalam Peraturan Gubernur ini meliputi:\na. penyusunan dan sistematika RSP Aceh;\nb. pengintegrasian RSP Aceh ke dalam dokumen perencanaan Aceh;\nc. Kelompok Kerja;\nd. kerja sama dan peran serta masyarakat;\ne. pemantauan dan evaluasi;\nf. pelaporan; dan\ng. pendanaan.",
+          "start_page": 4,
+          "end_page": 4,
+          "warnings": null
+        }
+      ]
+    },
+    {
+      "section": "batang_tubuh",
+      "node_type": "bab",
+      "label": "BAB II",
+      "content": "PENYUSUNAN DAN SISTEMATIKA RSP ACEH",
+      "start_page": 4,
+      "end_page": 4,
+      "warnings": null,
+      "children": [
+        {
+          "section": "batang_tubuh",
+          "node_type": "pasal",
+          "label": "4",
+          "start_page": 4,
+          "end_page": 4,
+          "warnings": null,
+          "children": [
+            {
+              "section": "batang_tubuh",
+              "node_type": "ayat",
+              "label": "1",
+              "content": "Gubernur menyusun RSP Aceh yang memuat strategi kebijakan dalam pengelolaan pembangunan sanitasi sesuai jangka waktu RPJMA.",
+              "start_page": 4,
+              "end_page": 4,
+              "warnings": null
+            },
+            {
+              "section": "batang_tubuh",
+              "node_type": "ayat",
+              "label": "2",
+              "content": "RSP .../5",
+              "start_page": 4,
+              "end_page": 4,
+              "warnings": null
+            },
+            {
+              "section": "batang_tubuh",
+              "node_type": "ayat",
+              "label": "2",
+              "content": "RSP Aceh sebagaimana dimaksud pada ayat (1) mencakup aspek:\na. pengelolaan air limbah domestik;\nb. pengelolaan sampah rumah tangga dan sampah sejenis sampah rumah tangga;\nc. pengelolaan drainase; dan\nd. peningkatan kesadaran masyarakat.",
+              "start_page": 5,
+              "end_page": 5,
+              "warnings": null
+            }
+          ]
+        },
+        {
+          "section": "batang_tubuh",
+          "node_type": "pasal",
+          "label": "5",
+          "start_page": 5,
+          "end_page": 5,
+          "warnings": null,
+          "children": [
+            {
+              "section": "batang_tubuh",
+              "node_type": "ayat",
+              "label": "1",
+              "content": "Sistematika RSP Aceh sebagaimana dimaksud dalam Pasal 4 ayat (1) meliputi:\na. BAB I : Pendahuluan;\nb. BAB II : Profil sanitasi Provinsi Aceh;\nc. BAB III : Isu strategis, tujuan, sasaran, dan target;\nd. BAB IV : Pembangunan sanitasi Provinsi Aceh;\ne. BAB V : Strategi dan kebijakan pembangunan Sanitasi Provinsi Aceh;\nf. BAB VI : Rencana aksi, program dan kegiatan Pembangunan;\ng. BAB VII : Pemantauan dan evaluasi capaian Pembangunan Sanitasi Provinsi Aceh;",
+              "start_page": 5,
+              "end_page": 5,
+              "warnings": null
+            },
+            {
+              "section": "batang_tubuh",
+              "node_type": "ayat",
+              "label": "2",
+              "content": "Sistematika sebagaimana dimaksud pada ayat (1) sebagaimana tercantum dalam Lampiran yang merupakan bagian yang tidak terpisahkan dari Peraturan Gubernur.",
+              "start_page": 5,
+              "end_page": 5,
+              "warnings": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "section": "batang_tubuh",
+      "node_type": "bab",
+      "label": "BAB III",
+      "content": "PENGINTEGRASIAN RSP ACEH KE DALAM DOKUMEN PERENCANAAN ACEH",
+      "start_page": 5,
+      "end_page": 5,
+      "warnings": null,
+      "children": [
+        {
+          "section": "batang_tubuh",
+          "node_type": "pasal",
+          "label": "6",
+          "start_page": 5,
+          "end_page": 5,
+          "warnings": null,
+          "children": [
+            {
+              "section": "batang_tubuh",
+              "node_type": "ayat",
+              "label": "1",
+              "content": "RSP Aceh sebagaimana dimaksud dalam Pasal 4 ayat (1) dilaksanakan dengan mengintegrasikan ke dalam dokumen perencanaan Aceh, meliputi:\na. RPJMA;\nb. RKPA;\nc. Renstra SKPA;\nd. Renja SKPA; dan\ne. RPJMD Pemerintah Kabupaten/Kota.",
+              "start_page": 5,
+              "end_page": 5,
+              "warnings": null
+            },
+            {
+              "section": "batang_tubuh",
+              "node_type": "ayat",
+              "label": "2",
+              "content": "RSP Aceh sebagaimana dimaksud dalam Pasal 2 tercantum dalam Lampiran yang merupakan bagian yang tidak terpisahkan dari Peraturan Gubernur ini.",
+              "start_page": 5,
+              "end_page": 5,
+              "warnings": null
+            },
+            {
+              "section": "batang_tubuh",
+              "node_type": "ayat",
+              "label": "3",
+              "content": "RSP Aceh yang diintegrasikan dalam dokumen RKPA sebagaimana dimaksud pada ayat (1) huruf b, meliputi:\na. gambaran umum kondisi Aceh dengan profil kondisi pencapaian dalam pengelolaan pembangunan sanitasi;\nb. permasalahan dan isu strategis Aceh yang mendesak terkait pengelolaan pembangunan sanitasi;\nc. kerangka ekonomi dan keuangan Aceh dengan kemampuan pendanaan sanitasi dan besaran anggaran kebutuhan pembangunan sanitasi;\nd. sasaran dan prioritas pembangunan Aceh dengan sasaran dan target capaian pemenuhan kebutuhan pembangunan sanitasi dalam rencana kerja tahunan; dan\ne. rencana kerja dan pendanaan dengan program, kegiatan, dan alokasi dana indikatif dan sumber pendanaan yang disusun dalam pencapaian pemenuhan kebutuhan pembangunan sanitasi.",
+              "start_page": 5,
+              "end_page": 5,
+              "warnings": null
+            },
+            {
+              "section": "batang_tubuh",
+              "node_type": "ayat",
+              "label": "4",
+              "content": "RSP .../6",
+              "start_page": 5,
+              "end_page": 5,
+              "warnings": null
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,176 @@
+=== HASIL OCR — 5 halaman ===
+
+--- IDENTITAS DOKUMEN (hasil classify) ---
+Diputuskan oleh  : model teks (gate.md + identity.md)
+Jenis            : PERATURAN GUBERNUR
+Wilayah          : PEMERINTAH ACEH
+Instansi tertulis: GUBERNUR ACEH
+Nomor            : 31
+Tahun            : 2025
+Tentang          : PENGELUARAN DAERAH MENDAHULUI PENETAPAN ANG GARAN PENDAPATAN DAN BELANJA ACEH TAHUN ANGGARAN 2026
+
+(lihat thinking.txt bila kolom KEPUTUSAN di atas = model teks — berisi PERSIS apa yang ditanyakan & dijawab)
+
+--- Halaman 1 — DPI 100 (blur_score probe: 1000430476) ---
+GUBERNUR ACEH
+
+PERATURAN GUBERNUR ACEH
+NOMOR 31 TAHUN 2025
+
+JENTANG
+
+PENGELUARAN DAERAH MENDAHULUI PENETAPAN ANG GARAN
+PENDAPATAN DAN BELANJA ACEH TAHUN ANGGARAN 2026
+
+DENGAN RAHMAT ALLAH YANG MAHA KUASA
+
+GUBERNUR ACEH,
+
+Menimbang : a. bahwa berdasarkan ketentuan Lampiran Bab IV huruf E angka 1 huruf 1 Peraturan Menteri Dalam Negeri Nomor 77 Tahun 2020 tentang Pedoman Teknis Pengelolaan Keuangan Daerah, dalam hal Kepala Daerah dan Dewan Perwakilan Rakyat Daerah belum menyetujui bersama rancangan Peraturan Daerah tentang Anggaran Pendapatan dan Belanja Daerah atau menetapkan rancangan Peraturan Daerah tentang Anggaran Pendapatan dan Belanja Daerah menjadi Peraturan Daerah tentang Anggaran Pendapatan dan Belanja Daerah setelah dimulainya tahun anggaran setiap tahun, Kepala Daerah menetapkan Peraturan Kepala Daerah mengenai dasar pengeluaran setiap bulan yang paling tinggi sebesar seperduabelas jumlah pengeluaran Anggaran Pendapatan dan Belanja Daerah tahun anggaran sebelumnya;
+
+b. bahwa untuk memenuhi kelengkapan administrasi pembayaran gaji dan tunjangan serta untuk kelancaran pelaksanaan kegiatan dan operasional Pemerintah Aceh, perlu dilakukan pengeluaran kas guna membiayai belanja yang bersifat mengikat dan belanja yang bersifat wajib melalui mekanisme LS dan UP/GU;
+
+c. bahwa berdasarkan pertimbangan sebagaimana dimaksud dalam huruf a dan huruf b, perlu menetapkan Peraturan Gubernur tentang Pengeluaran Daerah Mendahului Penetapan Anggaran Pendapatan dan Belanja Aceh Tahun Anggaran 2026;
+
+Mengingat : 1. Pasal 18 ayat (6) Undang-Undang Dasar Negara Republik Indonesia Tahun 1945;
+
+2. Undang-Undang Nomor 24 Tahun 1956 tentang Pembentukan Daerah Otonom Propinsi Atjeh dan Perubahan Peraturan Pembentukan Propinsi S umatera Utara (Lembaran Negara Republik Indonesia Tahun 1956 Nomor 54, Tambahan Lembaran Negara Republik Indonesia Nomor 1103);
+
+3. Undang-Undang Nomor 17 Tahun 2003 tentang Keuangan Negara (Lembaran Negara Republik Indonesia Tahun 2003 Nomor 47, Tambahan Lembaran Negara Republik Indonesia Nomor 4286);
+
+4. Undang-Undang Nomor 1 Tahun 2004 tentang Perbendaharaan Negara (Lembaran Negara Republik Indonesia Tahun 2004 Nomor 5, Tambahan Lembaran Negara Republik Indonesia Nomor 4355);
+
+5. Undang-Undang Nomor 11 Tahun 2006 tentang Pemerintahan Aceh (Lembaran Negara Republik Indonesia Tahun 2006 Nomor 62, Tambahan Lembaran Negara Republik Indonesia Tahun 2006 Nomor 4633);
+
+6. Undang-.../2
+
+--- Halaman 2 — DPI 100 (DPI mengikuti halaman 1) ---
+6. Undang-Undang Nomor 22 Tahun 2009 tentang Lalu Lintas dan Angkutan Jalan (Lembaran Negara Republik Indonesia Tahun 2009 Nomor 96, Tambahan Lembaran Negara Republik Indonesia Nomor 5025) sebagaimana telah beberapa kali diubah terakhir dengan Undang-Undang Nomor 6Tahun 2023 tentang Penetapan Peraturan Pemerintah Pengganti Undang-Undang (Lembaran Negara Republik Indonesia Tahun 2023 Nomor 41, Tambahan Lembaran Negara Republik Indonesia Nomor 6856);
+
+7. Undang-Undang Nomor 23 Tahun 2014 tentang Pemerintahan Daerah (Lembaran Negara Republik Indonesia Tahun 2014 Nomor 244, Tambahan Lembaran Negara Republik Indonesia Nomor 5587) sebagaimana telah beberapa kali diubah terakhir dengan Undang-Undang Nomor 6 Tahun 2023 tentang Penetapan Peraturan Pemerintah Pengganti Undang-Undang (Lembaran Negara Republik Indonesia Tahun 2023 Nomor 41, Tambahan Lembaran Negara Republik Indonesia Nomor 6856);
+
+8. Peraturan Pemerintah Nomor 39 Tahun 2007 tentang Pengelolaan Uang Negara/Daerah (Lembaran Negara Republik Indonesia Tahun 2005 Nomor 83, Tambahan Lembaran Negara Republik Indonesia Nomor 4738);
+
+9. Peraturan Pemerintah Nomor 18 Tahun 2017 tentang Hak Keuangan dan Administratif Pimpinan dan Anggota Dewan Perwakilan Rakyat Daerah (Lembaran Negara Republik Indonesia Tahun 2017 Nomor 106, Tambahan Lembaran Negara Republik Indonesia Nomor 6057);
+
+10. Peraturan Pemerintah Nomor 12 Tahun 2019 tentang Pedoman Pengelolaan Keuangan Daerah (Lembaran Negara Republik Indonesia Tahun 2019 Nomor 42);
+
+11. Peraturan Menteri Dalam Negeri Nomor 77 Tahun 2020 tentang Pedoman Teknis Pengelolaan Keuangan Daerah (Berita Negara Republik Indonesia Tahun 2020 Nomor 1781);
+
+12. Peraturan Menteri Dalam Negeri Nomor 15 Tahun 2023 tentang Pedoman Penyusunan Anggaran Pendapatan dan Belanja Daerah Tahun Anggaran 2024 (Berita Negara Republik Indonesia Tahun 2023 Nomor 799);
+
+13. Qanun Aceh Nomor 13 Tahun 2016 tentang Pembentukan dan Susunan Perangkat Aceh (Lembaran Aceh Tahun 2016 Nomor 16, Tambahan Lembaran Aceh Nomor 87) sebagaimana telah diubah dengan Qanun Aceh Nomor 13 Tahun 2019 tentang Perubahan Atas Qanun Aceh Nomor 13 Tahun 2016 tentang Pembentukan dan Susunan Perangkat Aceh (Lembaran Aceh Tahun 2019 Nomor 21);
+
+14. Qanun Aceh Nomor 3 Tahun 2024 tentang Pengelolaan Keuangan Aceh (Lembaran Aceh Tahun 2024 Nomor 3, Tambahan Lembaran Aceh Nomor 141);
+
+15. Peraturan Gubernur Aceh Nomor 52 Tahun 2021 tentang Sistem dan Prosedur Pengelolaan Keuangan Aceh (Berita Daerah Aceh Tahun 2021 Nomor 51);
+
+MEMUTUSKAN:
+
+Menetapkan : PERATURAN GUBERNUR TENTANG PENGELUARAN DAERAH MENDAHULUI PENETAPAN ANGGARAN PENDAPATAN DAN BELANJA ACEH TAHUN ANGGARAN 2026.
+
+--- Halaman 3 — DPI 100 (DPI mengikuti halaman 1) ---
+BAB I
+KETENTUAN UMUM
+Pasal 1
+
+Dalam Peraturan Gubernur ini yang dimaksud dengan:
+
+1. Aceh adalah daerah provinsi yang merupakan kesatuan masyarakat hukum yang bersifat istimewa dan diberi kewenangan khusus untuk mengatur dan mengurus sendiri urusan pemerintahan dan kepentingan masyarakat setempat sesuai dengan peraturan perundang-undangan dalam sistem dan prinsip Negara Kesatuan Republik Indonesia berdasarkan Undang-Undang Dasar Negara Republik Indonesia Tahun 1945 yang dipimpin oleh seorang Gubernur.
+
+2. Pemerintah Aceh adalah unsur penyelenggaraan pemerintahan Aceh terdiri dari Gubernur dan Perangkat Aceh.
+
+3. Dewan Perwakilan Rakyat Aceh yang selanjutnya disingkat DPRA adalah unsur penyelenggaraan Pemerintahan Aceh yang anggotanya dipilih melalui Pemilihan Umum.
+
+4. Belanja yang Bersifat Mengikat adalah belanja yang dibutuhkan secara terus menerus dan harus dialokasikan oleh Pemerintah Aceh dengan jumlah yang cukup untuk keperluan setiap bulan dalam tahun anggaran yang berkenaan, seperti belanja pegawai, belanja barang dan jasa.
+
+5. Belanja yang Bersifat Wajib adalah belanja untuk terjaminnya kelangsungan pemenuhan pendanaan pelayanan dasar masyarakat antara kain pendidikan, kesehatan, melaksanakan kewajiban kepada pihak ketiga, kewajiban pembayaran pokok pinjaman, bunga pinjaman yang telah jatuh tempo dan kewajiban lainnya sesuai dengan ketentuan peraturan perundang-undangan.
+
+6. Anggaran Pendapatan dan Belanja Aceh yang selanjutnya disingkat APBA adalah rencana keuangan tahunan Pemerintah Aceh yang ditetakkan dengan Qanun.
+
+7. Satuan Kerja Perangkat Aceh yang selanjutnya disingkat SKPA adalah organisasi perangkat daerah pada Pemerintah Aceh.
+
+8. Dokumen Pelaksanaan Anggaran Satuan Kerja Perangkat Aceh yang selanjutnya disingkat DPA-SKPA adalah dokumen yang memuat pendapatan dan belanja SKPA atau dokumen yang memuat pendapatan, belanja dan pembaiyaan SKPA yang melaksanakan fungsi bendahara umum Aceh yang digunakan sebagai dasar pelaksanaan angggaran oleh pengguna angggaran.
+
+9. Surat Perintah Membayar yang selanjutnya disingkat SPM adalah dokumen yang digunakan/diterbitkan oleh pengguna angggaran/kuasa pengguna angggaran untuk penerbitan Surat Perintah Pencairan Dana atas beban pengeluaran DPA-SKPA. kewajiban pembayaran pada waktu yang disepakati dengan pelunasan pembayaran secara sekaligus.
+
+10. Uang Persediaan yang selanjutnya disingkat UP adalah uang muka kerja dalam jumlah tertentu yang diberikan kepada bendahara pengeluaran untuk membiayai kegiatan operasional SKPA/Unit SKPA dan/atau untuk membiayai pengeluaran yang menurut sifat dan tujuannya tidak mungkin dilakukan melalui mekanisme pembayaran langsung yang bersifat pengisian k embali (revolving).
+
+Pasal .../4
+
+--- Halaman 4 — DPI 100 (DPI mengikuti halaman 1) ---
+Pasal 2
+Peraturan Gubernur ini dimaksud sebagai Pedoman Pengeluaran Daerah Mendahului Penetapan Anggaran Pendapatan dan Belanja Aceh Tahun Anggaran 2026.
+
+Pasal 3
+Peraturan Gubernur ini bertujuan untuk memberikan kepastian hukum dan memenuhi tertib administrasi pembayaran gaji dan tunjangan serta pelaksanaan kegiatan dan operasional Pemerintah Aceh.
+
+BAB II
+ALOKASI
+Pasal 4
+(1) Alokasi pengeluaran daerah mendahului APBA Tahun Anggaran 2026 sebesar Rp853.556.949.825,00 (delapan ratus lima puluh tiga miliar lima ratus lima puluh enam juta sembilan ratus empat puluh sembilan ribu delapan ratus dua puluh lima rupiah); dan
+b. belanja barang dan jasa sebesar Rp56.590.000.000,00 (lima puluh enam miliar lima ratus sembilan puluh juta rupiah)
+(2) Alokasi pengeluaran daerah sebagaimana dimaksud pada ayat (1) huruf a dialokasikan untuk pembayaran gaji dan tunjangan:
+a. Gubernur/Wakil Gubernur;
+b. Wali Nanggroe;
+c. Ketua/Wakil Ketua/Anggota DPRA;
+d. Ketua/Wakil Ketua/Anggota Lembaga Keistimewaan Aceh;
+e. Pegawai Negeri Sipil Pemerintah Aceh/Calon Pegawai Negeri Sipil Pemerintah Aceh, Pegawai Negeri Sipil yang diperbantukan pada Pemerintah Aceh serta Pegawai Pemerintah dengan Perjanjian Kerja; dan
+f. lainnya yang wajib dibayarkan sesuai ketentuan peraturan perundang-undangan.
+(3) Alokasi pengeluaran kas sebagaimana dimaksud pada ayat (1) huruf b dialokasikan untuk UP Tahun Anggaran 2026.
+
+Pasal 5
+(1) Batas atas jumlah UP untuk setiap SKPA sebesar 1/12 (satu per duabelas) dari belanja barang dan jasa Tahun Anggaran 2025.
+(2) Belanja barang dan jasa yang diperhitungkan untuk UP tidak termasuk belanja barang dan jasa yang akan diserahkan ke pihak ketiga atau belanja barang dan jasa yang dipersamakan dengan belanja modal.
+(3) Besaran alokasi UP untuk masing-masing SKPA sebagaimana tercantum dalam Lampiran yang merupakan bagian tidak terpisahkan dari Peraturan Gubernur ini.
+(4) Besaran alokasi UP sebagaimana dimaksud pada ayat (3) dapat berubah setelah penetakan APBA Tahun Anggaran 2026, yang besarannya akan ditetapkan dengan Keputusan Gubernur Aceh.
+
+AB III .../5
+
+--- Halaman 5 — DPI 100 (DPI mengikuti halaman 1) ---
+BAB III
+PEMBAYARAN
+Pasal 6
+
+(1) Pembayaran UP yang telah dilaksanakan untuk SKPA merupakan bagian dari pagu Tahun Anggaran 2026 masing-masing SKPA.
+
+(2) UP diberikan untuk menampung kebutuhan mendesak dan pengeluaran paling tinggi sebesar angka APBA tahun anggaran sebelumnya untuk membiayai keperluan setiap bulan dan telah direncanakan dalam Rencana Kerja dan Anggaran-SKPA Tahun Anggaran 2026.
+
+(3) Penggunaan UP mendahului APBA Tahun Anggaran 2026 hanya untuk membiayai kebutuhan Belanja yang Bersifat Mengikat dan Belanja yang Bersifat Wajib serta belanja yang bersifat insidentil dalam rangka mendukung kelancaran dan efektivitas penyelenggaraan kegiatan pelayanan masyarakat.
+
+(4) Realisasi pengeluaran/penggunaan UP harus dipertanggungjawabkan oleh Kepala SKPA berdasarkan DPA-SKPA atas beban APBA Tahun Anggaran 2026 dengan menyampaikan Laporan Pertanggungjawaban kepada Pejabat Pengelola Keuangan Aceh sesuai dengan ketentuan peraturan perundang-undangan.
+
+Pasal 7
+
+Kepala SKPA selaku Pengguna Anggaran dapat mengajukan SPM gaji dan tunjangan dan SPM-UP kepada Kuasa Bendahara Umum Aceh mendahului penetapan APBA Tahun Anggaran 2026 berdasarkan Peraturan Gubernur ini.
+
+Pasal 8
+
+Peraturan Gubernur ini mulai berlaku pada tanggal 1 Januari 2026.
+
+Agar setiap orang mengatahuinya, memerintahkan pengundangan Peraturan Gubernur ini dengan penempatannya dalam Berita Daerah Aceh.
+
+Ditetapkan di Banda Aceh
+pada tanggal, 16 Desember 2025
+25 Jumadil Akhir 1447
+
+GUBERNUR ACEH,
+
+Ttd.
+
+MUZAKIR MANAF
+
+Diundangkan di Banda Aceh
+pada tanggal, 16 Desember 2025
+25 Jumadil Akhir 1447
+
+SEKRETARIS DAERAH ACEH,
+
+Ttd.
+
+M. NASIR
+
+MUHAMMAD JUNAIDI, SH, MH
+
+BERITA DAERAH ACEH TAHUN 2025 NOMOR 322
+

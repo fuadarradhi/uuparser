@@ -1,0 +1,148 @@
+=== HASIL OCR — 4 halaman ===
+
+--- IDENTITAS DOKUMEN (hasil classify) ---
+Diputuskan oleh  : model teks (gate.md + identity.md)
+Jenis            : INSTRUKSI GUBERNUR
+Wilayah          : PEMERINTAH ACEH
+Instansi tertulis: GUBERNUR ACEH
+Nomor            : 08/INSTR/2025
+Tahun            : 2025
+Tentang          : PENATAAN DAN PENERTIBAN PERIZINAN/NON PERIZINAN BERUSAHA SEKTOR SUMBER DAYA ALAM
+
+(lihat thinking.txt bila kolom KEPUTUSAN di atas = model teks — berisi PERSIS apa yang ditanyakan & dijawab)
+
+--- Halaman 1 — DPI 100 (blur_score probe: 1616562003) ---
+GUBERNUR ACEH
+INSTRUKSI GUBERNUR ACEH
+NOMOR 08/INSTR/2025
+
+TENTANG
+
+PENATAAN DAN PENERTIBAN PERIZINAN/NON PERIZINAN BERUSAHA
+SEKTOR SUMBER DAYA ALAM
+
+GUBERNUR ACEH,
+
+Dalam rangka penataan dan penertiban perizinan/non perizinan berusaha sektor sumber daya alam menuju tata kelola yang strategis, terpadu, terkoordinir dan berkelanjutan, bahwa berdasarkan ketentuan Pasal 142 ayat (3) dan ayat (4), Pasal 143, Pasal 149, Pasal 150, Pasal 156, Pasal 157, Pasal 158, Pasal 159, Pasal 165, dan Pasal 181 ayat (1) huruf b dan ayat (3) Undang-Undang Nomor 11 Tahun 2006 tentang Pemerintahan Aceh, dengan ini menginstruksikan :
+
+Kepada : 1. Bupati/Walikota se-Aceh;
+2. Kepala Dinas Penanaman Modal dan Pelayanan Terpadu Satu Pintu Aceh;
+3. Kepala Dinas Energi dan Sumber Daya Mineral Aceh;
+4. Kepala Dinas Lingkungan Hidup dan Kehutanan Aceh;
+5. Kepala Dinas Pertanian dan Perkebunan Aceh; dan
+6. Kepala Dinas Perindustrian dan Perdagangan Aceh.
+
+Untuk :
+
+KESATU : Bupati/Walikota se-Aceh :
+a. melakukan penertiban pertambangan ilegal dalam Kabupaten/Kota setelah berkoordinasi dengan Pemerintah Aceh melalui tim penertiban pertambangan ilegal bersama aparat penegak hukum;
+b. melakukan koordinasi dengan Pemerintah Aceh melalui Dinas Energi dan Sumber Daya Mineral Aceh dan Dinas Penanaman Modal dan Pelayanan Terpadu Satu Pintu Aceh terhadap penerbitan rekomendasi permohonan Izin Usaha Pertambangan (IUP) komoditas mineral logam, mineral bukan logam jenis tertentu dan batubara;
+c. melakukan koordinasi dengan Pemerintah Aceh melalui Dinas Pertanian dan Perkebunan Aceh, Dinas Lingkungan Hidup dan Kehutanan Aceh dan Dinas Penanaman Modal dan Pelayanan Terpadu Satu Pintu Aceh terhadap penerbitan rekomendasi permohonan Izin Usaha Perkebunan (IUP), Izin Usaha Perkebunan Budidaya (IUP-B) dan Izin Usaha Perkebunan Pengolahan (IUP-P) serta fasilitasi pembangunan kebun masyarakat;
+d. menghentikan penggunaan dan pendistribusian merkuri/air raksa (Hg) dan sianida (CN) yang digunakan dalam kegiatan penambangan;
+e. melakukan inventarisasi dan verifikasi seluruh perizinan berusaha/non perizinan berusaha di luar Kawasan Hutan pada wilayah masing-masing;
+
+--- Halaman 2 — DPI 100 (DPI mengikuti halaman 1) ---
+f. melakukan penataan dan penertiban pelaksanaan perizinan berusaha/non perizinan berusaha agar sesuai dengan Rencana Tata Ruang dan Wilayah (RTRW) Kabupaten/Kota, Kesesuaian Kegiatan Pemanfaatan Ruang (KKPR), Analisis Mengenai Dampak Lingkungan (AMDAL), upaya pengelolaan lingkungan hidup dan upaya pengelolaan lingkungan hidup (UKL-UPL);
+
+g. mengambil langkah administratif terhadap pelanggaran perizinan berusaha/non perizinan berusaha dalam bentuk : teguran, pembekuan, penghentian sementara, atau pencabutan rekomendasi izin sesuai kententuan peraturan perundang-undangan;
+
+h. melakukan penertiban terhadap tanah/lahan/konsesi yang terbengkalai atau tidak diusahakan sesuai kententuan peraturan perundang-undangan, serta mengusulkan kepada Pemerintah Aceh untuk dimasukkan dalam program reforma agraria, perhutanan sosial, atau redistribusi tanah; dan
+
+i. melaporkan hasil pelaksanaan Instruksi ini secara berkala minimal 1 (satu) kali setiap 3 (tiga) bulan kepada Gubernur Aceh.
+
+KEDUA
+
+: Kepala Dinas Penanaman Modal dan Pelayanan Terpadu Satu Pintu Aceh Aceh:
+
+a. melakukan konsultasi dengan tim penataan dan penertiban perizinan berusaha dan non berusaha sektor sumber daya alam terhadap persetujuan perizinan berusaha dan non perizinan sektor sumber daya alam, diantaranya Izin Usaha Pertambangan Eksplorasi Komoditas Mineral Logam, Mineral Bukan Logam Jenis Tertentu dan Batubara, Perizinan Berusaha Pemanfaatan Hutan (PBPH), Persetujuan Penggunaan Kawasan Hutan (PPKH), Rekomendasi Perpanjangan Hak Guna Usaha (HGU), Izin Usaha Perkebunan (IUP), IUP-Budidaya, dan IUP-Pengolahan;
+
+b. konsultasi sebagaimana dimaksud pada huruf a berlaku selama 6 (enam) bulan sejak Instruksi ini ditetapkan;
+
+c. melakukan penyempurnaan Standar Operasional Prosedur (SOP) perizinan berusaha dan non perizinan sektor sumber daya alam sesuai dengan kententuan dalam Undang-Undang Nomor 11 Tahun 2006 tentang Pemerintah Aceh, Qanun Aceh Nomor 6 Tahun 2012 tentang Perkebunan sebagaimana telah diubah dengan Qanun Aceh Nomor 9 Tahun 2017 tentang Perubahan Atas Qanun Aceh Nomor 6 Tahun 2012 tentang Perkebunan, Qanun Aceh Nomor 15 Tahun 2013 tentang Pengelolaan Pertambangan Mineral dan Batubara sebagaimana telah diubah dengan Qanun Aceh Nomor 15 Tahun 2017 tentang Perubahan Atas Qanun Aceh Nomor 15 Tahun 2013 tentang Pengelolaan Pertambangan Mineral dan Batubara, dan Qanun Aceh Nomor 7 Tahun 2016 tentang Kehutanan Aceh;
+
+d. melakukan penataan perizinan melalui pembinaan dan evaluasi perizinan berusaha dan non perizinan sektor sumber daya alam;
+
+e. meningkatkan fungsi pengawasan perizinan berusaha dan non perizinan sektor sumber daya alam melalui reviu komitmen pemenuhan persyaratan pelaku usaha;
+
+f. mengkoordinir pengawasan perizinan berusaha bersama instansi terkait;
+
+g. memberikan sanksi terhadap ketidakpatuhan pelaku usaha sesuai kententuan peraturan perundang-undangan;
+
+h. melakukan sosialisasi terkait penataan penerbitan perizinan berusaha dan non perizinan sektor sumber daya alam kepada pelaku usaha;
+
+--- Halaman 3 — DPI 100 (DPI mengikuti halaman 1) ---
+i. melakukan koordinasi untuk pengintegrasian kewenangan khusus Aceh dalam sistem perizinan berusaha terintegrasi secara elektronik berbasis risiko Online Single Submission Risk Based Approach (OSS RBA); dan
+
+j. menyusun dan mengusulkan Keputusan Gubernur Aceh mengenai Tim penataan dan penertiban perizinan berusaha/non perizinan berusaha sektor sumber daya alam.
+
+KETIGA : Kepala Dinas Energi dan Sumber Daya Mineral Aceh :
+a. melakukan penertiban terhadap tambang ilegal dalam wilayah Aceh bersama dengan Pemerintah Kabupaten/Kota setempat dan aparat penegak hukum;
+b. melakukan konsultasi dengan Tim Penataan dan Penertiban Perizinan Berusaha dan Non Perizinan Berusaha Sektor Sumber Daya Alam terhadap penerbitan pencadangan Wilayah Izin Usaha Pertambangan (WIUP) dan Pertimbangan Teknis terhadap permohonan IUP Eksplorasi Komoditas Mineral Logam, Mineral Bukan Logam Jenis Tertentu dan Batubara;
+c. konsultasi sebagaimana dimaksud pada huruf b berlaku selama 6 (enam) bulan sejak Instruksi ini ditetapkan;
+d. melakukan penataan dan penertiban perizinan melalui pembinaan, pengawasan dan evaluasi terhadap Pemegang IUP dalam mengelola usaha pertambangan Komoditas Mineral Logam, Mineral Bukan Logam Jenis Tertentu dan Batubara yang berkelanjutan dan berwawasan lingkungan sesuai dengan kaidah pertambangan yang baik;
+e. melakukan penataan dan penertiban terhadap semua pemegang IUP Operasi Produksi untuk melakukan peningkatan nilai tambah Komoditas Mineral Logam, Mineral Bukan Logam Jenis Tertentu dan Batubara melalui proses pengolahan dan/atau pemurnian;
+f. melakukan fungsi koordinasi dengan seluruh Instansi terkait dalam pelaksanaan seluruh proses penataan dan penertiban IUP Eksplorasi Komoditas Mineral Logam, Mineral Bukan Logam Jenis Tertentu dan Batubara;
+g. melakukan koordinasi dengan Pertamina dalam pengawasan distribusi BBM solar bersubsidi;
+h. mempersiapkan sistem pangkalan data (database) pertambangan mineral dan batubara; dan
+i. menyusun dan mengusulkan Keputusan Gubernur Aceh mengenai Tim Penertiban Pertambangan Ilegal.
+
+KEEMPAT : Kepala Dinas Lingkungan Hidup dan Kehutanan Aceh :
+a. melakukan penataan dan penertiban kegiatan perizinan berusaha sesuai dengan Persetujuan Lingkungan;
+b. melakukan penataan dan penertiban terhadap Perizinan Berusaha Pemanfaatan Hutan (PBPH);
+c. melakukan penataan dan penertiban terhadap komitmen pelaksanaan operasional PBPH dan PPKH yang telah terbit izin melalui pembinaan, pengawasan dan pengendalian; dan
+d. rekonsiliasi pangkalan data (database) spasial pemanfaatan dan penggunaan kawasan hutan.
+
+KELIMA : Kepala Dinas Pertanian dan Perkebunan Aceh :
+a. melakukan penataan dan penertiban terhadap pelaksanaan kewajiban yang terkait dengan Izin Usaha Perkebunan (IUP), Izin Usaha Perkebunan Budidaya (IUP-B) dan Izin Usaha Perkebunan Pengolahan (IUP-P) dan fasilitasi pembangunan kebun masyarakat sesuai ketentuan peraturan perundang-undangan;
+
+b. melakukan...../4
+
+--- Halaman 4 — DPI 100 (DPI mengikuti halaman 1) ---
+b. melakukan koordinasi dengan Kanwil BPN Aceh untuk melakukan penataan dan penertiban terhadap pemanfaatan lahan HGU; dan
+
+c. mempersiapkan pangkalan data (database) Izin Usaha Perkebunan (IUP), Izin Usaha Perkebunan Budidaya (IUP-B) dan Izin Usaha Perkebunan Pengolahan (IUP-P) sesuai kewenangan.
+
+KEENAM : Kepala Dinas Perindustrian dan Perdagangan Aceh:
+
+a. melakukan penataan dan penertiban terhadap kegiatan ekspor produksi pertambangan Komoditas Mineral Logam, Mineral Bukan Logam Jenis Tertentu dan Batu Bara oleh pemegang IUP eksisting sesuai ketentuan peraturan perundang-undangan; dan
+
+b. melakukan pengawasan dan penertiban perizinan berusaha terhadap peredaran dan penggunaan merkuri/air raksa (Hg) dan sianida (CN) berdasarkan ketentuan peraturan perundang-undangan.
+
+KETUJUH : melaksanakan Instruksi ini dengan penuh tanggung jawab.
+
+Instruksi Gubernur ini mulai berlaku pada tanggal ditetapkan.
+
+Ditetapkan di Banda Aceh
+pada tanggal, 29 September 2025
+7 Rabiul Akhir 1447
+
+GUBERNUR ACEH
+
+MUZAKIR MANAF
+
+SALINAN - dari Instruksi ini disampaikan kapada:
+
+1. Menteri Dalam Negeri RI;
+2. Menteri Investasi dan Hillrisasi/Kepala Badan Koordinasi Penanaman Modal RI;
+3. Menteri Energi dan Sumber Daya Mineral RI;
+4. Menteri Lingkungan Hidup/Badan Pengendalian Lingkungan Hidup RI;
+5. Menteri Kehutanan RI;
+6. Menteri Pertanian RI;
+7. Menteri Kelautan dan Perikanan RI;
+8. Menteri Perindustrian RI;
+9. Menteri Agraria dan Tata Ruang/Kepala Badan Pertanahan Nasional RI;
+10. Panglima TNI;
+11. Kapolri;
+12. Jaksa Agung;
+13. Wali Nanggroe Aceh;
+14. Ketua DPR Aceh;
+15. Pangdam Iskandar Muda;
+16. Kapolda Aceh;
+17. Kepala Kejaksaan Tinggi Aceh;
+18. Ketua Pengadilan Tinggi Banda Aceh;
+19. Kabinda Aceh;
+20. DAN LANAL Sabang;
+21. DAN LANUD Sultan Iskandar Muda;
+22. Para Rektor Perguruan Tinggi Negeri dan Swasta;
+23. Ketua KADIN Aceh.
+

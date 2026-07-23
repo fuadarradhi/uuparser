@@ -1,0 +1,214 @@
+=== HASIL OCR — 5 halaman ===
+
+--- IDENTITAS DOKUMEN (hasil classify) ---
+Diputuskan oleh  : regex (deterministik, tanpa model)
+Jenis            : PERATURAN GUBERNUR
+Wilayah          : PEMERINTAH ACEH
+Instansi tertulis: ACEH
+Nomor            : 07
+Tahun            : 2025
+Tentang          : TEKNIS PEMBERIAN TUNJANGAN HARI RAYA DAN GAJI KETIGA BELAS YANG BERSUMBER DARI ANGGARAN PENDAPATAN DAN BELANJA ACEH TAHUN ANGGARAN 2025
+
+(lihat thinking.txt bila kolom KEPUTUSAN di atas = model teks — berisi PERSIS apa yang ditanyakan & dijawab)
+
+--- Halaman 1 — DPI 100 (blur_score probe: 2269268458) ---
+GUBERNUR ACEH
+
+PERATURAN GUBERNUR ACEH
+NOMOR 07 TAHUN 2025
+
+TENTANG
+
+TEKNIS PEMBERIAN TUNJANGAN HARI RAYA DAN GAJI KETIGA BELAS YANG
+BERSUMBER DARI ANGGARAN PENDAPATAN DAN BELANJA ACEH
+TAHUN ANGGARAN 2025
+
+GUBERNUR ACEH,
+
+Menimbang : bahwa untuk melaksanakan ketentuan Pasal 20 ayat (2) Peraturan Pemerintah Nomor 11 Tahun 2025 tentang Pemberian Tunjangan Hari Raya dan Gaji Ketiga Belas kepada Aparatur Negara, Pensiunan, Penerima Pensiun dan Penerima Tunjangan Tahun 2025, perlu menetapkan Peraturan Gubernur tentang Teknis Pemberian Tunjangan Hari Raya dan Gaji Ketiga Belas yang Bersumber dari Anggaran Pendapatan dan Belanja Aceh Tahun Anggaran 2025;
+
+Mengingat : 1. Pasal 18 ayat (6) Undang-Undang Dasar Negara Republik Indonesia 1945;
+
+2. Undang-Undang Nomor 24 Tahun 1956 tentang Pembentukan Daerah Otonom Propinsi Atjeh dan Perubahan Peraturan Pembentukan Propinsi Sumatera Utara (Lembaran Negara Republik Indonesia Tahun 1956 Nomor 54, Tambahan Lembaran Negara Republik Indonesia Nomor 1103);
+
+3. Undang-Undang Nomor 17 Tahun 2003 tentang Keuangan Negara (Lembaran Negara Republik Indonesia Tahun 2003 Nomor 47, Tambahan Lembaran Negara Republik Indonesia Nomor 4286);
+
+4. Undang-Undang Nomor 1 Tahun 2004 tentang Perbendaharaan Negara (Lembaran Negara Republik Indonesia Tahun 2004 Nomor 5, Tambahan Lembaran Negara Republik Indonesia Nomor 4355);
+
+5. Undang-Undang Nomor 11 Tahun 2006 tentang Pemerintahan Aceh (Lembaran Negara Republik Indonesia Tahun 2006 Nomor 62, Tambahan Lembaran Negara Republik Indonesia Tahun 2006 Nomor 4633);
+
+6. Undang-Undang Nomor 23 Tahun 2014 tentang Pemerintahan Daerah (Lembaran Negara Republik Indonesia Tahun 2014 Nomor 244, Tambahan Lembaran Negara Republik Indonesia Nomor 5587) sebagaimana telah beberapa kali diubah terakhir dengan Undang-Undang Nomor 6 Tahun 2023 tentang Penetapan Peraturan Pemerintah Pengganti Undang-Undang Nomor 2 Tahun 2022 tentang Cipta Kerja Menjadi Undang-Undang (Lembaran Negara Republik Indonesia Tahun 2023 Nomor 41, Tambahan Lembaran Negara Republik Indonesia Nomor 6856);
+
+7. Peraturan Pemerintah Nomor 12 Tahun 2019 tentang Pengelolaan Keuangan Daerah (Lembaran Negara Republik Indonesia Tahun 2019 Nomor 42, Tambahan Lembaran Negara Republik Indonesia Tahun 2019 Nomor 6322);
+
+8. Peraturan.../2
+
+--- Halaman 2 — DPI 100 (DPI mengikuti halaman 1) ---
+8. Peraturan Pemerintah Nomor 11 Tahun 2025 tentang Pemberian Tunjangan Hari Raya dan Gaji Ketiga Belas kepada Aparatur Negara, Pensiunan, Penerima Pensiun dan Penerima Tunjangan Tahun 2025 (Lembaran Negara Republik Indonesia Tahun 2025 Nomor 27, Tambahan Lembaran Negara Republik Indonesia Nomor 7099);
+
+9. Peraturan Menteri Dalam Negeri Nomor 77 Tahun 2020 tentang Pedoman Teknis Pengelolaan Keuangan Daerah (Berita Negara Republik Indonesia Tahun 2020 Nomor 1781);
+
+10. Peraturan Menteri Dalam Negeri Nomor 4 Tahun 2023 tentang Penjabat Gubernur, Penjabat Bupati dan Penjabat Walikota (Berita Negara Republik Indonesia Tahun 2023 Nomor 310);
+
+11. Qanun Aceh Nomor 3 Tahun 2024 tentang Pengelolaan Keuangan Aceh (Lembaran Aceh Tahun 2024 Nomor 3, Tambahan Lembaran Daerah Aceh Nomor 141);
+
+12. Qanun Aceh Nomor 1 Tahun 2025 tentang Anggaran Pendapatan dan Belanja Aceh Tahun Anggaran 2025 (Lembaran Aceh Tahun 2025 Nomor 1);
+
+13. Peraturan Gubernur Aceh Nomor 2 Tahun 2025 tentang Penjabaran Anggaran Pendapatan dan Belanja Aceh Tahun Anggaran 2025 (Berita Daerah Aceh Tahun 2025 Nomor 2);
+
+MEMUTUSKAN:
+Menetapkan: PERATURAN GUBERNUR TENTANG TEKNIS PEMBERIAN TUNJANGAN HARI RAYA DAN GAJI KETIGA BELAS YANG BERSUMBER DARI ANGGARAN PENDAPATAN DAN BELANJA ACEH TAHUN ANGGARAN 2025.
+
+BAB I
+KETENTUAN UMUM
+Pasal 1
+
+Dalam Peraturan Gubernur ini yang dimaksud dengan:
+
+1. Tunjangan Hari Raya yang selanjutnya disingkat THR adalah tunjangan yang diberikan kepada yang berhak sesuai ketentuan peraturan perundang-undangan yang dibayarkan menjelang Hari Raya.
+
+2. Gaji Ketiga Belas yang selanjutnya disebut Gaji Ke-13 adalah gaji ketiga belas yang diberikan kepada yang berhak sesuai ketentuan peraturan perundang-undangan yang dibayarkan paling cepat pada bulan Juni Tahun 2025.
+
+3. Hari Raya adalah Hari Raya Idul Fitri.
+
+4. Gaji adalah hak pegawai yang diterima dan dinyatakan dalam bentuk uang sebagai imbalan dari pemberi kerja kepada pegawai yang ditetapkan dan dibayarkan menurut suatu perjanjian kerja, kesepakatan atau peraturan perundang-undangan.
+
+5. Anggaran Pendapatan dan Belanja Aceh yang selanjutnya disingkat APBA adalah rencana tahunan Pemerintah Aceh yang ditetapkan dengan Qanun Aceh.
+
+6. Aceh adalah Daerah Provinsi yang merupakan kesatuan masyarakat hukum yang bersifat istimewa dan diberi kewenangan khusus untuk mengatur dan mengurus sendiri urusan pemerintahan dan kepentingan masyarakat setempat sesuai dengan Peraturan Perundang-undangan dalam sistem dan prinsip Negara Kesatuan Republik Indonesia berdasarkan Undang-Undang Dasar Negara Republik Indonesia Tahun 1945, yang dipimpin oleh seorang Gubernur.
+
+--- Halaman 3 — DPI 100 (DPI mengikuti halaman 1) ---
+7. Pemerintah Aceh adalah unsur penyelenggara pemerintahan Aceh yang terdiri atas Gubernur dan Perangkat Aceh.
+
+8. Pejabat Negara adalah Gubernur Aceh dan Wakil Gubernur Aceh.
+
+9. Gubernur adalah Kepala Pemerintah Aceh.
+
+10. Wali Nanggroe Aceh yang selanjutnya disebut Wali Nanggroe adalah seorang pemimpin yang bersifat personal dan independen sebagai pemersatu masyarakat Aceh dan pelestarian kehidupan adat dan budaya yang berkedudukan sebagai Kepala Nanggroe Aceh.
+
+11. Dewan Perwakilan Rakyat Aceh yang selanjutnya disingkat DPRA adalah unsur penyelenggara Pemerintahan Aceh yang anggotanya dipilih melalui pemilihan umum.
+
+12. Ketua Lembaga Keistimewan dan Kekhususan Aceh adalah Ketua Lembaga yang menyelenggarakan urusan Pemerintahan wajib lainnya yang bersifat keistimewan dan kekhususan pada Pemerintah Aceh yang terdiri atas Ketua Majelis Permusyawaratan Ulama Aceh, Ketua Majelis Adat Aceh, Ketua Majelis Pendidikan Aceh, Ketua Baitul Mal Aceh dan Ketua Badan Reintegrasi Aceh.
+
+13. Satuan Kerja Perangkat Aceh yang selanjutnya disingkat SKPA adalah organisasi perangkat daerah pada Pemerintah Aceh.
+
+14. Pegawai Negeri Sipil yang selanjutnya disingkat PNS adalah Warga Negara Indonesia yang memenuhi syarat tertentu, diangkat sebagai Pegawai Aparatur Sipil Negara secara tetap oleh Pejabat Pembina Kepegawaiian untuk menduduk jabatan pemerintahan.
+
+15. Calon Pegawai Negeri Sipil yang selanjutnya disingkat CPNS adalah Pegawai yang baru lulus tes seleksi penerimaan Calon Pegawai Negeri Sipil tahap pertama dan Calon Pegawai Negeri Sipil belum mengikuti kewajiban untuk memenuhi syarat sebagai Pegawai Negeri Sipil dengan gaji 100% (seratus persen).
+
+16. Pegawai Pemerintah dengan Perjianjian Kerja yang selanjutnya disingkat PPPK adalah Warga Negara Indonesia yang memenuhi syarat tertentu, diangkat berdasarkan perjianjian kerja untuk jangka waktu tertentu dalam rangka melaksanakan tugas pemerintahan.
+
+17. Tambahan Penghasilan Pegawai yang selanjutnya disingkat TPP adalah Tambahan penghasilan yang diberikan kepada PNS dan CPNS setiap bulan dengan jumlah tertentu secara rutin dalam rangka meningkatkan disiplin, motivasi kerja dan kesejahteraan pegawai berdasarkan beban kerja, prestasi kerja, kondisi kerja, tempat bertugas, kelangkaan profesi dan/atau pertimbangan objektif lainnya.
+
+18. Dokumen Pelaksanaan Anggaran Satuan Kerja Perangkat Aceh yang selanjutnya disingkat DPA-SKPA adalah dokumen yang memuat pendapatan, belanja dan pembiayaan yang digunakan sebagai pelaksanaan angggaran oleh Pengguna Anggaran.
+
+BAB II
+PEMBERIAN TUNJANGAN HARI RAYA DAN GAJI KETIGA BELAS
+Bagian Kesatu
+Umum
+Pasal 2
+(1) THR dan Gaji Ke-13 diberikan kepada:
+a. Gubernur dan Wakil Gubernur Aceh;
+b. Wali Nanggroe;
+
+c. Pimpinan.../4
+
+--- Halaman 4 — DPI 100 (DPI mengikuti halaman 1) ---
+c. Pimpinan dan Anggota DPRA;
+d. Ketua Lembaga Keistimewaan dan Kekhususan Aceh;
+e. PNS dan CPNS; dan
+f. PPPK.
+
+(2) PNS sebagaimana dimaksud pada ayat (1) huruf e, termasuk:
+a. PNS yang ditugaskan di luar SKPA yang gajinya dibayarkan oleh SKPA induknya;
+b. PNS penerima uang tunggu; dan
+c. PNS yang diberhentikan sementara dan gajinya masih dibayarkan.
+
+(3) THR dan Gaji Ke-13 sebagaimana dimaksud pada ayat (1) huruf a dan huruf e termasuk diberikan kepada janda/duda, anak atau orangtua penerima tunjangan tambahan penghasilan (gaji terusan) dari PNS atau Pejabat Negara yang meninggal dunia atau tewas sesuai ketentuan peraturan perundang-undangan yang mengatur mengenai pemberian tunjangan tambahan penghasilan bagi pensiun janda/duda PNS.
+
+Pasal 3
+
+THR dan Gaji Ke-13 tidak diberikan kepada PNS dalam hal:
+a. sedang cuti di luar tanggungan negara; atau
+b. sedang ditugaskan di luar instansi pemerintah baik di dalam negeri maupun di luar negeri yang gajinya dibayar oleh instansi tempat penugasan.
+
+Pasal 4
+
+THR dan Gaji Ke-13 bagi PPPK berlaku ketentuan:
+a. PPPK dengan masa kerja kurang dari 1 (satu) tahun diberikan THR secara proportional sesuai bulan bekerja yang mengacu pada besaran penghasilan 1 (satu) bulan yang diterima;
+b. PPPK yang masa kerja kurang dari 1 (satu) bulan kalender sebelum Hari Raya Tahun 2025, tidak diberikan THR; dan
+c. PPPK yang masa kerja kurang dari 1 (satu) bulan kalender sebelum tanggal 1 Juni 2025, tidak diberikan Gaji Ke-13.
+
+Bagian Kedua
+Pemberian THR
+Pasal 5
+
+(1) THR kepada Gubernur Aceh dan Wakil Gubernur Aceh terdiri dari:
+a. gaji pokok;
+b. tunjangan keluarga;
+c. tunjangan pangan; dan
+d. tunjangan jabatan.
+
+(2) THR kepala Wali Nanggroe sebesar akumulasi dari uang representasi, tunjangan keluarga dan tunjangan jabatan Wali Nanggroe sesuai ketentuan peraturan perundang-undangan yang mengatur mengenai hak keuangan dan administratif Pimpinan dan Anggota DPRA.
+
+(3) THR kepada Pimpinan dan Anggota DPRA, sebesar akumulasi dari uang representasi, tunjangan keluarga dan tunjangan jabatan pimpinan dan anggota DPRA sesuai ketentuan peraturan perundang-undangan yang mengatur mengenai hak keuangan dan administratif Pimpinan dan Anggota DPRA.
+
+(4) THR.../5
+
+--- Halaman 5 — DPI 100 (DPI mengikuti halaman 1) ---
+(4) THR kepada Ketua Lembaga Keistimewaan dan Kekhususan Aceh adalah sebagai berikut:
+
+a. THR kepada Ketua Majelis Permusyawaratan Ulama Aceh sebesar Jasa Ketua MPU Aceh sesuai ketentuan peraturan perundang-undangan;
+
+b. THR kepada Ketua Majelis Adat Aceh sebesar Jasa Ketua Dewan Pengurus Majelis Adat Aceh sesuai ketentuan peraturan perundang-undangan;
+
+c. THR kepada Ketua Majelis Pendidikan Aceh sebesar Jasa Ketua Pengurus Majelis Pendidikan Aceh sesuai ketentuan peraturan perundang-undangan;
+
+d. THR kepada Ketua Badan Baitul Mal Aceh sebesar Jasa Ketua Pengurus Badan Baitul Mal Aceh sesuai ketentuan peraturan perundang-undangan; dan
+
+e. THR kepada Ketua Badan Reintegrasi Aceh sebesar Jasa Ketua Pengurus Badan Reintegrasi Aceh sesuai ketentuan peraturan perundang-undangan.
+
+(5) THR kepada PNS terdiri atas:
+
+a. gaji pokok;
+
+b. tunjangan keluarga;
+
+c. tunjangan pangan;
+
+d. tunjangan jabatan atau tunjangan umum; dan
+
+e. TPP sebesar yang diterima dalam 1 (satu) bulan.
+
+(6) THR kepada CPNS terdiri dari:
+
+a. 80 % (delapan puluh persen) dari gaji pokok PNS;
+
+b. tunjangan keluarga;
+
+c. tunjangan pangan;
+
+d. tunjangan umum; dan
+
+e. TPP sebesar yang diterima dalam 1 (satu) bulan.
+
+(7) THR kepada PPPK terdiri atas:
+
+a. gaji pokok;
+
+b. tunjangan keluarga;
+
+c. tunjangan pangan; dan
+
+d. tunjangan jabatan atau tunjangan umum.
+
+(8) Dalam hal guru yang gaji pokoknya bersumber dari APBA tidak menerima TPP, dapat diberikan paling banyak sebesar Tunjangan Profesi Guru atau paling banyak sebesar Tambahan Penghasilan Guru Aparatur Sipil Negara yang diterima dalam 1 (satu) bulan.
+
+Bagian Ketiga
+
+Pemberian Gaji Ketiga Belas
+
+Pasal 6
+
+Ketentuan mengenai pemberian THR sebagaimana dimaksud dalam Pasal 5 berlaku secara mutatis mutandis terhadap pemberian Gaji Ke-13.
+

@@ -1,0 +1,120 @@
+=== HASIL PARSE — status=WARNING — 38 node ===
+
+[judul/judul]  (hal 1-1)
+  GUBERNUR ACEH
+
+[judul/judul]  (hal 1-1)
+  PERATURAN GUBERNUR ACEH NOMOR 13 TAHUN 2025
+
+[judul/judul]  (hal 1-1)
+  TENTANG
+
+[judul/judul]  (hal 1-1)
+  PERUBAHAN ATAS PERATURAN GUBERNUR ACEH NOMOR 78 TAHUN 2018 TENTANG MEKANISME PENGADUAN PELANGGARAN (WHISTLEBLOWING SYSTEM) TINDAK PIDANA KORUPSI DI LINGKUNGAN PEMERINTAH ACEH
+
+[judul/pembukaan]  (hal 1-1)
+  DENGAN RAHMAT ALLAH YANG MAHA KUASA
+
+[judul/judul]  (hal 1-1)
+  GUBERNUR ACEH,
+
+[menimbang/item]  (hal 1-1)
+  bahwa sesuai ketentuan Pasal 22 ayat (1) dan Pasal 25 ayat (1) Peraturan Pemerintah Nomor 12 Tahun 2017 tentang Pembinaan dan Pengawasan Penyelenggaraan Pemerintahan Daerah serta Pasal 8 Peraturan Presiden Nomor 76 Tahun 2013 tentang Pengelolaan Pengaduan Pelayanan Publik, telah ditetapkan Peraturan Gubernur Aceh 78 Tahun 2018 tentang Mekanisme Pengaduan Pelanggaran (Whistleblowing System) Tindak Pidana Korupsi di Lingkungan Pemerintah Aceh;
+
+[menimbang/item]  (hal 1-1)
+  bahwa dalam rangka meningkatkan pelayanan masyarakat secara objektif, cepat, tepat, bertanggung jawab dan berhasil guna, serta untuk mengakomodir perkembangan informasi Aceh, perlu dilakukan penyempurna pada Peraturan Gubernur Aceh Nomor 78 Tahun 2018 tentang Mekanisme Pengaduan Pelanggaran (Whistleblowing System) Tindak Pidana Korupsi di Lingkungan Pemerintah Aceh;
+
+[menimbang/item]  (hal 1-1)
+  bahwa berdasarkan pertimbangan sebagaimana dimaksud dalam huruf a dan huruf b, perlu menetapkan Peraturan Gubernur tentang Perubahan Atas Peraturan Gubernur Aceh Nomor 78 Tahun 2018 tentang Mekanisme Pengaduan Pelanggaran (Whistleblowing System) Tindak Pidana Korupsi di Lingkungan Pemerintah Aceh;
+
+[mengingat/item]  (hal 1-1)
+  Pasal 18 ayat (6) Undang-Undang Dasar Negara Republik Indonesia Tahun 1945;
+
+[mengingat/item]  (hal 1-1)
+  Undang-Undang Nomor 24 Tahun 1956 tentang Pembentukan Daerah Otonom Propinsi Atjeh dan Perubahan Peraturan Pembentukan Propinsi Sumatera Utara (Lembaran Negara Republik Indonesia Tahun 1956 Nomor 64, Tambahan Lembaran Negara Republik Indonesia Nomor 1103);
+
+[mengingat/item]  (hal 1-1)
+  Undang-Undang Nomor 28 Tahun 1999 tentang Penyelenggaraan Negara yang Bersih dan Bebas dari Korupsi, Kolusi dan Nepotisme (Lembaran Negara Republik Indonesia Tahun 1999 Nomor 75) sebagaimana telah diubah dengan Undang-Undang Nomor 30 Tahun 2002 tentang Komisi Pemberantasan Tindak Pidana Korupsi (Lembaran Negara Republik Indonesia Tahun 2006 Nomor 64, Tambahan Lembaran Negara Republik Indonesia Nomor 4635);
+
+[mengingat/item]  (hal 1-1)
+  Undang-Undang.../2
+
+[mengingat/item]  (hal 2-2)
+  Undang-Undang Nomor 31 Tahun 1999 tentang Pemberantasan Tindak Pidana Korupsi (Lembaran Negara Republik Indonesia Tahun 1999 Nomor 140, Tambahan Lembaran Negara Republik Indonesia Nomor 3874) sebagaimana telah diubah dengan Undang-Undang Nomor 30 Tahun 2002 tentang Komisi Pemberantasan Tindak Pidana Korupsi (Lembaran Negara Republik Indonesia Tahun 2002 Nomor 137, Tambahan Lembaran Negara Republik Indonesia Nomor 4150);
+
+[mengingat/item]  (hal 2-2)
+  Undang-Undang Nomor 11 Tahun 2006 tentang Pemerintahan Aceh (Lembaran Negara Republik Indonesia Tahun 2006 Nomor 62, Tambahan Lembaran Negara Republik Indonesia Nomor 4633);
+
+[mengingat/item]  (hal 2-2)
+  Undang-Undang Nomor 13 Tahun 2006 tentang Perlindungan Saksi dan Korban (Lembaran Negara Republik Indonesia Tahun 2006 Nomor 64, Tambahan Lembaran Negara Republik Indonesia Nomor 4635) sebagaimana telah diubah dengan Undang-Undang Nomor 31 Tahun 2014 tentang Perubahan Atas Undang-Undang Nomor 13 Tahun 2006 tentang Perlindungan Saksi dan Korban (Lembaran Negara Republik Indonesia Tahun 2006 Nomor 64, Tambahan Lembaran Negara Republik Indonesia Nomor 4635);
+
+[mengingat/item]  (hal 2-2)
+  Undang-Undang Nomor 11 Tahun 2008 tentang Informasi dan Transaksi Elektronik (Lembaran Negara Republik Indonesia Tahun 2008 Nomor 58, Tambahan Lembaran Negara Republik Indonesia Nomor 4843) sebagaimana telah diubah terakhir dengan Undang-Undang Nomor 1 Tahun 2024 tentang Perubahan Kedua Atas Undang-Undang Nomor 11 Tahun 2008 tentang Informasi dan Transaksi Elektronik (Lembaran Negara Republik Indonesia Tahun 2024 Nomor 1, Tambahan Lembaran Negara Republik Indonesia Nomor 6905);
+
+[mengingat/item]  (hal 2-2)
+  Undang-Undang Nomor 14 Tahun 2008 tentang Keterbukaan Informasi Publik (Lembaran Negara Republik Indonesia Tahun 2008 Nomor 61, Tambahan Lembaran Negara Republik Indonesia Nomor 4846);
+
+[mengingat/item]  (hal 2-2)
+  Undang-Undang Nomor 25 Tahun 2009 tentang Pelayanan Publik (Lembaran Negara Republik Indonesia Tahun 2009 Nomor 112, Tambahan Lembaran Negara Republik Indonesia Nomor 5038);
+
+[mengingat/item]  (hal 2-2)
+  Undang-Undang Nomor 23 Tahun 2014 tentang Pemerintahan Daerah (Lembaran Negara Republik Indonesia Tahun 2014 Nomor 224, Tambahan Lembaran Negara Republik Indonesia Nomor 5587) sebagaimana telah beberapa kali diubah terakhir dengan Undang-Undang Nomor 6 Tahun 2023 tentang Penetapan Peraturan Pemerintah Pengganti Undang-Undang Nomor 2 Tahun 2022 tentang Cipta Kerja Menjadi Undang-Undang (Lembaran Negara Republik Indonesia Tahun 2023 Nomor 41, Tambahan Lembaran Negara Republik Indonesia Nomor 6841);
+
+[mengingat/item]  (hal 2-2)
+  Undang-Undang Nomor 20 Tahun 2023 tentang Aparatur Sipil Negara (Lembaran Negara Republik Indonesia Tahun 2014 Nomor 6, Tambahan Lembaran Negara Republik Indonesia Nomor 5494);
+
+[mengingat/item]  (hal 3-3)
+  Peraturan Pemerintah Nomor 71 Tahun 2000 tentang Tata Cara Pelaksanaan Peran Serta Masyarakat dan Pemberian Penghargaan dalam Pencegahan dan Pemberantasan Tindak Pidana Korupsi (Lembaran Negara Republik Indonesia Tahun 2000 Nomor 144, Tambahan Lembaran Negara Republik Indonesia Nomor 3995);
+
+[mengingat/item]  (hal 3-3)
+  Peraturan Pemerintah Nomor 60 Tahun 2008 tentang Sistem Pengendalian Intern Pemerintah (Lembaran Negara Republik Indonesia Tahun 2008 Nomor 127, Tambahan Lembaran Negara Republik Indonesia Nomor 4890);
+
+[mengingat/item]  (hal 3-3)
+  Peraturan Pemerintah Nomor 96 Tahun 2012 tentang Pelaksanaan Undang-Undang Nomor 25 Tahun 2009 tentang Pelayanan Publik (Lembaran Negara Republik Indonesia Tahun 2012 Nomor 215, Tambahan Lembaran Negara Republik Indonesia Nomor 5357);
+
+[mengingat/item]  (hal 3-3)
+  Peraturan Pemerintah Nomor 12 Tahun 2017 tentang Pembinaan dan Pengawasan Penyelenggaraan Pemerintahan Daerah (Lembaran Negara Republik Indonesia Tahun 2017 Nomor 73, Tambahan Lembaran Negara Republik Indonesia Nomor 6041);
+
+[mengingat/item]  (hal 3-3)
+  Peraturan Pemerintah Nomor 17 Tahun 2020 tentang Perubahan Atas Peraturan Pemerintah Nomor 11 Tahun 2017 tentang Manajemen Pegawai Negeri Sipil (Lembaran Negara Republik Indonesia Tahun 2020 Nomor 68, Tambahan Lembaran Negara Republik Indonesia Nomor 6477);
+
+[mengingat/item]  (hal 3-3)
+  Peraturan Pemerintah Nomor 94 Tahun 2021 tentang Disiplin Pegawai Negeri Sipil (Lembaran Negara Republik Indonesia Tahun 2010 Nomor 74, Tambahan Lembaran Negara Republik Indonesia Nomor 5153);
+
+[mengingat/item]  (hal 3-3)
+  Peraturan Presiden Nomor 76 Tahun 2013 tentang Pengelolaan Pengaduan Pelayanan Publik (Lembaran Negara Republik Indonesia Tahun 2013 Nomor 191);
+
+[mengingat/item]  (hal 3-3)
+  Peraturan Presiden Nomor 54 Tahun 2018 tentang Strategi Nasional Pencegahan Korupsi (Lembaran Negara Republik Indonesia Tahun 2018 Nomor 108);
+
+[mengingat/item]  (hal 3-3)
+  Peraturan Menteri Pendayagunaan Aparatur Negara dan Reformasi Birokrasi Nomor 46 Tahun 2020 tentang Road Map Sistem Pengelolaan Pengaduan Pelayanan Publik Nasional Tahun 2020-2024 (Berita Negara Republik Indonesia Tahun 2020 Nomor 650);
+
+[mengingat/item]  (hal 3-3)
+  Peraturan Menteri Pendayagunaan Aparatur Negara dan Reformasi Birokrasi Nomor 90 Tahun 2021 tentang Pembangunan dan Evaluasi Zona Integritas Menuju Wilayah Bebas dari Korupsi dan Wilayah Birokrasi Bersih dan Melayani di Instansi Pemerintah (Berita Negara Republik Indonesia Tahun 2021 Nomor 1571);
+
+[mengingat/item]  (hal 3-3)
+  Qanun Aceh Nomor 13 Tahun 2016 tentang Pembentukan dan Susunan Perangkat Aceh (Lembaran Aceh Tahun 2016 Nomor 16, Tambahan Lembaran Aceh Nomor 87) sebagaimana telah diubah dengan Qanun Aceh Nomor 13 Tahun 2019 tentang Perubahan Atas Qanun Aceh Nomor 13 Tahun 2016 tentang Pembentukan dan Susunan Perangkat Aceh (Lembaran Aceh Tahun 2019 Nomor 21);
+
+[mengingat/item]  (hal 4-4)
+  Peraturan Gubenur Aceh Nomor 49 Tahun 2020 tentang Kode Etik Aparat Pengawas Intern Pemerintah di Lingkungan Pemerintah Aceh (Berita Daerah Aceh Tahun 2020 Nomor 52);
+
+[mengingat/item]  (hal 4-4)
+  Peraturan Gubernur Aceh Nomor 1 Tahun 2024 tentang Kedudukan, Susunan Organisasi, Tugas, Fungsi dan Tata Kerja Satuan Kerja Perangkat Aceh, Cabang Dinas dan Unit Pelaksana Teknis Daerah (Berita Daerah Aceh Tahun 2024 Nomor 01);
+
+[penetapan/penetapan]  (hal 4-4)
+  MEMUTUSKAN:
+
+[penetapan/penetapan]  (hal 4-4)
+  Menetapkan : PERATURAN GUBERNUR TENTANG PERUBAHAN ATAS PERATURAN GUBERNUR ACEH NOMOR 78 TAHUN 2018 TENTANG MEKANISME PENGADUAN PELANGGARAN (WHISTLEBLOWING SYSTEM) TINDAK PIDANA KORUPSI DI LINGKUNGAN PEMERINTAH ACEH.
+
+    [batang_tubuh/pasal] 1 (hal 4-5)
+      1. Mekanisme Pengaduan Tipikor yang selanjutnya disebut Whistleblowing System yang selanjutnya disingkat WBS adalah mekanisme penyampaan pengaduan dugaan tindak pidana korupsi yang telah terjadi, sedang atau akan terjadi yang melibatkan pegawai dan orang lain yang berkaitan dengan dugaan tindak pidana korupsi yang dilakukan di lingkungan Pemerintah Aceh. 2. Tindak Pidana Korupsi yang selanjutnya disebut Tipikor adalah tindak pidana sebagaimana dimaksud dalam Undang-Undang Nomor 31 Tahun 1999 tentang Pemberantasan Tindak Pidana Korupsi sebagaimana telah diubah dengan Undang-Undang Nomor 20 Tahun 2001 tentang Perubahan Atas Undang-Undang Nomor 31 Tahun 1999 tentang Pemberantasan Tindak Pidana Korupsi. 3. Whistleblower adalah pegawai atau masyarakat yang menyampaikan informasi dan/atau mengungkapkan dugaan terjadinya pelanggaran tindak pidana korupsi yang dilakukan oleh pegawai di lingkungan Pemerintah Aceh. 4. Aceh adalah daerah provinsi yang merupakan kesatuan masyarakat hukum yang bersifat istimewa dan diberi kewenangan khusus untuk mengatur dan mengurus sendiri urusan pemerintahan dan kepentingan masyarakat setempat sesuai dengan peraturan perundang-undangan dalam sistem dan prinsip Negara Kesatuan Republik Indonesia berdasarkan Undang-Undang Dasar Negara Republik Indonesia Tahun 1945, yang dipimpin oleh seorang Gubernur. 5. Pemerintah Aceh adalah pemerintahan daerah provinsi dalam sistem Negara Kesatuan Republik Indonesia berdasarkan Undang-Undang Dasar Negara Republik Indonesia Tahun 1945 yang menyelenggarakan urusan pemerintahan yang dilaksanakan oleh Pemerintah Aceh dan Dewan Perwakilan Rakyat Aceh sesuai dengan fungsi dan kewenangan masing-masing. 6. Pemerintah Aceh adalah unsur penyelenggara Pemerintahan Aceh yang terdiri atas Gubernur dan perangkat daerah Aceh. 7. Gubernur adalah Kepala Pemerintah Aceh yang dipilih melalui proses demokratis yang dilakukan berdasarkan asas langsung, umum, bebas, rahasia, jujur dan adil. 8. Inspektorat adalah Inspektorat Aceh. 9. Inspektur adalah Inspektur Aceh. 10. Mekanisme Pengaduan Tipikor yang selanjutnya disebut Whistleblowing System yang selanjutnya disingkat WBS adalah mekanisme penyampaian pengaduan dugaan tindak pidana korupsi yang telah terjadi, sedang atau akan terjadi yang melibatkan pegawai dan orang lain yang berkaitan dengan dugaan tindak pidana korupsi yang dilakukan di lingkungan Pemerintah Aceh. 11. Aparatur Sipil Negara yang selanjutnya disingkat ASN adalah profesi bagi pegawai negeri sipil dan pegawai pemerintah dengan perjanjian kerja yang bekerja pada instansi pemerintah. 12. Pegawai Negeri Sipil yang selanjutnya disingkat PNS adalah Warga Negara Indonesia yang memenuhi syarat tertentu, diangkat sebagai Pegawai ASN secara tetap oleh pejabat pembina kepegawaian untuk menduduki jabatan pemerintahan. 13. Tim Penanganan Pengaduan Whistleblower yang selanjutnya disebut Tim Penanganan Pengaduan adalah PNS di lingkungan Inspektorat Aceh yang mempunyai tugas dan wewenang menerima pengaduan dari Whistleblower, menelaah, melakukan pemeriksaan khusus dan menyusun laporan hasil pemeriksaan khusus. 14. Pengaduan adalah laporan yang mengandung informasi atau indikasi terjadinya pelanggaran terhadap Tipikor. 15. Laporan Hasil Pemeriksaan Khusus yang selanjutnya disingkat LHPK adalah laporan akhir terhadap hasil pemeriksaan atas pengaduan Whistleblower. 2. Ketentuan Pasal 4 diubah sehingga berbunyi sebagai berikut:
+      ! PERINGATAN: Teks tidak dikenali struktur; perlu tinjauan / kemungkinan sisip baris
+
+    [batang_tubuh/pasal] 4 (hal 5-5)
+      Whistleblower dapat menyampaikan Pengaduan melalui:
+      a. Aplikasi Web online Whistleblowing pada laman https://wbs.acehprov.go.id; dan
+      b. Melaporkan langsung ke Inspektur, dengan melampirkan dokumen-dokumen pendukung.
+      (3) Ketentuan Pasal 7 diubah, sehingga berbunyi sebagai berikut:
+

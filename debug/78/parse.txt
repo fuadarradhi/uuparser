@@ -1,0 +1,165 @@
+=== HASIL PARSE — status=SUCCESS — 54 node ===
+
+[judul/judul]  (hal 1-1)
+  SALINAN
+
+[judul/judul]  (hal 1-1)
+  GUBERNUR ACEH
+
+[judul/judul]  (hal 1-1)
+  PERATURAN GUBERNUR ACEH
+
+[judul/judul]  (hal 1-1)
+  NOMOR 35 TAHUN 2025
+
+[judul/judul]  (hal 1-1)
+  TENTANG
+
+[judul/judul]  (hal 1-1)
+  PENETAPAN RENCANA KERJA SATUAN KERJA PERANGKAT ACEH PEMERINTAH ACEH TAHUN 2026
+
+[judul/pembukaan]  (hal 1-1)
+  DENGAN RAHMAT ALLAH YANG MAHA KUASA
+
+[menimbang/item]  (hal 1-1)
+  bahwa untuk melaksanakan ketentuan Pasal 142 ayat (1) Peraturan Menteri Dalam Negeri Nomor 86 Tahun 2017 tentang Tata Cara Perencanaan, Pengendalian dan Evaluasi Pembangunan Daerah, Tata Cara Evaluasi Rancangan Peraturan Daerah tentang Rencana Pembangunan Jangka Panjang Daerah dan Rencana Pembangunan Jangka Menengah Daerah, serta Tata Cara Perubahan Rencana Pembangunan Jangka Panjang Daerah, Rencana Pembangunan Jangka Menengah Daerah dan Rencana Kerja Pemerintah Daerah, perlu menetapkan Peraturan Gubernur tentang penetapan Rencana Kerja Satuan Kerja Perangkat Aceh Pemerintah Aceh Tahun 2026;
+
+[mengingat/item]  (hal 1-1)
+  Pasal 18 ayat (6) Undang-Undang Dasar Negara Republik Indonesia Tahun 1945;
+
+[mengingat/item]  (hal 1-1)
+  Undang-Undang Nomor 24 Tahun 1956 tentang Pembentukan Daerah Otonom Propinsi Atjeh dan Perubahan Peraturan Pembentukan Propinsi Sumatera Utara (Lembaran Negara Republik Indonesia Tahun 1956 Nomor 64, Tambahan Lembaran Negara Republik Indonesia Nomor 1103) ;
+
+[mengingat/item]  (hal 1-1)
+  Undang-Undang Nomor 17 Tahun 2003 tentang Keuangan Negara (Lembaran Negara Republik Indonesia Tahun 2003 Nomor 47, Tambahan Lembaran Negara Republik Indonesia Nomor 4286);
+
+[mengingat/item]  (hal 1-1)
+  Undang-Undang Nomor 25 Tahun 2004 tentang Sistem Perencanaan Pembangunan Nasional (Lembaran Negara Republik Indonesia Tahun 2004 Nomor 104, Tambahan Lembaran Negara Republik Indonesia Nomor 4421);
+
+[mengingat/item]  (hal 1-1)
+  Undang-Undang Nomor 33 Tahun 2004 tentang Perimbangan Keuangan antara Pemerintah Pusat dan Pemerintahan Daerah (Lembaran Negara Republik Indonesia Tahun 2004 Nomor 126, Tambahan Lembaran Negara Reoublik Indonesia Nomor 4438);
+
+[mengingat/item]  (hal 1-1)
+  Undang-Undang Nomor 11 Tahun 2006 tentang Pemerintahan Aceh (Lembaran Negara Republik Indonesia Tahun 2006 Nomor 62, Tambahan Lembaran Negara Republik Indonesia Nomor 4633);
+
+[mengingat/item]  (hal 1-1)
+  Undang-Undang Nomor 17 Tahun 2007 tentang Rencana Pembangunan Jangka Panjang Nasional Tahun 2005-2025 (Lembaran Negara Republik Indonesia Tahun 2007 Nomor 33, Tambahan Lembaran Negara Republik Indonesia Nomor 4700);
+
+[mengingat/item]  (hal 1-1)
+  Undang.../2
+
+[mengingat/item]  (hal 2-2)
+  Undang-Undang Nomor 23 Tahun 2014 tentang Pemerintahan Daerah (Lembaran Negara Republik Indonesia Tahun 2014 Nomor 244, Tambahan Lembaran Negara Republik Indonesia Nomor 5587) sebagaimana telah beberapa kali diubah terakhir dengan Undang-Undang Nomor 6 Tahun 2023 tentang Penetapan Peraturan Pemerintah Pengganti Undang-Undang Nomor 2 Tahun 2022 tentang Cipta Kerja Menjadi Undang-Undang (Lembaran Negara Republik Indonesia Tahun 2023 Nomor 41, Tambahan Lembaran Negara Republik Indonesia Nomor 6841);
+
+[mengingat/item]  (hal 2-2)
+  Peraturan Pemerintah Nomor 13 Tahun 2019 tentang Laporan pdan Evaluasi Penyeleggaraan Pemerintah Daerah (Lembaran Negara Republik Indonesia Tahun 2019 Nomor 52, Tambahan Lembaran Negara Republik Indonesia Nomor 6323);
+
+[mengingat/item]  (hal 2-2)
+  Peraturan Pemerintah Nomor 18 Tahun 2016 tentang Perangkat Daerah (Lembaran Negara Republik Indonesia Tahun 2016 Nomor 114, Tambahan Lembaran Negara Republik Indonesia Nomor 5888) sebagaimana telah diubah dengan Peraturan Pemerintah Nomor 72 Tahun 2019 tentang Perubahan Atas Peraturan Pemerintah Nomor 18 Tahun 2016 tentang Perangkat Daerah (Lembaran Negara Republik Indonesia Tahun 2019 Nomor 187, Tambahan Lembaran Negara Republik Indonesia Nomor 6402);
+
+[mengingat/item]  (hal 2-2)
+  Peraturan Pemerintah Pengganti Undang-Undang Nomor 2 Tahun 2022 tentang Cipta Kerja Menjadi Undang-Undang (Lembaran Negara Republik Indonesia Tahun 2022 Nomor 238, Tambahan Lembaran Negara Republik Indonesia Nomor 6841);
+
+[mengingat/item]  (hal 2-2)
+  Peraturan Pemerintah Nomor 12 Tahun 2019 tentang Pengelolaan Keuangan Daerah (Lembaran Negara Republik Indonesia Tahun 2019 Nomor 42, Tambahan Lembaran Negara Republik Indonesia Nomor 6322);
+
+[mengingat/item]  (hal 2-2)
+  Peraturan Presiden Nomor 111 Tahun 2022 tentang Pelaksanaan Tujuan Pembangunan Berkelanjutan (Lembaran Negara Republik Indonesia Tahun 2022 Nomor 180);
+
+[mengingat/item]  (hal 2-2)
+  Peraturan Menteri Dalam Negeri Nomor 86 Tahun 2017 tentang Tata Cara Perencanaan, Pengendalian dan Evaluasi Pembangunan Daerah, Tata Cara Evaluasi Rancangan Peraturan Daerah tentang Rencana Pembangunan Jangka Panjang Daerah dan Rencana Pembangunan Jangka Menengah, serta Tata Cara Perubahan Rencana Pembangunan Jangka Menengah Daerah dan Rencana Kerja Pemerintah Daerah (Berita Daerah Republik Indonesia Tahun 2017 Nomor 1312);
+
+[mengingat/item]  (hal 2-2)
+  Peraturan Menteri Dalam Negeri Nomor 70 Tahun 2019 tentang Klasifikasi, Kodefikasi, dan Nomenklatur Perencanaan Pembangunan dan Keuangan Daerah (Berita Negara Republik Indonesia Tahun 2019 Nomor 1447);
+
+[mengingat/item]  (hal 2-2)
+  Peraturan Menteri Dalam Negeri Nomor 90 Tahun 2019 tentang Sistem Informasi Pemerintahan Daerah (Berita Negara Republik Indonesia Tahun 2019 Nomor 1114);
+
+[mengingat/item]  (hal 2-2)
+  Peraturan Menteri Dalam Negeri Nomor 77 Tahun 2020 tentang Pedoman Teknis Pengelolaan Keuangan Daerah (Berita Negara Republik Indonesia Tahun 2020 Nomor 1781);
+
+[mengingat/item]  (hal 2-2)
+  Qanun .../3
+
+[mengingat/item]  (hal 3-3)
+  Qanun Aceh Nomor 2 Tahun 2008 tentang Tata Cara Pengalokasian Tambahan Dana Bagi Hasil Minyak dan Gas Bumi dan Dana Otonomi Khusus (Lembaran Aceh Tahun 2008 Nomor 12, Tambahan Lembaran Aceh Nomor 12) sebagaimana telah beberapa kali diubah terakhir dengan Qanun Aceh Nomor 6 Tahun 2024 tentang Perubahan Keempat Atas Qanun Aceh Nomor 2 Tahun 2008 tentang Tata Cara Pengalokasian Tambahan Dana Bagi Hasil Minyak dan Gas Bumi dan Dana Otonomi Khusus (Lembaran Aceh Tahun 2024 Nomor 6);
+
+[mengingat/item]  (hal 3-3)
+  Qanun Aceh Nomor 19 Tahun 2013 tentang Rencana Tata Ruang Wilayah Aceh Tahun 2013-2032 (Lembaran Aceh Tahun 2013 Nomor 1, Tambahan Lembaran Aceh Nomor 62);
+
+[mengingat/item]  (hal 3-3)
+  Qanun Aceh Nomor 8 Tahun 2025 tentang Rencana Pembangunan Jangka Panjang Aceh 2025-2045 (Lembaran Aceh Tahun 2025 Nomor 8);
+
+[mengingat/item]  (hal 3-3)
+  Qanun Aceh Nomor 10 Tahun 2025 tentang Rencana Pembangunan Jangka Menengah Aceh (RPJMA) Tahun 2025-2029 (Lembaran Aceh Tahun 2025 Nomor 10);
+
+[mengingat/item]  (hal 3-3)
+  Peraturan Gubernur Aceh Nomor 22 Tahun 2019 tentang Petunjuk Teknis Pengelolaan Tambahan Dana Bagi Hasil Minyak dan Gas Bumi dan Otonomi Khusus (Berita Daerah Aceh Tahun 2019 Nomor 23);
+
+[mengingat/item]  (hal 3-3)
+  Peraturan Gubernur Aceh Nomor 26 Tahun 2025 tentang Rencana Kerja Pemerintah Aceh Tahun 2026 (Berita Daerah Aceh Tahun 2025 Nomor 27);
+
+[penetapan/penetapan]  (hal 3-3)
+  MEMUTUSKAN:
+
+[penetapan/penetapan]  (hal 3-3)
+  Menetapkan : PERATURAN GUBERNUR TENTANG PENETAPAN RENCANA KERJA SATUAN KERJA PERANGKAT ACEH PEMERINTAH ACEH TAHUN 2026.
+
+    [batang_tubuh/pasal] 1 (hal 3-3)
+      Dalam Peraturan Gubernur ini yang dimaksud dengan: 1. Aceh adalah daerah provinsi yang merupakan kesatuan masyarakat hukum yang bersifat istimewa dan diberi kewenangan khusus untuk mengatur dan mengurus sendiri urusan pemerintahan dan kepentingan masyarakat setempat sesuai dengan Peraturan Perundang-undangan dalam sistem dan prinsip Negara Kesatuan Republik Indonesia berdasarkan Undang-Undang Dasar Negara Republik Indonesia Tahun 1945, yang dipimpin oleh Gubernur. 2. Pemerintah Aceh adalah unsur penyelenggara Pemerintahan Aceh yang terdiri atas Gubernur dan Perangkat Aceh. 3. Gubernur adalah Kepala Pemerintah Aceh. 4. Satuan Kerja Perangkat Aceh yang selanjutnya disebut SKPA adalah Perangkat Pemerintah Aceh; dan 5. Rencana Kerja yang selanjutnya disebut dengan Renja adalah dokumen perencanaan Perangkat Aceh untuk periode 1 (satu) Tahun yang memuat kebijakan, Program dan Kegiatan yang diperlukan untuk mencapai sasaran pembangunan.
+
+    [batang_tubuh/pasal] 2 (hal 3-3)
+
+      [batang_tubuh/ayat] 1 (hal 3-3)
+        Menetapkan Rencana Kerja (Renja) Satuan Kerja Perangkat Aceh (SKPA) Pemerintah Aceh Tahun 2026 sebagaimana tercantum dalam Lampiran yang merupakan bagian tidak terpisahkan dari Peraturan Gubernur ini.
+
+      [batang_tubuh/ayat] 2 (hal 3-3)
+        Renja.../4
+
+      [batang_tubuh/ayat] 2 (hal 4-4)
+        Renja SKPA Pemerintah Aceh sebagaimana dimaksud pada ayat (1) adalah Dokumen Perencanaan Satuan Kerja Perangkat Aceh Pemerintah Aceh untuk periode 1 (satu) tahun yaitu Tahun 2026 yang dimulai pada tanggal 1 Januari 2026 dan berakhir pada tanggal 31 Desember 2026.
+
+    [batang_tubuh/pasal] 3 (hal 4-4)
+      Renja SKPA Pemerintah Aceh Tahun 2026 digunakan untuk:
+      a. Dasar penilaian sistem akuntabilitas kinerja intansi Pemerintah;
+      b. Pedoman Penyusunan Rencana Kerja Anggaran (RKA) SKPA Tahun 2026.
+
+    [batang_tubuh/pasal] 4 (hal 4-4)
+      Peraturan Gubernur ini mulai berlaku pada tanggal diundangkan.
+
+[penutup/paragraf_isi]  (hal 4-4)
+  Agar setiap orang mengatahuinya, memerintahkan pengundangan Peraturan Gubernur ini dengan penempatannya dalam Berita Daerah Aceh.
+
+[penutup/paragraf_isi]  (hal 4-4)
+  Ditetapkan di Banda Aceh pada tanggal, 31 Desember 2025 11 Rajab 1447
+
+[penutup/paragraf_isi]  (hal 4-4)
+  Ttd.
+
+[penutup/paragraf_isi]  (hal 4-4)
+  MUZAKIR MANAF
+
+[penutup/paragraf_isi]  (hal 4-4)
+  Diundangkan di Banda Aceh pada tanggal, 31 Desember 2025 11 Rajab 1447
+
+[penutup/paragraf_isi]  (hal 4-4)
+  SEKRETARIS DAERAH ACEH,
+
+[penutup/paragraf_isi]  (hal 4-4)
+  Ttd.
+
+[penutup/paragraf_isi]  (hal 4-4)
+  M. NASIR
+
+[penutup/paragraf_isi]  (hal 4-4)
+  BERITA DAERAH ACEH TAHUN 2025 NOMOR 36
+
+[penutup/paragraf_isi]  (hal 4-4)
+  Salinan sesuai dengan aslinya KEPALA BIRO HUKUM,
+
+[penutup/paragraf_isi]  (hal 4-5)
+  MUHAMMAD JUNAIDI, SH, MH PENETAPAN RENCANA KERJA SATUAN KERJA PERANGKAT ACEH TAHUN 2026
+
+[penutup/paragraf_isi]  (hal 5-5)
+  No NOMOR SKPA 1 2 3 1 01/Renja-Disdik/2025 Dinas Pendidikan Aceh 2 02/Renja-Dinkes/2025 Dinas Kesehatan Aceh 3 03/Renja-RSUZA/2025 BLUD Rumah Sakit Umum Daerah dr. Zainal Abidin 4 04/Renja-RSJ/2025 BLUD Rumah Sakit Jiwa Aceh 5 05/Renja-RSIA/2025 BLUD Rumah Sakit Ibu dan Anak Aceh 6 06/Renja/PUPR/2025 Dinas Pekerjaan Umum dan Penataan Ruang Aceh 7 07/Renja-Pengairan/2025 Dinas Pengairan Aceh 8 08/Renja-Perkim/2025 Dinas Perumahan Rakyat dan Kawasan Permukiman Aceh 9 09/Renja-Satpol.PP.WH/2025 Satuan Polisi Pamong Praja dan Wilayatul Hisbah Aceh 10 10/Renja-BPBA/2025 Badan Penanggulangan Bencana Aceh 11 11/Renja-Dinsos/2025 Dinas Sosial Aceh 12 12/Renja-Naker/2025 Dinas Tenaga Kerja dan Mobilitas Penduduk Aceh 13 13/Renja-DP3A/2025 Dinas Pemberdayaan Perempuan dan Perlindungan Anak Aceh 14 14/Renja-Pangan/2025 Dinas Pangan Aceh 15 15/Renja-Tanah/2025 Dinas Pertanahan Aceh 16 16/Renja-DRKA/2025 Dinas Registrasi Kependudukan Aceh 17 17/Renja-DPMGA/2025 Dinas Pemberdayaan Masyarakat dan Gampong Aceh 18 18/Renja-Dishub/2025 Dinas Perhubungan Aceh 19 19/Renja-Kominsa/2025 Dinas Komunikasi, Informatika dan Persandian Aceh 20 20/Renja-Kop.UKM/2025 Dinas Koperasi, Usaha Kecil dan Menengah Aceh 21 21/Renja-DPMPTSP/2025 Dinas Penanaman Modal dan Pelayanan Terpadu Satu Pintu Aceh 22 22/Renja-Dispora/2025 Dinas Pemuda dan Olahraga Aceh 23 23/Renja-Disbudpar/2025 Dinas Kebudayaan dan Pariwisata Aceh 24 24/Renja-Arpus/2025 Dinas Perpustakaan dan Kearsipan Aceh 25 25/Renja-DPDA/2025 Dinas Pendidikan Dayah Aceh 26 26/Renja-MPA/2025 Sekretariat Majelis Pendidikan Aceh 27 27/Renja-KKW/2025 Keurukon Katibul Wali Aceh/Sekretariat Wali Nanggroe Aceh 28 28/Renja-MAA/2025 Sekretariat Majelis Adat Aceh 29 29/Renja-Dinsyar/2025 Dinas Syariat Islam Aceh 30 30/Renja-MPU/2025 Sekretariat Majelis Permusyawaratan Ulama Aceh 31 31/Renja-BMA/2025 Sekretariat Baitul Mal Aceh 32 32/Renja-BRA/2025 Sekretariat Badan Reintegrasi Aceh 33 33/Renja-DKP/2025 Dinas Kelautan dan Perikanan Aceh 34 34/Renja-Tanbun/2025 Dinas Pertanian dan Perkebunan Aceh
+

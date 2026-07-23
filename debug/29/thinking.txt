@@ -1,0 +1,89 @@
+=== PANGGILAN MODEL TEKS (gate.md / identity.md / penetapan.md) ===
+
+=== PENETAPAN (penetapan.md) ===
+--- PROMPT ---
+Anda membaca bagian penutup sebuah produk hukum Indonesia — bagian yang memuat
+tempat dan tanggal penetapan serta pejabat yang menandatangani.
+
+Jawab HANYA dengan satu objek JSON. Tanpa penjelasan, tanpa tanda kutip
+Markdown, tanpa teks lain.
+
+{"ditetapkan_di": "", "ditetapkan_tanggal": "", "ditetapkan_oleh": "", "ditetapkan_oleh_nama": "", "diundangkan_di": "", "diundangkan_tanggal": "", "diundangkan_oleh": "", "diundangkan_oleh_nama": ""}
+
+Keterangan tiap isian:
+
+- "ditetapkan_di": nama kota setelah kata "Ditetapkan di".
+  Contoh: "Banda Aceh", "Meulaboh".
+- "ditetapkan_tanggal": tanggal setelah "pada tanggal", APA ADANYA.
+  Contoh: "1 Januari 2015", "15 Desember 2020".
+- "ditetapkan_oleh": JABATAN penanda tangan penetapan saja, TANPA nama orang.
+  Contoh: "GUBERNUR ACEH", "BUPATI ACEH BARAT".
+- "ditetapkan_oleh_nama": NAMA ORANG penanda tangan penetapan — biasanya
+  tertulis beberapa baris di bawah jabatan, kadang didahului kata "Ttd.".
+  Contoh: "MUZAKIR MANAF", "Drs. H. Ahmad, M.Si.".
+- Empat isian "diundangkan_*" diisi dengan cara yang sama (jabatan dan nama
+  terpisah) untuk bagian "Diundangkan di", bila ada. Bagian ini biasanya
+  ditandatangani Sekretaris Daerah.
+
+ATURAN:
+
+- Salin apa adanya. Jangan mengubah bentuk tanggal, jangan menerjemahkan nama
+  bulan, jangan mengubah huruf besar/kecil, jangan melengkapi yang tidak
+  tertulis.
+- Bagian yang tidak ada di teks diisi string kosong "".
+- "ditetapkan_oleh"/"diundangkan_oleh" HANYA jabatan — jangan sisipkan nama
+  orang di situ. Nama orang HANYA masuk ke "..._oleh_nama".
+- JANGAN menyalin contoh di atas sebagai jawaban.
+
+Contoh jawaban yang benar:
+
+{"ditetapkan_di": "Banda Aceh", "ditetapkan_tanggal": "5 Maret 2026", "ditetapkan_oleh": "GUBERNUR ACEH", "ditetapkan_oleh_nama": "MUZAKIR MANAF", "diundangkan_di": "Banda Aceh", "diundangkan_tanggal": "6 Maret 2026", "diundangkan_oleh": "SEKRETARIS DAERAH ACEH", "diundangkan_oleh_nama": "BUSTAMI HAMZAH"}
+
+--- TEKS YANG DIKIRIM ---
+22. Qanun Aceh Nomor 8 Tahun 2019 tentang Majelis Adat Aceh (Lembaran Aceh Tahun 2019 Nomor 16, Tambahan Lembaran Aceh Nomor 118);
+
+23. Qanun Aceh Nomor 7 Tahun 2022 tentang Majelis Pendidikan Aceh (Lembaran Aceh Tahun 2023 Nomor 1, Tambahan Lembaran Aceh Nomor 132);
+
+24. Qanun Aceh Nomor 2 Tahun 2023 tentang Wali Nanggroe (Lembaran Aceh Tahun 2023 Nomor 7, Tambahan Lembaran Aceh Nomor 138);
+
+25. Qanun Aceh Nomor 3 Tahun 2024 tentang Pengelolaan Keuangan Aceh (Lembaran Aceh Tahun 2024 Nomor 3);
+
+MEMUTUSKAN :
+
+Menetapkan : PERATURAN GUBERNUR TENTANG PERUBAHAN ATAS PERATURAN GUBERNUR ACEH NOMOR 03 TAHUN 2025 TENTANG PERJALANAN DINAS.
+
+Pasal I
+
+Lampiran I dalam Peraturan Gubernur Aceh Nomor 03 Tahun 2025 tentang Perjalanan Dinas (Berita Daerah Aceh Tahun 2025 Nomor 03) diubah sehingga menjadi sebagaimana tercantum dalam Lampiran I yang merupakan bagian tidak terpisahkan dari Peraturan Gubernur ini.
+
+Pasal II
+
+Peraturan Gubernur ini mulai berlaku pada tanggal diundangkan.
+
+Agar setiap orang mengetahuinya, memerintahkan pengundangan Peraturan Gubernur ini dengan penempatannya dalam Berita Daerah Aceh.
+
+Ditetapkan di Banda Aceh pada tanggal, 15 September 2025 22 Rabiul Awal 1447
+
+GUBERNUR ACEH,
+
+Ttd.
+
+MUZAKIR MANAF
+
+Diundangkan di Banda Aceh pada tanggal, 15 September 2025 22 Rabiul Awal 1447
+
+SEKRETARIS DAERAH ACEH,
+
+Salinan sesuai dengan aslinya KEPALA BIRO HUKUM,
+
+Ttd.
+
+M. NASIR
+
+MUHAMMAD JUNAIDI, SH, MH
+
+BERITA DAERAH ACEH TAHUN 2025 NOMOR 19
+
+--- JAWABAN MENTAH MODEL ---
+{"ditetapkan_di": "Banda Aceh", "ditetapkan_tanggal": "15 September 2025 22 Rabiul Awal 1447", "ditetapkan_oleh": "GUBERNUR ACEH", "ditetapkan_oleh_nama": "MUZAKIR MANAF", "diundangkan_di": "Banda Aceh", "diundangkan_tanggal": "15 September 2025 22 Rabiul Awal 1447", "diundangkan_oleh": "SEKRETARIS DAERAH ACEH", "diundangkan_oleh_nama": "M. NASIR"}
+

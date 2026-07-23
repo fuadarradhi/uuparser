@@ -1,0 +1,173 @@
+=== HASIL OCR — 5 halaman ===
+
+--- IDENTITAS DOKUMEN (hasil classify) ---
+Diputuskan oleh  : regex (deterministik, tanpa model)
+Jenis            : PERATURAN GUBERNUR
+Wilayah          : PEMERINTAH ACEH
+Instansi tertulis: ACEH
+Nomor            : 10
+Tahun            : 2025
+Tentang          : KEDUDUKAN, SUSUNAN ORGANISASI, TUGAS, FUNGSI DAN TATA KERJA UNIT PELAKSANA TEKNIS DAERAH PADA BADAN PENGEMBANGAN SUMBER DAYA MANUSIA ACEH DAN DINAS PEMUDA DAN OLAHRAGA ACEH
+
+(lihat thinking.txt bila kolom KEPUTUSAN di atas = model teks — berisi PERSIS apa yang ditanyakan & dijawab)
+
+--- Halaman 1 — DPI 100 (blur_score probe: 789327767) ---
+GUBERNUR ACEH
+
+PERATURAN GUBERNUR ACEH
+NOMOR 10 TAHUN 2025
+
+TENTANG
+
+KEDUDUKAN, SUSUNAN ORGANISASI, TUGAS, FUNGSI
+DAN TATA KERJA UNIT PELAKSANA TEKNIS DAERAH
+PADA BADAN PENGEMBANGAN SUMBER DAYA MANUSIA ACEH
+DAN DINAS PEMUDA DAN OLAHRAGA ACEH
+
+DENGAN RAHMAT ALLAH YANG MAHA KUASA
+
+GUBERNUR ACEH,
+
+Menimbang: a. bahwa untuk melaksanakan ketentuan Pasal 12 Qanun Aceh Nomor 13 Tahun 2016 tentang Pembentukan dan Susunan Perangkat Daerah Aceh sebagaimana telah diubah dengan Qanun Aceh Nomor 13 Tahun 2019 tentang Perubahan atas Qanun Nomor 13 Tahun 2016 tentang Pembentukan dan Susunan Perangkat Aceh, perlu membentuk Unit Pelaksana Teknis Daerah pada Badan Pengembangan Sumber Daya Manusia Aceh dan Dinas Pemuda dan Olahraga Aceh;
+
+b. bahwa berdasarkan pertimbangan sebagaimana dimaksud dalam huruf a, perlu menetapkan Peraturan Gubernur tentang Kedudukan, Susunan Organisasi, Tugas, Fungsi dan Tata Kerja Unit Pelaksana Teknis Daerah pada Badan Pengembangan Sumber Daya Manusia Aceh dan Dinas Pemuda dan Olahraga Aceh;
+
+Mengingat : 1. Pasal 18 ayat (6) Undang Undang Dasar Negara Republik Indonesia Tahun 1945;
+
+2. Undang-Undang Nomor 24 Tahun 1956 tentang Pembentukan Daerah Otonom Propinsi Atjeh dan Perubahan Peraturan Pembentukan Propinsi Sumatera Utara (Lembaran Negara Republik Indonesia Tahun 1956 Nomor 64, Tambahan Lembaran Negara Republik Indonesia Nomor 1103) sebagaimana telah diubah dengan Undang-Undang Nomor 4 Tahun 1974 tentang Pembentukan Kabupaten Aceh Tenggara (Lembaran Negara Republik Indonesia Tahun 1974 Nomor 32, Tambahan Lembaran Negara Republik Indonesia Nomor 3034);
+
+3. Undang-Undang Nomor 11 Tahun 2006 tentang Pemerintahan Aceh (Lembaran Negara Republik Indonesia Tahun 2006 Nomor 62, Tambahan Lembaran Negara Republik Indonesia Nomor 4633);
+
+4. Undang-Undang Nomor 12 Tahun 2011 tentang Pembentukan Peraturan Perundang-Undangan (Lembaran Negara Republik Indonesia Tahun 2011 Nomor 82, Tambahan Lembaran Negara Republik Indonesia Nomor 5234) sebagaimana telah diubah beberapa kali terakhir dengan Undang-Undang Nomor 13 Tahun 2022 tentang Perubahan Kedua atas Undang-Undang Nomor 12 Tahun 2011 tentang Pembentukan Peraturan Perundang-Undangan (Lembaran Negera Republik Indonesia Tahun 2022 Nomor 143,Tambahan Lembaran Negara Republik Indonesia Nomor 6801);
+
+5. Undang ...
+
+--- Halaman 2 — DPI 100 (DPI mengikuti halaman 1) ---
+2
+
+5. Undang-Undang Nomor 23 Tahun 2014 tentang Pemerintahan Daerah (Lembaran Negara Republik Indonesia Tahun 2014 Nomor 244, Tambahan Lembaran Negara Republik Indonesia Nomor 5587) sebagaimana telah diubah beberapa kali terakhir dengan Undang-Undang Nomor 6 Tahun 2023 tentang Penetapan Peraturan Pemerintah Pengganti Undang-Undang Nomor 2 Tahun 2022 Tentang Cipta Kerja Menjadi Undang-Undang (Lembaran Negara Republik Indonesia Tahun 2023 Nomor 41, Tambahan Lembaran Negara Republik Indonesia Nomor 6841);
+
+6. Undang-Undang Nomor 20 Tahun 2023 tentang Aparatur Sipil Negara (Lembaran Negara Republik Indonesia Tahun 2023 Nomor 141, Tambahan Lembaran Negara Republik Indonesia Nomor 6897);
+
+7. Peraturan Pemerintah Nomor 3 Tahun 2015 tentang Kewenangan Pemerintah Yang Bersifat Nasional di Aceh (Lembaran Negara Republik Indonesia Tahun 2015 Nomor 28);
+
+8. Peraturan Pemerintah Nomor 18 Tahun 2016 tentang Perangkat Daerah (Lembaran Negara Republik Indonesia Tahun 2016 Nomor 114, Tambahan Lembaran Negara Republik Indonesia Nomor 5887) sebagaimana telah diubah dengan Peraturan Pemerintah Nomor 72 Tahun 2019 tentang Perubahan Atas Peraturan Pemerintah Nomor 18 Tahun 2016 tentang Perangkat Daerah (Lembaran Negara Republik Indonesia Tahun 2019 Nomor 187, Tambahan Lembaran Negara Republik Indonesia Nomor 6402);
+
+9. Peraturan Menteri Dalam Negeri Nomor 80 Tahun 2015 tentang Pembentukan Produk Hukum Daerah (Berita Negara Republik Indonesia Tahun 2015 Nomor 2036) sebagaimana telah diubah dengan Peraturan Menteri Dalam Negeri Nomor 120 Tahun 2018 tentang Perubahan atas Peraturan Menteri Dalam Negeri Nomor 80 Tahun 2015 tentang Pembentukan Produk Hukum Daerah (Berita Negara Republik Indonesia Tahun 2019 Nomor 157);
+
+10. Peraturan Menteri Dalam Negeri Nomor 12 Tahun 2017 tentang Pedoman Pembentukan dan Klasifikasi Cabang Dinas dan Unit Pelaksana Teknis Daerah (Berita Negara Republik Indonesia Tahun 2017 Nomor 451);
+
+11. Qanun Aceh Nomor 13 Tahun 2016 tentang Pembentukan dan Susunan Perangkat Daerah Aceh (Lembaran Aceh Tahun 2016 Nomor 16, Tambahan Lembaran Aceh Nomor 87) sebagaimana telah diubah dengan Qanun Aceh Nomor 13 Tahun 2019 tentang Perubahan atas Qanun Aceh Nomor 13 Tahun 2016 tentang Pembentukan dan Susunan Perangkat Aceh (Lembaran Aceh Tahun 2019 Nomor 21);
+
+12. Peraturan Gubernur Aceh Nomor 01 Tahun 2024 tentang Kedudukan, Susunan Organisasi, Tugas, Fungsi dan Tata Kerja Satuan Kerja Perangkat Aceh, Cabang Dinas dan Unit Pelaksana Teknis Daerah;
+
+MEMUTUSKAN:
+
+Menetapkan : PERATURAN GUBERNUR TENTANG KEDUDUKAN, SUSUNAN ORGANISASI, TUGAS, FUNGSI DAN TATA KERJA UNIT PELAKSANA TEKNIS DAERAH PADA BADAN PENGEMBANGAN SUMBER DAYA MANUSIA ACEH DAN DINAS PEMUDA DAN OLAHRAGA ACEH.
+
+--- Halaman 3 — DPI 100 (DPI mengikuti halaman 1) ---
+BAB I
+KETENTUAN UMUM
+Pasal 1
+
+Dalam Peraturan Gubernur ini yang dimaksud dengan:
+
+1. Aceh adalah Daerah Provinsi yang merupakan kesatuan masyarakat hukum yang bersifat istimewa dan diberi kewenangan khusus untuk mengatur dan mengurus sendiri urusan pemerintahan dan kepentingan masyarakat setempat sesuai dengan Peraturan Perundang-Undangan dalam sistem dan prinsip Negara Kesatuan Republik Indonesia berdasarkan Undang-Undang Dasar Negara Republik Indonesia Tahun 1945, yang dipimpin oleh seorang Gubernur.
+
+2. Pemerintahan Aceh adalah pemerintahan daerah provinsi dalam sistem Negara Kesatuan Republik Indonesia berdasarkan Undang-Undang Dasar Negara Republik Indonesia Tahun 1945 yang menyelegggarakan urusan pemerintahan yang dilaksanakan oleh Pemerintah Daerah Aceh dan Dewan Perwakilan Rakyat Aceh sesuai dengan fungsi dan kewenangan masing-masing.
+
+3. Pemerintah Daerah Aceh yang selanjutnya disebut Pemerintah Aceh adalah unsur penyelegggara pemerintahan Aceh yang terdiri atas Gubernur dan Perangkat Daerah Aceh.
+
+4. Gubernur adalah Kepala Pemerintah Aceh yang dipilih melalui suatu proses demokratis yang dilakukan berdasarkan asas langsung, umum, bebas, rahasia, jujur, dan adil.
+
+5. Satuan Kerja Perangkat Aceh, selanjutnya disingkat dengan SKPA adalah perangkat Pemerintah Aceh.
+
+6. Unit Pelaksana Teknis Daerah yang selanjutnya disingkat UPTD adalah Unit Pelaksana Teknis Daerah pada Badan Pengembangan Sumber Daya Manusia Aceh dan Dinas Pemuda dan Olahraga Aceh.
+
+7. Unit Pelaksana Teknis Daerah Pusat Pengembangan Kompetensi dan Sertifikasi Sumber Daya Manusia yang selanjutnya disebut UPTD Pusat Pengembangan Kompetensi dan Sertifikasi Sumber Daya Manusia pada Badan Pengembangan Sumber Daya Manusia pada Badan Pengembangan Sumber Daya Manusia pada Badan Pengembangan Sumber Daya Manusia pada Badan Pengembangan Sumber Daya Manusia pada Badan Pengembangan Sumber Daya Manusia pada Badan Pengembangan Sumber Daya Manusia pada Badan Pengembangan Sumber Daya Manusia pada Badan Pengembangan Sumber Daya Manusia pada Badan Pengembangan Sumber Daya Manusia pada Badan Pengembangan Sumber Daya Manusia pada Badan Pengembangan Sumber Daya Manusia pada Dinas Pemuda dan Olahraga Aceh.
+
+8. Kepala Unit Pelaksana Teknis Daerah yang selanjutnya disebut Kepala UPTD adalah Kepala Unit Pelaksana Teknis Daerah pada Badan Pengembangan Kompetensi dan Sertifikasi Sumber Daya Manusia Badan Pengembangan Sumber Daya Manusia Aceh dan UPTD Gelanggang Pemuda dan Olahraga Harapan Bangsa pada Dinas Pemuda dan Olahraga Aceh.
+
+9. Subbagian adalah Subbagian pada UPTD Pusat Pengembangan Kompetensi dan Sertifikasi Sumber Daya Manusia Badan Pengembangan Sumber Daya Manusia Aceh dan UPTD Gelanggang Pemuda dan Olahraga Harapan Bangsa pada Dinas Pemuda dan Olahraga Aceh.
+
+10. Seksi adalah Seksi pada UPTD Pusat Pengembangan Kompetensi dan Sertifikasi Sumber Daya Manusia Badan Pengembangan Sumber Daya Manusia Aceh dan UPTD Gelanggang Pemuda dan Olahraga Harapan Bangsa pada Dinas Pemuda dan Olahraga Aceh.
+
+11. Kelompok Jabatan Fungsional adalah kelompok jabatan fungsional pada Badan Pengembangan Sumber Daya Manusia Aceh dan Dinas Pemuda dan Olahraga Aceh.
+
+BAB II.
+
+--- Halaman 4 — DPI 100 (DPI mengikuti halaman 1) ---
+BAB II
+PENETAPAN
+Pasal 2
+
+Dengan Peraturan Gubernur ini ditetapkan:
+
+1. Unit Pelaksana Teknis Daerah Pusat Pengembangan Kompetensi dan Sertifikasi Sumber Daya Manusia pada Badan Pengembangan Sumber Daya Manusia Aceh dengan klasifikasi A.
+
+2. Unit Pelaksana Teknis Daerah Gelanggang Pemuda dan Olahraga Harapan Bangsa pada Dinas Pemuda dan Olahraga Aceh dengan klasifikasi A.
+
+BAB III
+UPTD PUSAT PENGEMBANGAN KOMPETENSI DAN SERTIFIKASI SUMBER DAYA MANUSIA
+
+Bagian Kesatu
+Kedudukan dan Susunan
+
+Paragraf 1
+Kedudukan
+
+Pasal 3
+
+(1) UPTD Pusat Pengembangan Kompetensi dan Sertifikasi Sumber Daya Manusia merupakan perangkat teknis operasional dan/atau teknis penunjang pada Badan Pengembangan Sumber Daya Manusia Aceh.
+
+(2) UPTD dipimpin oleh seorang Kepala UPTD yang berkedudukan di bawah dan bertanggung jawab kepada Kepala Badan.
+
+(3) Subbagian dipimpin oleh seorang Kepala Subbagian yang berkedudukan di bawah dan bertanggung jawab kepada Kepala UPTD.
+
+(4) Seksi dipimpin oleh seorang Kepala Seksi yang berkedudukan di bawah dan bertanggung jawab kepada Kepala UPTD.
+
+Paragraf 2
+Susunan
+
+Pasal 4
+
+(1) Susunan organisasi UPTD Pusat Pengembangan Kompetensi dan Sertifikasi Sumber Daya Manusia, terdiri atas:
+a. Kepala UPTD;
+b. Subbagian Tata Usaha;
+c. Seksi Fasilitasi Pelatihan Aparatur;
+d. Seksi Fasilitasi Pelatihan Non Aparatur; dan
+e. Kelompok Jabatan Fungsional.
+
+(2) Bagan Struktur Organisasi UPTD Pusat Pengembangan Kompetensi dan Sertifikasi Sumber Daya Manusia sebagaimana tercantum dalam Lampiran I merupakan bagian yang tidak terpisahkan dari Peraturan Gubernur ini.
+
+--- Halaman 5 — DPI 100 (DPI mengikuti halaman 1) ---
+Bagian Kedua
+Tugas dan Fungsi
+
+Paragraf 1
+UPTD Pusat Pengembangan Kompetensi dan Sertifikasi SDM mempunyai tugas melaksanakan fasilitasi pelatihan dan sertifikasi sumber daya manusia aparatur dan non aparatur.
+
+(2) Untuk melaksanakan tugas sebagaimana dimaksud pada ayat (1), UPTD Pusat Pengembangan Kompetensi dan Sertifikasi SDM menyelenggarakan fungsi:
+a. penyusunan rencana fasilitasi pelatihan dan sertifikasi SDM aparatur dan non aparatur;
+b. pelaksanaan fasilitasi pelatihan dan sertifikasi SDM aparatur dan non aparatur;
+c. pelaksanaan pengkoordinasian kinerja individu dan organisasi dalam kegiatan fasilitasi pelatihan dan sertifikasi SDM aparatur dan non aparatur;
+d. pelaksanaan pengawasan, monitoring, evaluasi dan penilaian fasilitasi pelatihan dan sertifikasi SDM aparatur dan non aparatur;
+e. pelaksanaan kerjasama/kemitraan fasilitasi pelatihan dan sertifikasi SDM aparatur dan non aparatur;
+f. pelaksanaan pengelolaan keuangan pada kegiatan fasilitasi pelatihan dan sertifikasi SDM aparatur dan non aparatur; dan
+g. pelaksanaan koordinasi pemanfaatan dan pendayagunaan sarana dan prasarana dalam fasilitasi pelatihan dan sertifikasi SDM aparatur dan non aparatur.
+
+Paragraf 2
+Kepala UPTD
+
+Pasal 6
+
+(1) Kepala UPTD mempunyai tugas memimpin dan melaksanakan fasilitasi pelatihan dan sertifikasi sumber daya manusia aparatur dan non aparatur.
+
+(2) Untuk melaksanakan tugas sebagaimana dimaksud pada ayat (1), Kepala UPTD menyelenggarakan fungsi:
+a. pengendalian penyusunan rencana fasilitasi pelatihan dan sertifikasi SDM aparatur dan non aparatur;
+b. pengendalian dan pengkoordinasian fasilitasi pelatihan dan sertifikasi SDM aparatur dan non aparatur;
+c. pengkoordinasian kinerja individu dan organisasi dalam kegiatan fasilitasi pelatihan dan sertifikasi SDM aparatur dan non aparatur;
+d. pelaksanaan pengawasan, monitoring, evaluasi dan penilaian fasilitasi pelatihan dan sertifikasi SDM aparatur dan non aparatur;
+e. pelaksanaan kerjasama/kemitraan fasilitasi pelatihan dan sertifikasi SDM aparatur dan non aparatur;
+f. pelaksanaan pengelolaan keuangan pada kegiatan fasilitasi pelatihan dan sertifikasi SDM aparatur dan non aparatur;
+

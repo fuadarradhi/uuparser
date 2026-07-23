@@ -1,0 +1,153 @@
+=== PANGGILAN MODEL TEKS (gate.md / identity.md / penetapan.md) ===
+
+=== GERBANG (gate.md) ===
+--- PROMPT ---
+Anda memeriksa satu halaman hasil pemindaian (OCR) dari situs JDIH pemerintah
+Indonesia. Tugas Anda HANYA menjawab satu pertanyaan: apakah halaman ini
+bagian dari PRODUK HUKUM RESMI?
+
+Jawab HANYA dengan satu objek JSON. Tanpa penjelasan, tanpa tanda kutip
+Markdown, tanpa teks lain.
+
+{"produk_hukum": true, "alasan": ""}
+
+Bernilai true bila halaman memuat ciri produk hukum resmi yang ditetapkan
+pejabat berwenang, misalnya:
+- judul berpola "<JENIS> <PEJABAT/DAERAH> NOMOR ... TAHUN ... TENTANG ..."
+- kata MENIMBANG, MENGINGAT, MEMUTUSKAN, MENETAPKAN
+- struktur Pasal/Ayat, atau diktum KESATU/KEDUA/KETIGA
+
+Bernilai false untuk: naskah akademik, rancangan yang belum ditetapkan,
+kajian, laporan, notulen, berita, formulir, brosur, daftar isi, atau halaman
+yang hanya berisi sampul tanpa isi peraturan.
+
+Bila false, isi "alasan" dengan satu kalimat singkat. Bila true, kosongkan.
+
+Contoh jawaban yang benar:
+{"produk_hukum": true, "alasan": ""}
+{"produk_hukum": false, "alasan": "dokumen ini naskah akademik, bukan peraturan yang ditetapkan"}
+
+--- TEKS YANG DIKIRIM ---
+GUBERNUR ACEH
+
+Yth. Para Bupati/Walikota se-Aceh
+
+Masing-masing di tempat
+
+SURAT EDARAN
+NOMOR : 500.3 / 5338
+
+TENTANG
+
+PERCEPATAN PEMBENTUKAN KOPERASI DESA MERAH PUTIH
+
+Memperhatikan :
+1. Instruksi Presiden Republik Indonesia Nomor 9 Tahun 2025 tentang Percepatan Pembentukan Koperasi Desa/Kelurahan Merah Putih;
+2. Peraturan Menteri Hukum Nomor 13 Tahun 2025 tentang Pengesahan Koperasi;
+3. Keputusan Menteri Koperasi Nomor 9 Tahun 2025 tentang Satuan Tugas Pembentukan Koperasi Desa Merah Putih;
+4. Surat Edaran Menteri Desa, Pembangunan Daerah Tertinggal dan Transmigrasi Nomor 6 Tahun 2025 tentang Petunjuk Teknis Percepatan Pelaksanaan Pembentukan Koperasi Desa Merah Putih;
+5. Surat Edaran Menteri Koperasi Nomor 1 Tahun 2025 tentang Tata Cara Pembentukan Koperasi Desa Merah Putih;
+6. Surat Edaran Menteri Dalam Negeri Nomor 500.3/2438/SJ tentang Percepatan Pembentukan Koperasi Desa/Kelurahan Merah Putih;
+7. Petunjuk Pelaksanaan Menteri Koperasi Nomor 1 Tahun 2025 tentang Pembentukan Koperasi Desa/Kelurahan Merah Putih;
+8. Surat Edaran Menteri Dalam Negeri Nomor 500.3/2438/SJ tentang Percepatan Pembentukan Koperasi Desa/Kelurahan Merah Putih;
+9. Surat Direktur Jenderal Pembangunan Desa dan Perdesaan Kementerian Desa dan Pembangunan Daerah Tertinggal RI Nomor B.-143/PDP.04.01/V/2025 tanggal 6 Mei 2025 perihal Penggunaan Dana Desa untuk Pembentukan Koperasi Desa Merah Putih;
+10. Surat Gubernur Aceh Nomor 500.3.2/4410 tanggal 22 April 2025 perihal Pendirian Koperasi Desa Merah Putih.
+
+Dalam rangka percepatan implementasi amanat Instruksi Presiden Republik Indonesia Nomor 9 Tahun 2025 tentang Percepatan Pembentukan Koperasi Desa/Kelurahan Merah Putih dan sebagai bentuk komitmen Pemerintah Aceh dalam mendukung target pembentukan 80.000 Koperasi Desa Merah Putih secara nasional, maka kepada Bupati/Walikota se-Aceh diminta untuk mengambil langkah-langkah sebagai berikut:
+
+I. TAHAP PERSIAPAN DAN SOSIALISASI
+1. Melakukan sosialisasi percepatan pembentukan Koperasi Desa Merah Putih;
+2. Memfasilitasi dan mendampingi dalam hal identifikasi potensi, permasalahan, dan profil ekonomi serta kebutuhan penataan dan layanan Gampong atau nama lain secara partisipatif melibatkan para pemangku kepentingan sebagai pembentukan koperasi yang akan dibahas pada Musyawarah Gampong Khusus;
+3. Memfasilitasi dan mendampingi pelaksanaan Musyawarah Gampong Khusus yang hasilnya digunakan sebagai pedoman pendirian, pengembangan dan revitalisasi koperasi di Gampong sesuai ketentuan perundang-undangan;
+4. Menyampaikan informasi secara terbuka melalui media gampong, media sosial resmi, dan sarana komunikasi lainnya, termasuk penggunaan tagar nasional seperti #KopMP atau #MerahPutih sebagai bagian dari informasi publik.
+
+II. TAHAP .../2
+
+--- JAWABAN MENTAH MODEL ---
+{"produk_hukum": true, "alasan": ""}
+
+=== IDENTITAS (identity.md) ===
+--- PROMPT ---
+Anda membaca halaman pertama sebuah produk hukum Indonesia. Salin identitasnya
+APA ADANYA dari teks.
+
+Jawab HANYA dengan satu objek JSON. Tanpa penjelasan, tanpa tanda kutip
+Markdown, tanpa teks lain.
+
+{"jenis": "", "instansi_tertulis": "", "nomor": "", "tahun": "", "tentang": ""}
+
+Keterangan tiap isian:
+
+- "jenis": nama jenis peraturannya saja, TANPA nama daerah atau pejabat.
+  Contoh: "PERATURAN DAERAH", "QANUN", "PERATURAN GUBERNUR",
+  "KEPUTUSAN GUBERNUR", "PERATURAN BUPATI", "KEPUTUSAN BUPATI",
+  "PERATURAN WALI KOTA", "UNDANG-UNDANG", "PERATURAN PEMERINTAH".
+
+- "instansi_tertulis": nama daerah ATAU jabatan PERSIS seperti tertulis di
+  dokumen. Jangan diubah, jangan diterjemahkan, jangan dilengkapi.
+  Contoh yang benar: "ACEH", "GUBERNUR ACEH", "KABUPATEN ACEH BARAT",
+  "BUPATI ACEH BARAT", "KOTA BANDA ACEH", "PROPINSI DAERAH ISTIMEWA ACEH".
+
+- "nomor": nomor peraturan PERSIS seperti tertulis, termasuk garis miring,
+  titik, dan spasi. JANGAN disederhanakan menjadi angka saja.
+  Contoh yang benar: "5", "12A", "300.2/ 69 /2026", "188.44/123/2020".
+
+- "tahun": empat angka saja. Contoh: "2015", "1979".
+
+- "tentang": judul lengkap setelah kata TENTANG, apa adanya.
+
+ATURAN YANG TIDAK BOLEH DILANGGAR:
+
+- Salin apa yang tertulis. Jangan menebak, jangan melengkapi, jangan
+  memperbaiki. Bila suatu bagian tidak terbaca, isi dengan string kosong "".
+- JANGAN menyalin contoh di atas sebagai jawaban.
+- JANGAN menulis tanda titik-titik ("...") di dalam jawaban.
+- Dokumen lama memakai ejaan lama (Propinsi, Atjeh, Dati II, Kotamadya).
+  Pertahankan apa adanya, jangan dimodernkan.
+- Jangan memakai pengetahuan Anda tentang peraturan Indonesia. Laporkan HANYA
+  yang benar-benar tertulis pada teks yang diberikan.
+
+Contoh jawaban yang benar untuk halaman berjudul
+"KEPUTUSAN GUBERNUR ACEH NOMOR 300.2/ 69 /2026 TENTANG PENETAPAN PANITIA":
+
+{"jenis": "KEPUTUSAN GUBERNUR", "instansi_tertulis": "GUBERNUR ACEH", "nomor": "300.2/ 69 /2026", "tahun": "2026", "tentang": "PENETAPAN PANITIA"}
+
+--- TEKS YANG DIKIRIM ---
+GUBERNUR ACEH
+
+Yth. Para Bupati/Walikota se-Aceh
+
+Masing-masing di tempat
+
+SURAT EDARAN
+NOMOR : 500.3 / 5338
+
+TENTANG
+
+PERCEPATAN PEMBENTUKAN KOPERASI DESA MERAH PUTIH
+
+Memperhatikan :
+1. Instruksi Presiden Republik Indonesia Nomor 9 Tahun 2025 tentang Percepatan Pembentukan Koperasi Desa/Kelurahan Merah Putih;
+2. Peraturan Menteri Hukum Nomor 13 Tahun 2025 tentang Pengesahan Koperasi;
+3. Keputusan Menteri Koperasi Nomor 9 Tahun 2025 tentang Satuan Tugas Pembentukan Koperasi Desa Merah Putih;
+4. Surat Edaran Menteri Desa, Pembangunan Daerah Tertinggal dan Transmigrasi Nomor 6 Tahun 2025 tentang Petunjuk Teknis Percepatan Pelaksanaan Pembentukan Koperasi Desa Merah Putih;
+5. Surat Edaran Menteri Koperasi Nomor 1 Tahun 2025 tentang Tata Cara Pembentukan Koperasi Desa Merah Putih;
+6. Surat Edaran Menteri Dalam Negeri Nomor 500.3/2438/SJ tentang Percepatan Pembentukan Koperasi Desa/Kelurahan Merah Putih;
+7. Petunjuk Pelaksanaan Menteri Koperasi Nomor 1 Tahun 2025 tentang Pembentukan Koperasi Desa/Kelurahan Merah Putih;
+8. Surat Edaran Menteri Dalam Negeri Nomor 500.3/2438/SJ tentang Percepatan Pembentukan Koperasi Desa/Kelurahan Merah Putih;
+9. Surat Direktur Jenderal Pembangunan Desa dan Perdesaan Kementerian Desa dan Pembangunan Daerah Tertinggal RI Nomor B.-143/PDP.04.01/V/2025 tanggal 6 Mei 2025 perihal Penggunaan Dana Desa untuk Pembentukan Koperasi Desa Merah Putih;
+10. Surat Gubernur Aceh Nomor 500.3.2/4410 tanggal 22 April 2025 perihal Pendirian Koperasi Desa Merah Putih.
+
+Dalam rangka percepatan implementasi amanat Instruksi Presiden Republik Indonesia Nomor 9 Tahun 2025 tentang Percepatan Pembentukan Koperasi Desa/Kelurahan Merah Putih dan sebagai bentuk komitmen Pemerintah Aceh dalam mendukung target pembentukan 80.000 Koperasi Desa Merah Putih secara nasional, maka kepada Bupati/Walikota se-Aceh diminta untuk mengambil langkah-langkah sebagai berikut:
+
+I. TAHAP PERSIAPAN DAN SOSIALISASI
+1. Melakukan sosialisasi percepatan pembentukan Koperasi Desa Merah Putih;
+2. Memfasilitasi dan mendampingi dalam hal identifikasi potensi, permasalahan, dan profil ekonomi serta kebutuhan penataan dan layanan Gampong atau nama lain secara partisipatif melibatkan para pemangku kepentingan sebagai pembentukan koperasi yang akan dibahas pada Musyawarah Gampong Khusus;
+3. Memfasilitasi dan mendampingi pelaksanaan Musyawarah Gampong Khusus yang hasilnya digunakan sebagai pedoman pendirian, pengembangan dan revitalisasi koperasi di Gampong sesuai ketentuan perundang-undangan;
+4. Menyampaikan informasi secara terbuka melalui media gampong, media sosial resmi, dan sarana komunikasi lainnya, termasuk penggunaan tagar nasional seperti #KopMP atau #MerahPutih sebagai bagian dari informasi publik.
+
+II. TAHAP .../2
+
+--- JAWABAN MENTAH MODEL ---
+{"jenis": "SURAT EDARAN", "instansi_tertulis": "GUBERNUR ACEH", "nomor": "500.3 / 5338", "tahun": "", "tentang": "PERCEPATAN PEMBENTUKAN KOPERASI DESA MERAH PUTIH"}
+

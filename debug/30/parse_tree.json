@@ -1,0 +1,426 @@
+{
+  "status": "SUCCESS",
+  "nodes": [
+    {
+      "section": "judul",
+      "node_type": "judul",
+      "content": "GUBERNUR ACEH",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "judul",
+      "node_type": "judul",
+      "content": "NOMOR 100.3.2 / 1180 / 2025",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "judul",
+      "node_type": "judul",
+      "content": "TENTANG",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "judul",
+      "node_type": "judul",
+      "content": "PENETAPAN PEDOMAN PELAKSANAAN REPARASI PENYELESAIAN NON YUDISIAL PELANGGARAN HAK ASASI MANUSIA PADA MASA LALU DI ACEH",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "judul",
+      "node_type": "judul",
+      "content": "GUBERNUR ACEH,",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "menimbang",
+      "node_type": "item",
+      "content": "bahwa untuk mewujudkan efektivitas dan efisiensi pelaksanaan pemberian reparasi kepada individu atau kelompok setelah proses pengungkapan kebenaran, sesuai dengan ketentuan Pasal 26 ayat [2] dan Pasal 29 Qanun Aceh Nomor 17 Tahun 2013 tentang Komisi Kebenaran dan Rekonsiliasi Aceh dan Pasal 12 huruf g Qanun Aceh Nomor 6 Tahun 2015 tentang Badan Reintegrasi Aceh, perlu ditetapkan Pedoman Pelaksanaan Reparasi Penyelesaian Non Yudisial Pelanggaran Hak Asasi Manusia pada Masa Lalu di Aceh;",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "menimbang",
+      "node_type": "item",
+      "content": "bahwa berdasarkan pertimbangan sebagaimana dimaksud dalam hurufa, perlu menetapkan Keputusan Gubernur tentang Penetapan Pedoman Pelaksanaan Reparasi Penyelesaian Non Yudisial Pelanggaran Hak Asasi Manusia pada Masa Lalu di Aceh;",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 24 Tahun 1956 tentang Pembentukan Daerah Otonom Propinsi Atjeh dan Perubahan Peraturan Pembentukan Propinsi Sumatera Utara;",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 39 Tahun 1999 tentang Hak Asasi Manusia;",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 26 Tahun 2000 tentang Pengadilan Hak Asasi Manusia;",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 11 Tahun 2005 tentang Pengesahan International Covenant on Economic, Social and Cultural Rights (Konvenan Internasional tentang Hak-Hak Ekonomi, Sosial dan Budaya);",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 12 Tahun 2005 tentang Pengesahan International Covenant on Civil and Political Rights (Konvenan Internasional tentang Hak-Hak Sipil dan Politik);",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 11 Tahun 2006 tentang Pemerintahan Aceh;",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 13 Tahun 2006 tentang Perlindungan Saksi dan Korban sebagaimana telah diubah dengan Undang-Undang Nomor 31 Tahun 2014 tentang Perubahan Atas Undang-Undang Nomor 13 Tahun 2006 tentang Perlindungan Saksi dan Korban;",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 23 Tahun 2014 tentang Pemerintahan Daerah sebagaimana telah beberapa kali diubah terakhir dengan Undang-Undang Nomor 6 Tahun 2023 tentang Penetapan Peraturan Pemerintah Pengganti Undang-Undang Nomor 2 Tahun 2022 tentang Cipta Kerja Menjadi Undang-Undang;",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan Pemerintah Nomor 18 Tahun 2016 tentang Perangkat Daerah sebagaimana telah diubah dengan Peraturan Pemerintah Nomor 72 Tahun 2019 tentang Perubahan Atas Peraturan Pemerintah Nomor 18 Tahun 2016 tentang Perangkat Daerah;",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan Menteri Dalam Negeri Nomor 95 Tahun 2016 tentang Perangkat Daerah Aceh;",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan .../2",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan Menteri Dalam Negeri Nomor 80 Tahun 2015 tentang Pembentukan Produk Hukum Daerah sebagaimana telah diubah dengan Peraturan Menteri Dalam Negeri Nomor 120 Tahun 2018 tentang Perubahan Atas Peraturan Menteri Dalam Negeri Nomor 80 Tahun 2015 tentang Pembentukan Produk Hukum Daerah;",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Qanun Aceh Nomor 17 Tahun 2013 tentang Komisi Kebenaran dan Rekomsiliasi Aceh;",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Qanun Aceh Nomor 6 Tahun 2015 tentang Badan Reintegrasi Aceh;",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Qanun Aceh Nomor 13 Tahun 2016 tentang Pembentukan dan Susunan Perangkat Aceh sebagaimana telah diubah dengan Qanun Aceh Nomor 13 Tahun 2019 tentang Perubahan Atas Qanun Aceh Nomor 13 Tahun 2016 tentang Pembentukan dan Susunan Perangkat Aceh;",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Qanun Aceh Nomor 3 Tahun 2024 tentang Pengelolaan Keuangan Aceh;",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "penetapan",
+      "node_type": "penetapan",
+      "content": "MEMUTUSKAN:",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "penetapan",
+      "node_type": "penetapan",
+      "content": "Menetapkan :",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "batang_tubuh",
+      "node_type": "diktum",
+      "label": "KESATU",
+      "content": "Menetapkan Pedoman Pelaksanaan Reparasi Penyelesaian Non Yudisial Pelanggaran Hak Asasi Manusia pada Masa Lalu di Aceh.",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "batang_tubuh",
+      "node_type": "diktum",
+      "label": "KEDUA",
+      "content": "Pedoman Pelaksanaan Reparasi sebagaimana dimaksud pada Diktum Kesatu meliputi: Bab I : Ketentuan Umum Bab II : Asas, Maksud, Tujuan dan Ruang Lingkup Bab III : Pelaksanaan Reparasi Bab IV : Kewajiban Pemerintah Aceh Bab V : Data dan Informasi Bab VI : Mekanisme Koordinasi Bab VII : Partisipasi Masyarakat dan Kemitraan Bab VIII : Pelaporan dan Pengawasan Bab IX : Monitoring dan Evaluasi Bab X : Pembiayaan Bab XI : Ketentuan Lain-lain Bab XII : Ketentuan Penutup",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "batang_tubuh",
+      "node_type": "diktum",
+      "label": "KETIGA",
+      "content": "Pedoman Pelaksanaan Reparasi sebagaimana dimaksud pada Diktum Kedua menjadi pedoman bagi Satuan Kerja Perangkat Aceh dan/atau Lembaga Non Pemerintah yang ditunjuk oleh Pemerintah Aceh dalam Pelaksanaan Pelaksanaan Reparasi Penyelesaian Non Yudisial Pelanggaran Hak Asasi Manusia pada Masa Lalu di Aceh.",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "batang_tubuh",
+      "node_type": "diktum",
+      "label": "KEEMPAT",
+      "content": "Pedoman Pelaksanaan Reparasi sebagaimana dimaksud pada Diktum Kesatu, Diktum Kedua dan Diktum Ketiga tercantum dalam Lampiran yang merupakan bagian tidak terpisahkan dari Keputusan Gubernur ini.",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "batang_tubuh",
+      "node_type": "diktum",
+      "label": "KELIMA",
+      "content": "Keputusan Gubernur ini mulai berlaku pada tanggal ditetapkan.",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "penutup",
+      "node_type": "paragraf_isi",
+      "content": "Ditetapkan di Banda Aceh pada tanggal, 29 September 2025 7 Rabiul Akhir 1447",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "penutup",
+      "node_type": "paragraf_isi",
+      "content": "SALINAN - dari Keputusan ini disampalkan kepada:",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "penutup",
+      "node_type": "paragraf_isi",
+      "content": "1. Sekretaris Daerah Aceh; 2. Inspektur Aceh; 3. Kepala Badan Pengelolaan Keuangan Aceh; 4. Kepala Badan Kesatu Bangsa dan Politik Aceh; 5. Ketua BRA; 6. Kepala Sekretariat BRA; 7. Ketua Satuan Pelaksana BRA Kabupaten/Kota se Aceh; 8. Para Kepala Biro Setda Aceh.",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "lampiran",
+      "node_type": "paragraf_isi",
+      "content": "LAMPIRAN NOMOR 100.3.2/ 1180/2025 TENTANG PENETAPAN PEDOMAN PELAKSANAAN REPARASI PENYELESAIAN NON YUDISIAL PELANGGARAN HAK ASASI MANUSIA PADA MASA LALU DI ACEH-----",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null
+    },
+    {
+      "section": "lampiran",
+      "node_type": "paragraf_isi",
+      "content": "A. KETENTUAN UMUM",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null
+    },
+    {
+      "section": "lampiran",
+      "node_type": "paragraf_isi",
+      "content": "Dalam Peraturan Gubernur ini yang dimaksud dengan:",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null
+    },
+    {
+      "section": "lampiran",
+      "node_type": "paragraf_isi",
+      "content": "1. Reparasi adalah hak korban atas perbaikan atau pemulihan yang wajib diberikan oleh negara kepada korban atau ahli warisnya karena kerugian yang dialaminya, baik berupa asoe batee damee, rehabilitasi, jaminan ketidakberulangan dan hak atas kepuasan;",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null
+    },
+    {
+      "section": "lampiran",
+      "node_type": "paragraf_isi",
+      "content": "2. Reparasi Mendesak adalah reparasi yang perlu dilakukan segera untuk memenuhi kebutuhan korban karena kondisi kesehatan, usia, kemiskinan dan/atau status kependudukan berdasarkan rekomendasi KKR Aceh;",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null
+    },
+    {
+      "section": "lampiran",
+      "node_type": "paragraf_isi",
+      "content": "3. Reparasi Komprehensif adalah reparasi dalam bentuk dukungan jangka panjang dan menyeluruh baik secara individual dan/atau kolektif kepada korban, yang terintegrasi di dalam program Pemerintah Aceh dan Pemerintah Kabupaten/Kota berdasarkan rekomendasi KKR Aceh;",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null
+    },
+    {
+      "section": "lampiran",
+      "node_type": "paragraf_isi",
+      "content": "4. Korban Pelanggaran HAM yang untuk selanjutnya disebut Korban adalah orang perseorangan dan/atau kelompok orang yang mengalami penderitaan baik fisik, mental, maupun emosional, kerugian ekonomi, kerugian sosial, kerugian budaya, atau mengalami pengabaian, pengurangan atau perampasan hak-hak dasarnya, sebagai akibat langsung dari pelanggaran HAM dan pelanggaran HAM yang berat termasuk juga ahli warisnya;",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null
+    },
+    {
+      "section": "lampiran",
+      "node_type": "paragraf_isi",
+      "content": "5. Pelanggaran HAM adalah setiap perbuatan seseorang atau kelompok orang termasuk aparat negara baik disengaja maupun tidak disengaja atau kelalaian yang secara melawan hukum mengurangan, menghalangi, membatasi dan/atau mencabut hak asasi manusia seseorang atau kelompok orang yang dijamin oleh Undang-Undang Nomor 39 Tahun 1999 tentang Hak Asasi Manusia dan tidak mendapatkan atau dikhawatirkan tidak meremoleh penyelesaiian hukum adil dan benar berdasarkan mekanisme hukum yang berlaku;",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null
+    },
+    {
+      "section": "lampiran",
+      "node_type": "paragraf_isi",
+      "content": "6. Hak Asasi Manusia yang selanjutnya disebut HAM adalah seperangkat hak yang melekat pada haikat atan keberadaan manusia sebagai Makkhluk Tuhan Yang Maha Esa dan merupakan anugerah-Nya wajib dihormati, dijunjung tingdian dilindungi oleh negara, hukum, Pemerintah dan setiap orang demi kehormatan serta perlindungan harkat dan martabat manusia;",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null
+    },
+    {
+      "section": "lampiran",
+      "node_type": "paragraf_isi",
+      "content": "7. Pelaku adalah setiap orang perseorangan, kelompok orang, baik sipil, militer, maupun polisi yang bertanggung jawab secara individual maupun institusi atas pelanggaran HAM dan pelanggaran HAM yang berat yang terjadi di Aceh;",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null
+    },
+    {
+      "section": "lampiran",
+      "node_type": "paragraf_isi",
+      "content": "8. Ahli Waris adalah orang yang mempunyai hubungan darah atau hubungan perkawinan dengan korban dan tidak terhalang karena hukum untuk menjadi ahli waris;",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null
+    },
+    {
+      "section": "lampiran",
+      "node_type": "paragraf_isi",
+      "content": "9. Kompensasi untuk selanjutnya disebut Asoe Batee Damee adalah sejemulah harta yang diserahkan kepada korban atau ahli warisnya berdasarkan persetujuan korban atau ahli warisnya, oleh negara sebagai rukun perdamaian terhadap pelanggaran HAM yang dilakukan oleh negara maupun non-negara;",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null
+    },
+    {
+      "section": "lampiran",
+      "node_type": "paragraf_isi",
+      "content": "10. Rehabilitasi adalah pemulihan harkat dan martabat seserang yang menyangkut kehormatan, nama baik, jabatan, termasuk pemulihan kondisi fisik, psikis, maupun status sosial, melalui pemberian layanan medis, psikologis, hukum dan sosial pada korban sesuai kebutuhannya;",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null
+    },
+    {
+      "section": "lampiran",
+      "node_type": "paragraf_isi",
+      "content": "11. Hak Atas Kepuasan adalah untuk memuaskan korban yang termasuk di dalamnya dihentikannya pelanggaran, pengakuan kebenaran, pencarian orang hilang termasuk penggalian kuburan massal, deklarasi resmi atau putusan yudisial yang memulihan martabat korban, permintaan maaf resmi, sanksi terhadap pelaku, penghargaan korban melalui peringat dan monumen, serta dimasukkannya suatu catatan yang akurat mengenai pelanggaran HAM dalam kurikulum dan bahan-bahan pendidikan;",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null
+    },
+    {
+      "section": "lampiran",
+      "node_type": "paragraf_isi",
+      "content": "12. Jaminan .../2",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null
+    },
+    {
+      "section": "lampiran",
+      "node_type": "paragraf_isi",
+      "content": "SUBBAG PALWAHIDI | 2021 | 8MA | KEP GUB",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null
+    },
+    {
+      "section": "lampiran",
+      "node_type": "paragraf_isi",
+      "content": "Dipindai dengan CamScanner 12. Jaminan Ketidakberulangan adalah upaya sistematis untuk memastikan bahwa pelanggaran Hak Asasi Manusia (HAM) berat tidak terjadi kembali di masa depan. Ini mencakup reformasi mendalam terhadap institusi, hukum dan budaya yang memungkinkan terjadinya pengambil di masa lalu; 13. Pengungkapan Kebenaran adalah serangkaian tindakan KKR Aceh untuk mencari dan menemukan peristiwa pelanggaran HAM pada masa masa konfulik di Aceh untuk tujuan rekonsiliasi korban dan pelakau meliputi pengumplak informasi dan dokumen, investigasi, pengambil dan pernyataan dan publikasi; 14. Pengambil Pernyataan adalah proses mendengarkan, mencatat dan mendokumentasikan keterangan pemberi pernyataan tentang pelanggaran HAM masa lalu di Aceh; 15. Aceh adalah Daerah Provinsi yang merupakan kesatuan masyarakat hukum yang bersifat istimewa dan diberi kewenangan khusus untuk mengatur dan mengurus sendiri urusan pemerintahan dan mengenting masyarakat setempat sesuai dengan Peraturan Perundang-undangan dalam sistem dan prinsip Negara Kesatuan Republik Indonesia berdasarkan Undang-Undang Dasar Negara Republik Indonesia Tahun 1945, yang dipimpin oleh seorang Gubernur; 16. Pemerintah Pusat yang selanjutnya disebul Pemerintah adalah Presiden Republik Indonesia yang memegang kekuasaan Negara Kesatuan Republik Indonesia sebagaimana dimaksud dalam Undang-Undang Dasar Negara Kesatuan Republik Indonesia Tahun 1945; 17. Pemerintah Aceh adalah unsur penyelenggara Pemerintah Aceh yang terdiri atas Gubernur dan Perangkat Pemerintah Aceh; 18. Pemerintah Kabupaten/Kota adalah unsur penyelenggara Pemerintahan Kabupaten/Kota yang terdiri atas Bupati/Walikota dan perangkat daerah Kabupaten/Kota; 19. Gubernur adalah Kepala Pemerintah Aceh yang dipilih melauu suatu proses demokratis yang dilakukan berdasarkan asas langsung, umum, bebas, rahasia, jujur dan adil; 20. Satuan Kerja Perangkat Aceh selanjutnya disingkat dengan SKPA adalah perangkat Pemerintah Aceh yang merupakan unsur pembantu Gubernur dalam penyelenggara urusan pemerintahan atau kewenangan Pemerintah Aceh untuk melindungi, melayani, memberdayakan dan menyejahterakan masyarakat; 21. Komisi Kebenaran dan Rekonsiliasi Aceh yang selanjutnya disebul KKR Aceh adalah lembaga independen yang dibentuk untuk mengungkapkan kebenaran, pola dan motif atas pelanggaran HAM dalam konfilik bersenjata di Aceh, merekomendasikan tindak lanjut, merekomendasikan reparasi dan melaksanakan rekonsiliasi; 22. Badan Reintegrasi Aceh yang selanjutnya disingkat BRA adalah Badan yang melaksanakan program dan kegiatan Reintegrasi dan usaha Penguatan Perdamaian Aceh; 23. Konflik adalah konflik bersenjata di Aceh pada masa lalu dari tanggal 4 Desember 1976 sampai dengan 15 Agustus 2006 yang mengakibatkan terjadinya perlanggaran HAM; 24. Mitra adalah orang perorangan/organisasi/lembaga non-pemerintah yang ditunjuk oleh Pemerintah Aceh melalui Keputusan yang memiliki kompetensi dan bersedia melaksanakan reparasi sesuai rekomendasi KKR Aceh; 25. Pendidikan Dayah adalah satuan Pendidikan yang khusus menyelenggarakan Pendidikan Agama Islam yang bersumber dari kitab kuning (kutub al-turats) bertujuan untuk mengembangkan kemampuan, pengetahuan dan keterampilan thalabah untuk menjadi ahli ilmu agama Islam (mutafaggih fiddin) atau menjadi muslim yang memiliki keterampilan dan keahlian untuk membangun kehidupan yang islami dalam masyarakat; 26. Pemulihan dalam Keadaan Semula (restutio in integrum) adalah suatu upaya bahwa korban kejahatan haruslah dikembalikan pada kondisi semula sebelum kejahatan terjadi; 27. Non-diskriminasi adalah ketentuan-ketentuan yang terkait dengan reparasi korban, akan berlakuk bagi semua orang, tanpa perbedaan segala macam jenis, seperti ras, warna kulit, jenis kelamin, umur, bahasa, agama, kekayaan, status kelahiran atau keluarga, asal usul etnis atau sosial dan ketidakmampuan;",
+      "start_page": 3,
+      "end_page": 4,
+      "warnings": null
+    },
+    {
+      "section": "lampiran",
+      "node_type": "paragraf_isi",
+      "content": "28. Tepat .../3 28. Tepat Guna adalah relevan dengan kebutuhan korban yang sesuai konteks local serta efektif dan tidak membebani, mudah diakses dan dijalankan oleh korban maupun pelaksana; 29. Adil adalah suatu keadaan atau sikap yang memperlakukan setiap orang secara layak, setara dan sesuai dengan hak dan kewajiban; 30. Proprorsional adalah suatu keadaan atau cara membagi, memberikan atau memperlakukan sesuatu secara seimbang dan sesuai takaran, ukuran atau perbandingan yang tepat; 31. Pemulihan Berkelanjutan adalah upaya reparasi sebagai wujud tanggung jawab negara dilaksanakan secara tuntas baik dari proses perencanaan, pelaksanaan, hingga pengukuran keberhasilan dan dampak pemulihan. Termasuk di dalamnya mengambil tindakan untuk mengurangi gangguan kepada korban, melindungi kebebasan pribadinya, apabila perlu dan menjamin keselamatannya, maupun keselamat keluarganya dan saksi-saksi yang memberikan kesaksian untuk kepentingannya dari intimidasi dan tindakan balasan; 32. Inklusif adalah upaya reparasi diselenggarakan dengan memperhatikan korban berkebutuhan khusus termasuk tidak meninggalkan Kelompok rentan dan marjinal; 33. Keadilan Gender adalah posisi keberpihakan terkait dengan perempuan yang mengalami peristiwa khusus termasuk kekerasan seksual mendapatkan perhatian yang lebih dibandingkan penyediaan informasi administratif terhadap kasus yang terjadi itu sendiri; 34. Kelompok adalah kelompok korban berdasarkan wilayah tempat tinggal, tempat peristiwa pelanggaran HAM terjadi atau berdasarkan bentuk dan jenis pelanggaran yang dialami; 35. Transparan adalah sikap atau keadaan yang terbuka, jujur dan mudah dipahami oleh semua pihak tanpa ada yang disembunyikan; 36. Akuntabilitas adalah perihal bertanggung jawab keadaan dapat dimintai pertanggungjawaban; 37. Standar Universal adalah ukuran atau prinsip yang bersifat global, diakui dan dianggap sah oleh komunitas global. Dalam konteks HAM tentang martabat, kebebasan dan hak setiap manusia; 38. Materil adalah segala sesuatu yang berbentuk bahan fisik yang digunakan untuk membuat, membangun atau menghasilikan sesuatu; bantuan yang bersifat nyata dan dapat dirasakan secara langsung seperti uang, barang, layanan atau akses terhadap fasilitas; 39. Inmateril adalah pemulihan yang bersifat simbolik, moral, psikologis atau sosial, yang tujuannya adalah mengakui penderitaan korban dan memulihkan harga diri serta posisi mereka dalam masyarakat; 40. Psikososial adalah kondisi atau proses yang menunjukkan bagaimana faktor psikologis dan sosial saling memengaruh satu sama lain dalam kehidupan seseorang; 41. Rekomendasi KKR adalah sejumlah nama, alamat, keterangan korban dan ahli waris serta layanan yang telah analisis dan ditetapkan sebagai penerima rekomendasi reparasi; dan 42. Orang Hilang atau korban penghilangan orang secara paksa adalah orang yang mengalami penangkapan, penahanan, penculikan atau tindakan lain yang merampas kebebasan yang dilakukan oleh aparat negara atau oleh orang-orang maupun Kelompok yang melakukannya dengan mendapat kewenangan, dukungan serta persetujuan dari negara, yang diikuti dengan penyangkalan pengetahuan terhadap adanya tindakan perampas kebebasan atau upaya menyembunyikan nasib serta keberadaan orang yang hilang, sehingga menyebabkan orang-orang hilang tersebut berada di luar perlindungan hukum.",
+      "start_page": 4,
+      "end_page": 5,
+      "warnings": null
+    },
+    {
+      "section": "lampiran",
+      "node_type": "paragraf_isi",
+      "content": "B. ASAS, .../4",
+      "start_page": 5,
+      "end_page": 5,
+      "warnings": null
+    }
+  ]
+}

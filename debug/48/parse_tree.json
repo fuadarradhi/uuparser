@@ -1,0 +1,297 @@
+{
+  "status": "SUCCESS",
+  "nodes": [
+    {
+      "section": "judul",
+      "node_type": "judul",
+      "content": "KEPUTUSAN GUBERNUR ACEH",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "judul",
+      "node_type": "judul",
+      "content": "NOMOR 300.2/1446/2025",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "judul",
+      "node_type": "judul",
+      "content": "TENTANG",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "judul",
+      "node_type": "judul",
+      "content": "PENETAPAN PERPANJANGAN STATUS KEADAAN TANGGAP DARURAT BENCANA HIDROMETEOROLOGI DI ACEH TAHUN 2025",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "judul",
+      "node_type": "judul",
+      "content": "GUBERNUR ACEH,",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "menimbang",
+      "node_type": "item",
+      "content": "bahwa berdasarkan Diktum Kedua Keputusan Gubernur Aceh Nomor 100.3.3.3/1416/2025 tentang Penetapan Status Keadaan Tanggap Darurat Bencana Hidrometeorologi di Aceh Tahun 2025, yang menegaskan Status Tanggap Darurat Bencana Hidrometeorologi di Aceh Tahun 2025 berlaku selama 14 (empat belas) hari sejak tanggal 28 November sampai dengan 11 Desember 2025, dapat diperpanjang sesuai dengan kondisi dan kebutuhan;",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "menimbang",
+      "node_type": "item",
+      "content": "bahwa berdasarkan hasil kajian lapangan dan rapat koordinasi Badan Nasional Penanggulangan Bencana (BNPB) dengan Pos Komando Tanggap Darurat Bencana Hidrometeorologi Aceh, maka tanggap darurat Bencana Hidrometeorologi Aceh masih membutuhkan penangganan secara intensif, terpadu, terintegrasi dan terkoordinasi untuk evakuasi, distribusi logistik, penangganan kerusakan jalan dan jembatan (konektifitas), sarana pelayanan kesehatan, pendidikan, keagamaan dan berbagai fasilitas sosial lainnya akibat bencana hidrometeorologi di Kabupaten Aceh Tamiang, Kota Langsa, Kabupaten Aceh Timur, Kabupaten Aceh Utara, Kota Lhokseumawae, Kabupaten Bireuen, Kabupaten Pidie Jaya, Kabupaten Pidie, Kabupaten Aceh Tenggara, Kabupaten Gayo Lues, Kabupaten Aceh Tengah, Kabupaten Bener Meriah, Kota Subulussalam, Kabupaten Aceh Singki, Kabupaten Aceh Selatan, Kabupaten Nagan Raya, Kabupaten Aceh Barat, Kabupaten Simeulue dan Kabupaten Aceh Besar, sehingga perlu penetapan perpanjangan status tanggap darurat bencana hidrometeorologi di Aceh;",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "menimbang",
+      "node_type": "item",
+      "content": "bahwa sehubungan dengan surat Plt. Kepala Pelaksana Badan Penanggulangan Bencana Aceh Nomor 300.2/1040 tanggal 8 Desember 2025 perihal Penyampaian Laporan Kaji Cepat Tim Reaksi Cepat (TRC) tentang Perpanjangan Darurat Bencana Banjir dan Longsor Aceh Tahun 2025, yang menyatakan perlu perpanjangan Status Keadaan Tanggap Darurat Bencana Hidrometeorologi di Aceh Tahun 2025;",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "menimbang",
+      "node_type": "item",
+      "content": "bahwa berdasarkan pertimbangan sebagaimana dimaksud dalam huruf a, huruf b, dan huruf c, perlu menetapkan Keputusan Gubernur tentang Penetapan Perpanjangan Status Keadaan Tanggap Darurat Bencana Hidrometeorologi di Aceh Tahun 2025;",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 24 Tahun 1956 tentang Pembentukan Daerah Otonom Propinsi Atjeh dan Perubahan Peraturan Pembentukan Propinsi Sumatera Utara;",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 11 Tahun 1999 tentang Penyelenggaraan Negara yang Bersih dan Bebas dari Korupsi, Kolusi dan Nepotisme;",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 11 Tahun 2006 tentang Pemerintahan Aceh;",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 24 Tahun 2007 tentang Penanggulangan Bencana;",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 23 Tahun 2014 tentang Pemerintahan Daerah sebagaimana telah beberapa kali diubah terakhir dengan Undang-Undang Nomor 6 Tahun 2023 tentang Penetapan Peraturan Pemerintah Pengganti Undang-Undang Nomor 2 Tahun 2022 tentang Cipta Kerja Menjadi Undang-Undang;",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan Pemerintah Nomor 21 Tahun 2008 tentang Penyelenggaraan Penanggulangan Bencana;",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan Pemerintah Nomor 22 Tahun 2008 tentang Pendanaan dan Pengelolaan Bantuan Bencana;",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan Pemerintah Nomor 12 Tahun 2019 tentang Pengelolaan Keuangan Daerah;",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan Presiden Nomor 17 Tahun 2018 tentang Penyelenggaraan Penanggulangan Bencana Dalam Keadaan Tertentu;",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan Menteri Dalam Negeri Nomor 77 Tahun 2020 tentang Pedoman Teknis Pengelolaan Keuangan Daerah;",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan Badan Nasional Penanggulangan Bencana Nomor 5 Tahun 2018 tentang Kondisi dan Tata Cara Pelaksanaan Penyelenggaraan Penanggulangan Bencana Dalam Keadaan Tertentu;",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan Kepala Badan Nasional Penanggulangan Bencana Nomor 3 Tahun 2016 tentang Sistem Komando Penangganan Darurat Bencana;",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan Badan Nasional Penanggulangan Bencana Nomor 4 Tahun 2020 tentang Penggunaan Dana Siap Pakai;",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "memperhatikan",
+      "node_type": "item",
+      "content": "Keputusan Gubernur Aceh Nomor 100.3.3.3/1416/2025 tentang Penetapan Status Keadaan Tanggap Darurat Bencana Hidrometeorologi di Aceh Tahun 2025;",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "memperhatikan",
+      "node_type": "item",
+      "content": "Surat Menteri Dalam Negeri Nomor 300.2.8/e.1907/BAK tanggal 9 Desember 2025 perihal Perpanjangan Status Tanggap Darurat Bencana di Sumatera;",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "penetapan",
+      "node_type": "penetapan",
+      "content": "MEMUTUSKAN:",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "penetapan",
+      "node_type": "penetapan",
+      "content": "Menetapkan :",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "batang_tubuh",
+      "node_type": "diktum",
+      "label": "KESATU",
+      "content": "Perpanjangan Status Keadaan Tanggap Darurat Bencana Hidrometeorologi di Aceh Tahun 2025.",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "batang_tubuh",
+      "node_type": "diktum",
+      "label": "KEDUA",
+      "content": "Perpanjangan Status Tanggap Darurat Bencana Hidrometeorologi di Provinsi Aceh Tahun 2025 sebagaimana dimaksud pada Diktum Kesatu selama 14 (empat belas) hari sejak tanggal 12 Desember sampai dengan 25 Desember 2025, dan dapat diperpanjang atau diperpendek sesuai dengan kondisi dan kebutuhan.",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "batang_tubuh",
+      "node_type": "diktum",
+      "label": "KETIGA",
+      "content": "Segala biaya yang timbul akibat dikeluarkan Keputusan Gubernur ini dibebankan pada Anggaran Pendapatan dan Belanja Aceh Tahun Anggaran 2025 dan sumber dana lainnya yang sah serta tidak mengikat sesuai ketentuan peraturan perundang-undangan.",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "batang_tubuh",
+      "node_type": "diktum",
+      "label": "KEEMPAT",
+      "content": "Keputusan Gubernur ini mulai berlaku pada tanggal ditetapkan.",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "penutup",
+      "node_type": "paragraf_isi",
+      "content": "Ditetapkan di Banda Aceh pada tanggal, 10 Desember 2025 19 Jumadil Akhir 1447",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "penutup",
+      "node_type": "paragraf_isi",
+      "content": "GUBERNUR ACEH,",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "penutup",
+      "node_type": "paragraf_isi",
+      "content": "Ttd.",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "penutup",
+      "node_type": "paragraf_isi",
+      "content": "MUZAKIR MANAF",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "penutup",
+      "node_type": "paragraf_isi",
+      "content": "SALINAN – dari Keputusan ini disampaikan kepada:",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "penutup",
+      "node_type": "paragraf_isi",
+      "content": "1. Menteri Dalam Negeri RI; 2. Kepala Badan Nasional Penanggulangan Bencana; 3. Ketua DPR Aceh; 4. Para Bupati/Walikota se-Aceh; 5. Inspektur Aceh; 6. Kepala Bappeda Aceh; 7. Kepala Badan Pengelolaan Keuangan Aceh; 8. Kepala Pelaksana BPBA; 9. Kepala Biro Hukum Setda Aceh.",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    }
+  ]
+}

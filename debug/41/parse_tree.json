@@ -1,0 +1,414 @@
+{
+  "status": "SUCCESS",
+  "nodes": [
+    {
+      "section": "judul",
+      "node_type": "judul",
+      "content": "BUKU I",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "judul",
+      "node_type": "judul",
+      "content": "RENCANA KERJA PEMERINTAH ACEH",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "judul",
+      "node_type": "judul",
+      "content": "RKPA TAHUN 2026",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "judul",
+      "node_type": "judul",
+      "content": "BADAN PERENCANAAN PEMBANGUNAN DAERAH ACEH TAHUN 2025",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "judul",
+      "node_type": "judul",
+      "content": "RENCANA KERJA PEMERINTAH ACEH TAHUN 2026",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "judul",
+      "node_type": "pembukaan",
+      "content": "DENGAN RAHMAT ALLAH YANG MAHA KUASA",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "menimbang",
+      "node_type": "item",
+      "content": "bahwa untuk melaksanakan ketentuan Pasal 104 ayat (1) Peraturan Menteri Dalam Negeri Nomor 86 Tahun 2017 tentang Tata Cara Perencanaan, Pengendalian dan Evaluasi Pembangunan Daerah, Tata Cara Evaluasi Rancangan Peraturan Daerah tentang Rencana Pembangunan Jangka Panjang Daerah dan Rencana Pembangunan Jangka Menengah, serta Tata Cara Perubahan Rencana Pembangunan Jangka Panjang Daerah, Rencana Pembangunan Jangka Menengah Daerah dan Rencana Kerja Pemerintah Daerah, perlu Menetapkan Peraturan Gubernur Aceh tentang Rencana Kerja Pemerintah Aceh Tahun 2026;",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 24 Tahun 1956 tentang Pembentukan Daerah Otonom Propinsi Atjeh dan Perubahan Pembentukan Propinsi Sumatera Utara (Lembaran Negara Republik Indonesia Tahun 1956 Nomor 64, Tambahan Lembaran Negara Republik Indonesia Nomor 1103);",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 17 Tahun 2003 tentang Keuangan Negara (Lembaran Negara Republik Indonesia Tahun 2003 Nomor 47, Tambahan Lembaran Negara Republik Indonesia Nomor 4286);",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan Pemerintah Nomor 13 Tahun 2019 tentang Laporan dan Evaluasi Penyelenggaraan Pemerintah Daerah (Lembaran Negara Republik Indonesia Tahun 2019 Nomor 52, Tambahan Lembaran Negara Republik Indonesia Nomor 6323);",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 25 Tahun 2004 tentang Sistem Perencanaan Pembangunan Nasional (Lembaran Negara Republik Indonesia Tahun 2004 Nomor 104, Tambahan Lembaran Negara Republik Indonesia Nomor 4421);",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 33 Tahun 2004 tentang Perimbangan Keuangan antara Pemerintah Pusat dan Pemerintahan Daerah (Lembaran Negara Republik Indonesia Tahun 2004 Nomor 126, Tambahan Lembaran Negara Republik Indonesia Nomor 4438);",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 11 Tahun 2006 tentang Pemerintahan Aceh (Lembaran Negara Republik Indonesia Tahun 2006 Nomor 62, Tambahan Lembaran Negara Republik Indonesia Nomor 4633);",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 17 Tahun 2007 tentang Rencana Pembangunan Jangka Panjang Nasional Tahun 2005-2025 (Lembaran Negara Republik Indonesia Tahun 2007 Nomor 33, Tambahan Lembaran Negara Republik Indonesia Nomor 4700);",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang- .../2",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 23 Tahun 2014 tentang Pemerintahan Daerah (Lembaran Negara Republik Indonesia Tahun 2014 Nomor 244, Tambahan Lembaran Negara Republik Indonesia Nomor 5587) sebagaimana telah diubah beberapa kali terakhir dengan Peraturan Pemerintah Pengganti Undang-Undang Nomor 2 Tahun 2022 tentang Cipta Kerja Menjadi Undang-Undang (Lembaran Negara Republik Indonesia Tahun 2022 Nomor 238, Tambahan Lembaran Negara Republik Indonesia Nomor 6841);",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan Pemerintah Nomor 72 Tahun 2019 tentang Perubahan Atas Peraturan Pemerintah Nomor 18 Tahun 2016 tentang Perangkat Daerah (Lembaran Negara Republik Indonesia Tahun 2019 Nomor 187, Tambahan Lembaran Negara Republik Indonesia Nomor 6402);",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan Pemerintah Pengganti Undang-Undang Nomor 2 Tahun 2022 tentang Cipta Kerja Menjadi Undang-Undang (Lembaran Negara Republik Indonesia Tahun 2022 Nomor 238, Tambahan Lembaran Negara Republik Indonesia Nomor 6841);",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan Pemerintah Nomor 12 Tahun 2019 tentang Pengelolaan Keuangan Daerah (Lembaran Negara Republik Indonesia Tahun 2019 Nomor 42, Tambahan Lembaran Negara Republik Indonesia Nomor 6322);",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan Presiden Republik Indonesia Nomor 111 Tahun 2022 tentang Pelaksanaan Tujuan Pembangunan Berkelanjutan (Lembaran Negara Republik Indonesia Tahun 2022 Nomor 180);",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan Menteri Dalam Negeri Nomor 86 Tahun 2017 tentang Tata Cara Perencanaan, Pengendalian dan Evaluasi Pembangunan Daerah, Tata Cara Evaluasi Rancangan Peraturan Daerah tentang Rencana Pembangunan Jangka Panjang Daerah dan Rencana Pembangunan Jangka Menengah, serta Tata Cara Perubahan Rencana Pembangunan Jangka Panjang Daerah, Rehcana Pembangunan Jangka Menengah Daerah dan Rencana Kerja Pemerintah Daerah (Berita Negara Republik Indonesia Tahun 2017 Nomor 1312);",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan Menteri Dalam Negeri Nomor 70 Tahun 2019 tentang Sistem Informasi Pemerintahan Daerah (Berita Negara Republik Indonesia Tahun 2019 Nomor 1114);",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan Menteri Dalam Negeri Nomor 90 Tahun 2019 tentang Klasifikasi, Kodefikasi dan Nomenklatur Perencanaan Pembangunan Keuangan Daerah (Berita Negara Republik Indonesia Tahun 2019 Nomor 1447);",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan Menteri Dalam Negeri Nomor 77 Tahun 2020 tentang Pedoman Teknis Pengelolaan Keuangan Daerah (Berita Negara Republik Indonesia Tahun 2020 Nomor 1781);",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Qanun Aceh Nomor 2 Tahun 2008 tentang Tata Cara Pengalokasian Tambahan Dana Bagi Hasil Minyak dan Gas Bumi dan Dana Otonomi Khusus (Lembaran Aceh Tahun 2008 Nomor 12, Tambahan Lembaran Aceh Nomor 12) sebagaimana telah diubah beberapa kali terakhir dengan Qanun Aceh Nomor 6 Tahun 2024 tentang Perubahan Keempat Atas Qanun Aceh Nomor 2 Tahun 2008 tentang Tata Cara Pengalokasian Tambahan Dana Bagi Hasil Minyak dan Gas Bumi dan Dana Otonomi Khusus (Lembaran Aceh Tahun 2024 Nomor 6);",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Qanun Aceh Nomor 19 Tahun 2013 tentang Rencana Tata Ruang Wilayah Aceh Tahun 2013-2033 (Lembaran Aceh Tahun 2014 Nomor 1, Tambahan Lembaran Aceh Nomor 62);",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Qanun Aceh Nomor 3 Tahun 2024 tentang Pengelolaan Keuangan Aceh (Lembaran Aceh Tahun 2024 Nomor 3, Tambahan Lembaran Aceh Nomor 141);",
+      "start_page": 4,
+      "end_page": 4,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Qanun Aceh Nomor 8 Tahun 2025 tentang Rencana Pembangunan Jangka Panjang Aceh 2025-2045 (Lembaran Aceh Tahun 2025 Nomor 8, Tambahan Lembaran Aceh Nomor 151);",
+      "start_page": 4,
+      "end_page": 4,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan Gubernur Aceh Nomor 22 Tahun 2019 tentang Petunjuk Teknis Pengelolaan Tambahan Dana Bagi Hasil Minyak dan Gas Bumi dan Dana Otonomi Khusus (Berita Daerah Aceh Tahun 2019 Nomor 23);",
+      "start_page": 4,
+      "end_page": 4,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan Gubernur Aceh Nomor 06 Tahun 2022 tentang Rencana Pembangunan Aceh Tahun 2023-2026 (Berita Daerah Aceh Tahun 2022 Nomor 6);",
+      "start_page": 4,
+      "end_page": 4,
+      "warnings": null
+    },
+    {
+      "section": "penetapan",
+      "node_type": "penetapan",
+      "content": "MEMUTUSKAN:",
+      "start_page": 4,
+      "end_page": 4,
+      "warnings": null
+    },
+    {
+      "section": "penetapan",
+      "node_type": "penetapan",
+      "content": "Menetapkan : PERATURAN GUBERNUR TENTANG RENCANA KERJA PEMERINTAH ACEH TAHUN 2026.",
+      "start_page": 4,
+      "end_page": 4,
+      "warnings": null
+    },
+    {
+      "section": "batang_tubuh",
+      "node_type": "pasal",
+      "label": "1",
+      "start_page": 4,
+      "end_page": 4,
+      "warnings": null,
+      "children": [
+        {
+          "section": "batang_tubuh",
+          "node_type": "ayat",
+          "label": "1",
+          "content": "Rencana Kerja Pemerintah Aceh Tahun 2026 merupakan Dokumen Perencanaan Pembangunan Aceh untuk periode 1 (satu) tahun dan akan berakhir pada tanggal 31 Desember 2026.",
+          "start_page": 4,
+          "end_page": 4,
+          "warnings": null
+        },
+        {
+          "section": "batang_tubuh",
+          "node_type": "ayat",
+          "label": "2",
+          "content": "Rencana Kerja Pemerintah Aceh Tahun 2026 sebagaimana dimaksud pada ayat (1) tercantum dalam Lampiran yang merupakan bagian tidak terpisahkan dari Peraturan Gubernur ini.",
+          "start_page": 4,
+          "end_page": 4,
+          "warnings": null
+        }
+      ]
+    },
+    {
+      "section": "batang_tubuh",
+      "node_type": "pasal",
+      "label": "2",
+      "start_page": 4,
+      "end_page": 4,
+      "warnings": null,
+      "children": [
+        {
+          "section": "batang_tubuh",
+          "node_type": "ayat",
+          "label": "1",
+          "content": "Rencana Kerja Pemerintah Aceh Tahun 2026 memuat:\na. Rancangan kerangka ekonomi Aceh;\nb. Prioritas program Aceh;\nc. Rencana kerja; dan\nd. Pendanaan dan prakiraan maju termasuk di dalamnya arah kebijakan umum dan program pembangunan Aceh Tahun 2026.",
+          "start_page": 4,
+          "end_page": 4,
+          "warnings": null
+        },
+        {
+          "section": "batang_tubuh",
+          "node_type": "ayat",
+          "label": "2",
+          "content": "Rencana Kerja Pemerintah Aceh Tahun 2026 sebagaimana dimaksud pada ayat (1) menjadi:\na. Pedoman bagi Satuan Kerja Perangkat Aceh (SKPA) dalam menyempurnakan Rencana Kerja Satuan Kerja Perangkat Aceh (Renja SKPA) Tahun 2026;\nb. Pedoman bagi Pemerintah Aceh dalam penyusunan Kebijakan Umum Anggaran Pendapatan dan Belanja Aceh (KUA) dan Prioritas Plafon Anggaran Sementara (PPAS) Tahun 2026;\nc. Pedoman bagi Pemerintah Kabupaten/Kota se-Aceh dalam menyusun Rencana Kerja Pemerintah Kabupaten/Kota Tahun 2026.",
+          "start_page": 4,
+          "end_page": 4,
+          "warnings": null
+        }
+      ]
+    },
+    {
+      "section": "batang_tubuh",
+      "node_type": "pasal",
+      "label": "3",
+      "content": "Peraturan Gubernur ini mulai berlaku pada tanggal diundangkan.",
+      "start_page": 5,
+      "end_page": 5,
+      "warnings": null
+    },
+    {
+      "section": "penutup",
+      "node_type": "paragraf_isi",
+      "content": "Agar setiap orang mengetahuinya, memerintahkan pengundangan Peraturan Gubernur ini dengan penempatannya dalam Berita Daerah Aceh.",
+      "start_page": 5,
+      "end_page": 5,
+      "warnings": null
+    },
+    {
+      "section": "penutup",
+      "node_type": "paragraf_isi",
+      "content": "Ditetapkan di Banda Aceh pada tanggal, 12 November 2025 21 Jumadil Awal 1447",
+      "start_page": 5,
+      "end_page": 5,
+      "warnings": null
+    },
+    {
+      "section": "penutup",
+      "node_type": "paragraf_isi",
+      "content": "Ttd.",
+      "start_page": 5,
+      "end_page": 5,
+      "warnings": null
+    },
+    {
+      "section": "penutup",
+      "node_type": "paragraf_isi",
+      "content": "MUZAKIR MANAF",
+      "start_page": 5,
+      "end_page": 5,
+      "warnings": null
+    },
+    {
+      "section": "penutup",
+      "node_type": "paragraf_isi",
+      "content": "Diundangkan di Banda Aceh pada tanggal, 12 November 2025 21 Jumadil Awal 1447",
+      "start_page": 5,
+      "end_page": 5,
+      "warnings": null
+    },
+    {
+      "section": "penutup",
+      "node_type": "paragraf_isi",
+      "content": "SEKRETARIS DAERAH ACEH,",
+      "start_page": 5,
+      "end_page": 5,
+      "warnings": null
+    },
+    {
+      "section": "penutup",
+      "node_type": "paragraf_isi",
+      "content": "Ttd.",
+      "start_page": 5,
+      "end_page": 5,
+      "warnings": null
+    },
+    {
+      "section": "penutup",
+      "node_type": "paragraf_isi",
+      "content": "M. NASIR",
+      "start_page": 5,
+      "end_page": 5,
+      "warnings": null
+    },
+    {
+      "section": "penutup",
+      "node_type": "paragraf_isi",
+      "content": "BERITA DAERAH ACEH TAHUN 2025 NOMOR 27",
+      "start_page": 5,
+      "end_page": 5,
+      "warnings": null
+    },
+    {
+      "section": "penutup",
+      "node_type": "paragraf_isi",
+      "content": "Salinan sesuai dengan aslinya KEPALA BIRO HUKUM,",
+      "start_page": 5,
+      "end_page": 5,
+      "warnings": null
+    },
+    {
+      "section": "penutup",
+      "node_type": "paragraf_isi",
+      "content": "MUHAMMAD JUNAIDI, SH, MH",
+      "start_page": 5,
+      "end_page": 5,
+      "warnings": null
+    }
+  ]
+}

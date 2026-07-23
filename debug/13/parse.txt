@@ -1,0 +1,150 @@
+=== HASIL PARSE — status=SUCCESS — 37 node ===
+
+[judul/judul]  (hal 1-1)
+  QANUN ACEH
+
+[judul/judul]  (hal 1-1)
+  NOMOR 4 TAHUN 2025
+
+[judul/judul]  (hal 1-1)
+  TENTANG
+
+[judul/judul]  (hal 1-1)
+  PELINDUNGAN HAK PEREMPUAN BISMILLAHIRRAHMANIRRAHIM
+
+[judul/pembukaan]  (hal 1-1)
+  DENGAN NAMA ALLAH YANG MAHA PENGASIH DAN PENYAYANG
+
+[judul/judul]  (hal 1-1)
+  ATAS RAHMAT ALLAH YANG MAHA KUASA GUBERNUR ACEH,
+
+[menimbang/item]  (hal 1-1)
+  bahwa setiap perempuan berhak untuk mendapatkan rasa aman dan pelindungan dari segala bentuk kekerasan, penyiksaan diskriminasi dan perlakukan salah lainnya yang dapat merendahkan derajat manusia dan melanggar hak asasi manusia sehingga dibutuhkan pengaturan terkait pemenuhan, pelindungan, pemajuan, penghormatan dan penegakan hak perempuan yang berkeadilan, persamaan, toleransi, dan keberagaman sesuai dengan nilai-nilai Islam yang rahmatan li al-'alamin;
+
+[menimbang/item]  (hal 1-1)
+  bahwa sejarah dan kebudayaan Aceh telah melahirkan banyak pemimpin dan pejuang perempuan, sehingga pemberdayaan, perlindungan dan pemenuhan hak perempuan secara optimal di Aceh harus terus dilakukan;
+
+[menimbang/item]  (hal 1-1)
+  bahwa ketentuan Pasal 231 Undang-Undang Nomor 11 Tahun 2006 tentang Pemerintahan Aceh, mengamanatkan pelaksanaan kewenangan Pemerintah Aceh dalam kewajiban memajukan dan melindungi hak perempuan serta melakukan upaya pemberdayaan yang bermartabat diatur dengan Qanun Aceh;
+
+[menimbang/item]  (hal 1-1)
+  bahwa berdasarkan pertimbangan sebagaimana dimaksud dalam huruf a, huruf b dan huruf c perlu membentuk Qanun tentang Pelindungan Hak Perempuan;
+
+[mengingat/item]  (hal 1-1)
+  Pasal 18 ayat (6) Undang-Undang Dasar Negara Republik Indonesia Tahun 1945;
+
+[mengingat/item]  (hal 1-1)
+  Undang-Undang Nomor 24 Tahun 1956 tentang Pembentukan Daerah Otonomi Propinsi Atjeh dan Perubahan Peraturan Pembentukan Propinsi Sumatera Utara (Lembaran Negara Republik Indonesia Tahun 1956 Nomor 64, Tambahan Lembaran Negara Republik Indonesia Nomor 1103);
+
+[mengingat/item]  (hal 1-1)
+  Undang-Undang Nomor 39 Tahun 1999 tentang Hak Asasi Manusia (Lembaran Negara Republik Indonesia Tahun 1999 Nomor 165, Tambahan Lembaran Negara Republik Indonesia Nomor 3886);
+
+[mengingat/item]  (hal 1-1)
+  Undang-Undang Nomor 23 Tahun 2004 tentang Penghapusan Kekerasan Dalam Rumah Tangga (Lembaran Negara Republik Indonesia Tahun 2004 Nomor 95, Tambahan Lembaran Negara Republik Indonesia Nomor 4419);
+
+[mengingat/item]  (hal 1-1)
+  Undang-Undang Nomor 11 Tahun 2006 tentang Pemerintahan Aceh (Lembaran Negara Republik Indonesia Tahun 2006 Nomor 62, Tambahan Lembaran Negara Nomor 4633);
+
+[mengingat/item]  (hal 1-1)
+  Undang-Undang...
+
+[mengingat/item]  (hal 2-2)
+  Undang-Undang Nomor 23 Tahun 2014 tentang Pemerintahan Daerah (Lembaran Negara Republik Indonesia Tahun 2014 Nomor 244, Tambahan Lembaran Negara Republik Indonesia Nomor 5587) sebagaimana telah diubah beberapa kali terakhir dengan Undang-Undang Nomor 6 Tahun 2023 tentang Penetapan Peraturan Pemerintah Pengganti Undang-Undang Nomor 2 Tahun 2022 tentang Cipta Kerja menjadi Undang-Undang (Lembaran Negara Republik Indonesia Tahun 2023 Nomor 41, Tambahan Lembaran Negara Republik Indonesia Nomor 6856);
+
+[mengingat/item]  (hal 2-2)
+  Undang-Undang Nomor 12 Tahun 2022 tentang Tindak Pidana Kekerasan Seksual (Lembaran Negara Republik Indonesia Tahun 2022 Nomor 120, Tambahan Lembaran Negara Republik Indonesia Nomor 6792);
+
+[mengingat/item]  (hal 2-2)
+  Peraturan Pemerintah Nomor 61 Tahun 2014 tentang Kesehatan Reproduksi (Lembaran Negara Republik Indonesia Tahun 2014 Nomor 169, Tambahan Lembaran Negara Republik Indonesia Nomor 5559);
+
+[mengingat/item]  (hal 2-2)
+  Peraturan Menteri Pemberdayaan Perempuan Dan Perlindungan Anak Nomor 2 Tahun 2022 tentang Standar Layanan Perlindungan Perempuan Dan Anak (Berita Negara Republik Indonesia Tahun 2022 Nomor 85); Dengan Persetujuan Bersama DEWAN PERWAKILAN RAKYAT ACEH dan GUBERNUR ACEH
+
+[penetapan/penetapan]  (hal 2-2)
+  MEMUTUSKAN:
+
+[penetapan/penetapan]  (hal 2-2)
+  Menetapkan : QANUN TENTANG PELINDUNGAN HAK PEREMPUAN.
+
+[batang_tubuh/bab] BAB I (hal 2-2)
+  KETENTUAN UMUM
+
+    [batang_tubuh/pasal] 1 (hal 2-4)
+      Dalam Qanun Aceh ini yang dimaksud dengan: 1. Pelindungan Hak Perempuan adalah segala upaya terarah, terpadu dan berkelanjutan yang ditujukan untuk pemenuhan, perlindungan, pemajuan, penghormatan dan penegakan hak perempuan secara konsisten dan sistematis untuk mencapai keadilan gender. 2. Aceh adalah daerah provinsi yang merupakan kesatuan masyarakat hukum yang bersifat istimewa dan diberi kewenangan khusus untuk mengatur dan mengurus sendiri urusan pemerintahan dan kepentingan masyarakat setempat sesuai dengan peraturan perundangan dalam sistem dan prinsip Negara Kesatuan Republik Indonesia berdasarkan Undang-Undang Dasar Negara Republik Indonesia Tahun 1945, yang dipimpin oleh seorang gubernur. 3. Kabupaten/Kota adalah bagian dari daerah provinsi sebagai suatu kesatuan masyarakat hukum yang diberi kewenangan khusus untuk mengatur dan mengurus sendiri urusan Pemerintahan dan kepentingan masyarakat setempat sesuai dengan peraturan perundangan dalam sistem dan prinsip Negara Kesatuan Republik Indonesia berdasarkan Undang-Undang Dasar Negara Republik Indonesia tahun 1945, yang dipimpin oleh seorang bupati/walikota. 4. Pemerintah... 4. Pemerintah Aceh adalah pemerintahan daerah provinsi dalam sistem Negara Kesatuan Republik Indonesia berdasarkan Undang-undang Dasar Negara Republik Indonesia tahun 1945 yeng menyelenggarakan urusan pemerintahan yang dilaksanakan oleh Pemerintahan Daerah Aceh dan Dewan Perwakilan Rakyat Aceh sesuai dengan fungsi dan kewenangan masing-masing. 5. Pemerintah Kabupaten/Kota adalah penyelenggaraan urusan pemerintahan yang dilaksanakan oleh pemerintah kabupaten/kota dan Dewan Perwakilan Rakyat Kabupaten/Kota sesuai dengan fungsi dan kewenangan masing-masing. 6. Gubernur adalah Kepala Pemerintah Aceh yang dipilih melalui suatu proses demokratis yang dilakukan berdasarkan asas langsung, umum, bebas, rahasia, jujur, dan adil. 7. Dewan Perwakilan Rakyat Aceh yang selanjutnya disingkat DPRA adalah unsur penyelenggara Pemerintahan Aceh yang anggotanya dipilih melalui pemilihan umum. 8. Bupati/Walikota adalah kepala pemerintah daerah kabupaten/kota. 9. Satuan Kerja Perangkat Aceh yang selanjutnya disingkat SKPA adalah Perangkat Pemerintah Aceh. 10. Dinas adalah adalah SKPA yang menyelenggarakan urusan pemerintahan bidang pemberdayaan perempuan dan perlindungan anak. 11. Hak Perempuan adalah semua hak yang dimiliki oleh setiap perempuan yang merupakan hak asasi manusia. 12. Pemberdayaan Perempuan adalah upaya peningkatan kemampuan perempuan untuk memperoleh akses dan kontrol terhadap semua sumber daya dalam seluruh aspek kehidupan. 13. Perlindungan Perempuan adalah upaya penanganan untuk melindungi dan memenuhi hak perempuan dari segala bentuk tindak kekerasan, diskriminasi dan masalah lainnya. 14. Lembaga Penyedia Layanan Perlindungan Perempuan adalah lembaga berbadan hukum milik pemerintah atau masyarakat yang melakukan upaya perlindungan perempuan dari kekerasan, baik dalam bentuk kegiatan, pelayanan, kebijakan, maupun administrasi. 15. Gender adalah nilai, peran, dan tanggung jawab perempuan dan laki-laki yang dikonstruksikan secara sosial dan budaya masyarakat sesuai dengan prinsip syariat Islam. 16. Keadilan Gender adalah suatu kondisi yang adil dalam hubungan antara perempuan dan laki-laki. 17. Korban adalah perempuan yang mengalami penderitaan fisik, mental, seksual, dan/atau kerugian ekonomi yang diakibatkan oleh kekerasan dan/atau diskriminasi. 18. Kekerasan terhadap perempuan adalah setiap tindakan yang berakibat atau mungkin berakibat kesengsaraan atau penderitaan perempuan secara fisik, psikis, seksual, ekonomi, sosial, termasuk ancaman tindakan tertentu, pemaksaan atau perampasan kemerdekaan secara sewenang-wenang, baik yang terjadi di depan umum dan/atau dalam lingkungan kehidupan pribadi. 19. Diskriminasi... 19. Diskriminasi adalah setiap pembedaan, pengucilan atau pembatasan yang dibuat atas dasar jenis kelamin, yang mempunyai pengaruh atau tujuan untuk mengurangi atau menghapuskan pengakuan, penikmatan atau penggunaan hak-hak azasi manusia dan kebebasan-kebebasan pokok di bidang politik, ekonomi, sosial, budaya, sipil atau bentuk lainnya oleh kaum perempuan, terlepas dari status perkawinan mereka, atas dasar persamaan antara laki-laki dan perempuan. 20. Penyandang Disabilitas adalah setiap orang yang mengalami keterbatasan fisik, intelektual, mental, dan/atau sensorik dalam jangka waktu lama yang dang berinteraksi dengan lingkungan dapat mengalami hambatan dan kesulitan untuk berpartisipasi secara penuh dan efektif dengan warga negara lainnya berdasarkan kesamaan hak. 21. Hak Perempuan adalah semua hak yang dimiliki oleh setiap perempuan yang merupakan hak asasi manusia.
+
+[batang_tubuh/bab] BAB II (hal 4-4)
+  ASAS, MAKSUD DAN TUJUAN SERTA RUANG LINGKUP
+
+    [batang_tubuh/pasal] 2 (hal 4-4)
+      Pelindungan Hak Perempuan berasaskan:
+      a. nilai-nilai syariat Islam;
+      b. kepastian hukum;
+      c. kepentingan umum;
+      d. keadilan gender;
+      e. pemberdayaan;
+      f. penghormatan atas hak asasi manusia;
+      g. keadilan yang inklusif dan kemuliaan perempuan;
+      h. profesionalitas, akuntabilitas dan transparansi;
+      i. non diskriminasi; dan
+      j. pelindungan dan pemenuhan hak korban.
+
+    [batang_tubuh/pasal] 3 (hal 4-4)
+      Qanun ini bermaksud sebagai pedoman bagi Pemerintah Aceh, organisasi, dan masyarakat dalam memperkuat strategi dan dukungan kebijakan serta anggaran dalam rangka optimalisasi penyelenggaraan Pelindungan Hak Perempuan.
+
+    [batang_tubuh/pasal] 4 (hal 4-5)
+      Qanun ini bertujuan:
+      a. meningkatkan partisipasi perempuan dalam proses pembangunan;
+      b. meningkatkan kualitas hidup perempuan agar mampu mengembangkan diri dan berpartisipasi secara optimal sesuai dengan fungsi sosial dalam perkembangan kehidupan masyarakat;
+      c. memberikan jaminan kepada perempuan untuk dapat memenuhi haknya sebagai manusia dalam segala aspek kehidupan;
+      d. memberikan...
+      d. memberikan rasa aman kepada perempuan dalam segala aspek kehidupan; dan
+      e. memperkuat strategi pelaksanaan dalam Pelindungan Hak Perempuan.
+
+    [batang_tubuh/pasal] 5 (hal 5-5)
+      Ruang lingkup pengaturan dalam qanun ini meliputi:
+      a. asas, maksud dan tujuan serta ruang lingkup;
+      b. hak dan kewajiban perempuan;
+      c. kewajiban dan tanggung jawab Pemerintah Aceh;
+      d. strategi pemberdayaan dan pelindungan Perempuan;
+      e. partisipasi masyarakat;
+      f. pengawasan dan evaluasi;
+      g. penghargaan; dan
+      h. pendanaan.
+
+[batang_tubuh/bab] BAB III (hal 5-5)
+  HAK DAN KEWAJIBAN PEREMPUAN
+
+  [batang_tubuh/bagian] Bagian 1 (hal 5-5)
+    Hak Perempuan
+
+    [batang_tubuh/pasal] 6 (hal 5-5)
+      Hak Perempuan meliputi:
+      a. hak bebas dari kekerasan dan tindakan diskriminasi;
+      b. hak keamanan dan perdamaian;
+      c. hak beribadah;
+      d. hak pengakuan dan penghargaan;
+      e. hak pendidikan, teknologi dan pengetahuan;
+      f. hak kesehatan dan kesehatan reproduksi;
+      g. hak sosial dan politik;
+      h. hak berkeluarga dan melanjutkan keturunan;
+      i. hak pekerjaan dan ekonomi;
+      j. hak mengelola lingkungan dan sumber daya alam yang berkelanjutan;
+      k. hak budaya, seni, dan olahraga;
+      l. hak informasi;
+      m. hak berpartisipasi dalam pembangunan; dan
+      n. hak lain sesuai ketentuan peraturan perundang-undangan.
+
+    [batang_tubuh/paragraf] 1 (hal 5-5)
+      Hak Bebas dari Kekerasan dan Tindakan Diskriminasi
+
+    [batang_tubuh/pasal] 7 (hal 5-5)
+
+      [batang_tubuh/ayat] 1 (hal 5-5)
+        Perempuan berhak bebas dari segala bentuk kekerasan dan Diskriminasi baik dalam rumah tangga maupun di ruang publik.
+
+      [batang_tubuh/ayat] 2 (hal 5-5)
+        Perempuan Korban kekerasan berhak atas layanan rehabilitasi medis dan rehabilitasi sosial.
+
+      [batang_tubuh/ayat] 3 (hal 5-5)
+        Perempuan...
+

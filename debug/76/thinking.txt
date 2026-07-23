@@ -1,0 +1,222 @@
+=== PANGGILAN MODEL TEKS (gate.md / identity.md / penetapan.md) ===
+
+=== GERBANG (gate.md) ===
+--- PROMPT ---
+Anda memeriksa satu halaman hasil pemindaian (OCR) dari situs JDIH pemerintah
+Indonesia. Tugas Anda HANYA menjawab satu pertanyaan: apakah halaman ini
+bagian dari PRODUK HUKUM RESMI?
+
+Jawab HANYA dengan satu objek JSON. Tanpa penjelasan, tanpa tanda kutip
+Markdown, tanpa teks lain.
+
+{"produk_hukum": true, "alasan": ""}
+
+Bernilai true bila halaman memuat ciri produk hukum resmi yang ditetapkan
+pejabat berwenang, misalnya:
+- judul berpola "<JENIS> <PEJABAT/DAERAH> NOMOR ... TAHUN ... TENTANG ..."
+- kata MENIMBANG, MENGINGAT, MEMUTUSKAN, MENETAPKAN
+- struktur Pasal/Ayat, atau diktum KESATU/KEDUA/KETIGA
+
+Bernilai false untuk: naskah akademik, rancangan yang belum ditetapkan,
+kajian, laporan, notulen, berita, formulir, brosur, daftar isi, atau halaman
+yang hanya berisi sampul tanpa isi peraturan.
+
+Bila false, isi "alasan" dengan satu kalimat singkat. Bila true, kosongkan.
+
+Contoh jawaban yang benar:
+{"produk_hukum": true, "alasan": ""}
+{"produk_hukum": false, "alasan": "dokumen ini naskah akademik, bukan peraturan yang ditetapkan"}
+
+--- TEKS YANG DIKIRIM ---
+GUBERNUR ACEH
+INSTRUKSI GUBERNUR ACEH
+NOMOR 09 /INSTR/2025
+
+TENTANG
+
+PELAKSANAAN CEK KESEHATAN GRATIS (CKG)
+SEKOLAH/MADRASAH/DAYAH
+
+GUBERNUR ACEH,
+
+Dalam rangka menindaklanjuti Surat Edaran Menteri Dalam Negeri Nomor 400.5.2/290/SJ tanggal 19 Januari 2025 tentang Dukungan Pelaksanaan Pemeriksaan Kesehatan Gratis, Surat Edaran Sekretaris Jenderal Kementerian Agama Nomor 22 Tahun 2025 tanggal 30 Juni 2025 tentang Dukungan Pelaksanaan Pemeriksaan Kesehatan Gratis di Madrasah, Satuan Pendidikan Keagamaan dan Pesantren, Surat Edaran Menteri Kesehatan Nomor HK.02.01/MENKES/731/2025 tanggal 14 Juli 2025 tentang Peningkatan Pelaksanaan Cek Kesehatan Gratis Ulang Tahun dan Pelaksanaan Cek Kesehatan Gratis Sekolah, Surat Edaran Menteri Sosial Nomor 1 Tahun 2025 tanggal 25 Agustus 2025 tentang Dukungan Pelaksanaan Cek Kesehatan Gratis pada Sekolah Rakyat, Surat Edaran Menteri Pendidikan Dasar dan Menengah Nomor 12 Tahun 2025 tanggal 28 Agustus 2025 tentang Dukungan Pelaksanaan Cek Kesehatan Gratis Sekolah dan Surat Keputusan Gubernur Aceh Nomor 440/1593/2022 tentang Pembentukan Tim Pembina Usaha Kesehatan Sekolah/Madrasah/Dayah Provinsi Aceh, maka ditetapkan 8 (delapan) Program Hasil Terbaik Cepat (PHTC) yang salah satunya Pemeriksaan Kesehatan Gratis (PKG) yang selanjutnya disebut Cek Kesehatan Gratis (CKG), dengan ini menginstruksikan:
+
+Kepada : 1. Para Bupati/Walikota se-Aceh;
+2. Kepala Kantor Wilayah Kementerian Agama Provinsi Aceh;
+3. Kepala Dinas Pendidikan Aceh;
+4. Kepala Dinas Pendidikan Dayah Aceh;
+5. Kepala Dinas Kesehatan Aceh;
+6. Kepala Dinas Sosial Aceh.
+
+Untuk :
+
+KESATU : a. Bupati/Walikota se-Aceh mendukung pelaksanaan CKG Sekolah/Madrasah/Dayah/Sederajat pada satuan pendidikan sesuai kewenangan Saudara dan menginstruksikan kepada:
+1. Kepala Dinas Pendidikan Kabupaten/Kota dan Kepala Dinas Pendidikan Dayah Kabupaten/Kota untuk:
+a) menyediakan data satuan pendidikan dan data murid Sekolah Dasar (SD), Sekolah Menengah Pertama (SMP) dan/atau satuan pendidikan lainnya yang sederajat;
+b) menyampaikan petunjuk teknis CKG Sekolah/Madrasah/Dayah/Sederajat kepada satuan pendidikan tingkat SD, SMP dan/atau satuan pendidikan lainnya yang sederajat;
+c) melakukan sosialisasi dan orientasi pelaksanaan CKG Sekolah/Madrasah/Dayah/Sederajat kepada Kepala Sekolah/Madrasah/Dayah/Sederajat dan Guru bersama TP-UKS/Madrasah/Dayah/Sederajat Kabupaten/Kota;
+d) melakukan pendampingan pada saat pelaksanaan CKG Sekolah/Madrasah/Dayah/Sederajat;
+
+e) bersama .../2
+
+--- JAWABAN MENTAH MODEL ---
+{"produk_hukum": true, "alasan": ""}
+
+=== IDENTITAS (identity.md) ===
+--- PROMPT ---
+Anda membaca halaman pertama sebuah produk hukum Indonesia. Salin identitasnya
+APA ADANYA dari teks.
+
+Jawab HANYA dengan satu objek JSON. Tanpa penjelasan, tanpa tanda kutip
+Markdown, tanpa teks lain.
+
+{"jenis": "", "instansi_tertulis": "", "nomor": "", "tahun": "", "tentang": ""}
+
+Keterangan tiap isian:
+
+- "jenis": nama jenis peraturannya saja, TANPA nama daerah atau pejabat.
+  Contoh: "PERATURAN DAERAH", "QANUN", "PERATURAN GUBERNUR",
+  "KEPUTUSAN GUBERNUR", "PERATURAN BUPATI", "KEPUTUSAN BUPATI",
+  "PERATURAN WALI KOTA", "UNDANG-UNDANG", "PERATURAN PEMERINTAH".
+
+- "instansi_tertulis": nama daerah ATAU jabatan PERSIS seperti tertulis di
+  dokumen. Jangan diubah, jangan diterjemahkan, jangan dilengkapi.
+  Contoh yang benar: "ACEH", "GUBERNUR ACEH", "KABUPATEN ACEH BARAT",
+  "BUPATI ACEH BARAT", "KOTA BANDA ACEH", "PROPINSI DAERAH ISTIMEWA ACEH".
+
+- "nomor": nomor peraturan PERSIS seperti tertulis, termasuk garis miring,
+  titik, dan spasi. JANGAN disederhanakan menjadi angka saja.
+  Contoh yang benar: "5", "12A", "300.2/ 69 /2026", "188.44/123/2020".
+
+- "tahun": empat angka saja. Contoh: "2015", "1979".
+
+- "tentang": judul lengkap setelah kata TENTANG, apa adanya.
+
+ATURAN YANG TIDAK BOLEH DILANGGAR:
+
+- Salin apa yang tertulis. Jangan menebak, jangan melengkapi, jangan
+  memperbaiki. Bila suatu bagian tidak terbaca, isi dengan string kosong "".
+- JANGAN menyalin contoh di atas sebagai jawaban.
+- JANGAN menulis tanda titik-titik ("...") di dalam jawaban.
+- Dokumen lama memakai ejaan lama (Propinsi, Atjeh, Dati II, Kotamadya).
+  Pertahankan apa adanya, jangan dimodernkan.
+- Jangan memakai pengetahuan Anda tentang peraturan Indonesia. Laporkan HANYA
+  yang benar-benar tertulis pada teks yang diberikan.
+
+Contoh jawaban yang benar untuk halaman berjudul
+"KEPUTUSAN GUBERNUR ACEH NOMOR 300.2/ 69 /2026 TENTANG PENETAPAN PANITIA":
+
+{"jenis": "KEPUTUSAN GUBERNUR", "instansi_tertulis": "GUBERNUR ACEH", "nomor": "300.2/ 69 /2026", "tahun": "2026", "tentang": "PENETAPAN PANITIA"}
+
+--- TEKS YANG DIKIRIM ---
+GUBERNUR ACEH
+INSTRUKSI GUBERNUR ACEH
+NOMOR 09 /INSTR/2025
+
+TENTANG
+
+PELAKSANAAN CEK KESEHATAN GRATIS (CKG)
+SEKOLAH/MADRASAH/DAYAH
+
+GUBERNUR ACEH,
+
+Dalam rangka menindaklanjuti Surat Edaran Menteri Dalam Negeri Nomor 400.5.2/290/SJ tanggal 19 Januari 2025 tentang Dukungan Pelaksanaan Pemeriksaan Kesehatan Gratis, Surat Edaran Sekretaris Jenderal Kementerian Agama Nomor 22 Tahun 2025 tanggal 30 Juni 2025 tentang Dukungan Pelaksanaan Pemeriksaan Kesehatan Gratis di Madrasah, Satuan Pendidikan Keagamaan dan Pesantren, Surat Edaran Menteri Kesehatan Nomor HK.02.01/MENKES/731/2025 tanggal 14 Juli 2025 tentang Peningkatan Pelaksanaan Cek Kesehatan Gratis Ulang Tahun dan Pelaksanaan Cek Kesehatan Gratis Sekolah, Surat Edaran Menteri Sosial Nomor 1 Tahun 2025 tanggal 25 Agustus 2025 tentang Dukungan Pelaksanaan Cek Kesehatan Gratis pada Sekolah Rakyat, Surat Edaran Menteri Pendidikan Dasar dan Menengah Nomor 12 Tahun 2025 tanggal 28 Agustus 2025 tentang Dukungan Pelaksanaan Cek Kesehatan Gratis Sekolah dan Surat Keputusan Gubernur Aceh Nomor 440/1593/2022 tentang Pembentukan Tim Pembina Usaha Kesehatan Sekolah/Madrasah/Dayah Provinsi Aceh, maka ditetapkan 8 (delapan) Program Hasil Terbaik Cepat (PHTC) yang salah satunya Pemeriksaan Kesehatan Gratis (PKG) yang selanjutnya disebut Cek Kesehatan Gratis (CKG), dengan ini menginstruksikan:
+
+Kepada : 1. Para Bupati/Walikota se-Aceh;
+2. Kepala Kantor Wilayah Kementerian Agama Provinsi Aceh;
+3. Kepala Dinas Pendidikan Aceh;
+4. Kepala Dinas Pendidikan Dayah Aceh;
+5. Kepala Dinas Kesehatan Aceh;
+6. Kepala Dinas Sosial Aceh.
+
+Untuk :
+
+KESATU : a. Bupati/Walikota se-Aceh mendukung pelaksanaan CKG Sekolah/Madrasah/Dayah/Sederajat pada satuan pendidikan sesuai kewenangan Saudara dan menginstruksikan kepada:
+1. Kepala Dinas Pendidikan Kabupaten/Kota dan Kepala Dinas Pendidikan Dayah Kabupaten/Kota untuk:
+a) menyediakan data satuan pendidikan dan data murid Sekolah Dasar (SD), Sekolah Menengah Pertama (SMP) dan/atau satuan pendidikan lainnya yang sederajat;
+b) menyampaikan petunjuk teknis CKG Sekolah/Madrasah/Dayah/Sederajat kepada satuan pendidikan tingkat SD, SMP dan/atau satuan pendidikan lainnya yang sederajat;
+c) melakukan sosialisasi dan orientasi pelaksanaan CKG Sekolah/Madrasah/Dayah/Sederajat kepada Kepala Sekolah/Madrasah/Dayah/Sederajat dan Guru bersama TP-UKS/Madrasah/Dayah/Sederajat Kabupaten/Kota;
+d) melakukan pendampingan pada saat pelaksanaan CKG Sekolah/Madrasah/Dayah/Sederajat;
+
+e) bersama .../2
+
+--- JAWABAN MENTAH MODEL ---
+{"jenis": "INSTRUKSI GUBERNUR", "instansi_tertulis": "GUBERNUR ACEH", "nomor": "09 /INSTR/2025", "tahun": "2025", "tentang": "PELAKSANAAN CEK KESEHATAN GRATIS (CKG) SEKOLAH/MADRASAH/DAYAH"}
+
+=== PENETAPAN (penetapan.md) ===
+--- PROMPT ---
+Anda membaca bagian penutup sebuah produk hukum Indonesia — bagian yang memuat
+tempat dan tanggal penetapan serta pejabat yang menandatangani.
+
+Jawab HANYA dengan satu objek JSON. Tanpa penjelasan, tanpa tanda kutip
+Markdown, tanpa teks lain.
+
+{"ditetapkan_di": "", "ditetapkan_tanggal": "", "ditetapkan_oleh": "", "ditetapkan_oleh_nama": "", "diundangkan_di": "", "diundangkan_tanggal": "", "diundangkan_oleh": "", "diundangkan_oleh_nama": ""}
+
+Keterangan tiap isian:
+
+- "ditetapkan_di": nama kota setelah kata "Ditetapkan di".
+  Contoh: "Banda Aceh", "Meulaboh".
+- "ditetapkan_tanggal": tanggal setelah "pada tanggal", APA ADANYA.
+  Contoh: "1 Januari 2015", "15 Desember 2020".
+- "ditetapkan_oleh": JABATAN penanda tangan penetapan saja, TANPA nama orang.
+  Contoh: "GUBERNUR ACEH", "BUPATI ACEH BARAT".
+- "ditetapkan_oleh_nama": NAMA ORANG penanda tangan penetapan — biasanya
+  tertulis beberapa baris di bawah jabatan, kadang didahului kata "Ttd.".
+  Contoh: "MUZAKIR MANAF", "Drs. H. Ahmad, M.Si.".
+- Empat isian "diundangkan_*" diisi dengan cara yang sama (jabatan dan nama
+  terpisah) untuk bagian "Diundangkan di", bila ada. Bagian ini biasanya
+  ditandatangani Sekretaris Daerah.
+
+ATURAN:
+
+- Salin apa adanya. Jangan mengubah bentuk tanggal, jangan menerjemahkan nama
+  bulan, jangan mengubah huruf besar/kecil, jangan melengkapi yang tidak
+  tertulis.
+- Bagian yang tidak ada di teks diisi string kosong "".
+- "ditetapkan_oleh"/"diundangkan_oleh" HANYA jabatan — jangan sisipkan nama
+  orang di situ. Nama orang HANYA masuk ke "..._oleh_nama".
+- JANGAN menyalin contoh di atas sebagai jawaban.
+
+Contoh jawaban yang benar:
+
+{"ditetapkan_di": "Banda Aceh", "ditetapkan_tanggal": "5 Maret 2026", "ditetapkan_oleh": "GUBERNUR ACEH", "ditetapkan_oleh_nama": "MUZAKIR MANAF", "diundangkan_di": "Banda Aceh", "diundangkan_tanggal": "6 Maret 2026", "diundangkan_oleh": "SEKRETARIS DAERAH ACEH", "diundangkan_oleh_nama": "BUSTAMI HAMZAH"}
+
+--- TEKS YANG DIKIRIM ---
+d. menyediakan ruang Unit Kesehatan Sekolah (UKS)/Madrasah/Dayah, aula dan lapangan untuk pemeriksaan serta peralatan untuk pemeriksaan berupa stopwatch, Snellen chart (lembar pemeriksaan ketajaman penglihatan), timbangan injak digital dan stadio meter (alat ukur tinggi badan); dan
+
+e. menugaskan guru penanggung jawab UKS/Madrasah/Dayah dan guru PJOK untuk melaksanakan CKG Sekolah/Sekolah Rakyat/Dayah.
+
+KEEMPAT : Kepala Dinas Kesehatan Aceh agar:
+a. melakukan koordinasi, orientasi dan sosialisisi kepada Dinas Kesehatan Kabupaten/Kota;
+b. melakukan koordinasi dengan Kantor Wilayah Kementerian Agama Provinsi Aceh, Balai Penjamin Mutu Pendidikan Provinsi Aceh, Dinas Pendidikan, Dinas Pendidikan Dayah, Dinas Sosial dalam persiapan implementasi CKG Sekolah/Madrasah/Pesantren/Sekolah Rakyat/Dayah;
+c. memetakan kesiapan fasilitas pelayanan kesehatan pelaksanaan program CKG Sekolah/Madrasah/Pesantren/Sekolah Rakyat/Dayah;
+d. melakukan pemantauan persiapan CKG Sekolah/Madrasah/Pesantren/Sekolah Rakyat/Dayah di seluruh Kabupaten/Kota;
+e. mengidentifikasi dan pemetaan kapasitas fasilitas untuk CKG Sekolah/Madrasah/Dayah memastikan SDM, alat kesehatan, BMHP tersedia di Fasilitas Kesehatan Tingkat Pertama (FKTP);
+f. melakukan upaya pemenuhan BMHP dari anggaran yang tersedia;
+g. memfasilitasi pelaksanaan CKG Sekolah/Madrasah/Pesantren/Sekolah Rakyat/Dayah di FKTP penyelenggaraan CKG Sekolah/Madrasah/Pesantren/Sekolah Rakyat/Dayah;
+h. melakukan monitoring dan evaluasi pencatatan pelaksanaan CKG Sekolah/Madrasah/Pesantren/Sekolah Rakyat/Dayah; dan
+i. melaporkan hasil pencatatan pelaksanaan CKG kepada Gubernur Aceh melalui Biro Keistimewaan Aceh dan Kesejahteraan Rakyat Sekretariat Daerah Aceh setiap tahun ajaran berjalan.
+
+KELIMA : Melaksanakan instruksi ini dengan penuh tanggung jawab.
+
+Instruksi ini mulai berlaku pada tanggal ditetapkan.
+
+Ditetapkan di Banda Aceh
+pada tanggal, 19 Desember 2025
+28 Jumadil Akhir 1447
+
+GUBERNUR ACEH
+
+MUZAKIR MANAF
+
+SALINAN - dari Instruksi ini disampaikan kepada:
+1. Menteri Dalam Negeri RI;
+2. Menteri Kesehatan RI;
+3. Menteri Pendidikan Dasar dan Menengah RI;
+4. Menteri Agama RI;
+5. Kepala Biro Keistimewaan Aceh dan Kesejahteraan Rakyat Setda Aceh.
+
+--- JAWABAN MENTAH MODEL ---
+{"ditetapkan_di": "Banda Aceh", "ditetapkan_tanggal": "19 Desember 2025", "ditetapkan_oleh": "GUBERNUR ACEH", "ditetapkan_oleh_nama": "MUZAKIR MANAF", "diundangkan_di": "", "diundangkan_tanggal": "", "diundangkan_oleh": "", "diundangkan_oleh_nama": ""}
+

@@ -1,0 +1,404 @@
+{
+  "status": "SUCCESS",
+  "nodes": [
+    {
+      "section": "judul",
+      "node_type": "judul",
+      "content": "GUBERNUR ACEH PERATURAN GUBERNUR ACEH",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "judul",
+      "node_type": "judul",
+      "content": "NOMOR 25 TAHUN 2025",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "judul",
+      "node_type": "judul",
+      "content": "TENTANG",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "judul",
+      "node_type": "pembukaan",
+      "content": "DENGAN RAHMAT ALLAH YANG MAHA KUASA",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "menimbang",
+      "node_type": "item",
+      "content": "bahwa berdasarkan ketentuan Pasal 80 ayat (4) Qanun Aceh Nomor 4 Tahun 2024 tentang Pajak Aceh dan Retribusi Aceh, perlu menetapkan Peraturan Gubernur tentang Pembebasan Pajak Atas Kendaraan Bermotor;",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Pasal 18 ayat (6) Undang-Undang Dasar Negara Republik Indonesia Tahun 1945;",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 24 Tahun 1956 tentang Pembentukan Daerah Otonom Propinsi Atjeh dan Perubahan Peraturan Pembentukan Propinsi Sumatera Utara (Lembaran Negara Republik Indonesia Tahun 1956 Nomor 64, Tambahan Lembaran Negara Republik Indonesia Nomor 1103);",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 11 Tahun 2006 tentang Pemerintahan Aceh (Lembaran Negara Republik Indonesia Tahun 2006 Nomor 62, Tambahan Lembaran Negara Republik Indonesia Nomor 4633);",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 22 Tahun 2009 tentang Lalu Lintas dan Angkutan Jalan (Lembaran Negara Republik Indonesia Tahun 2009 Nomor 96, Tambahan Lembaran Negara Republik Indonesia Nomor 5025) sebagaimana telah beberapa kali diubah terakhir dengan Undang-Undang Nomor 6 Tahun 2023 tentang Penetapan Peraturan Pemerintah Pengganti Undang-Undang Nomor 2 Tahun 2022 tentang Cipta Kerja Menjadi Undang-Undang (Lembaran Negara Republik Indonesia Tahun 2023 Nomor 41, Tambahan Lembaran Negara Republik Indonesia Nomor 6856);",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 23 Tahun 2014 tentang Pemerintahan Daerah (Lembaran Negara Republik Indonesia Tahun 2014 Nomor 244, Tambahan Lembaran Negara Republik Indonesia Nomor 5587) sebagaimana telah beberapa kali diubah terakhir dengan Undang-Undang Nomor 6 Tahun 2023 tentang Penetapan Peraturan Pemerintah Pengganti Undang-Undang Nomor 2 Tahun 2022 tentang Cipta Kerja Menjadi Undang-Undang (Lembaran Negara Republik Indonesia Tahun 2023 Nomor 41, Tambahan Lembaran Negara Republik Indonesia Nomor 6856);",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 1 Tahun 2022 tentang Hubungan Keuangan antara Pemerintah Pusat dan Pemerintahan Daerah (Lembaran Negara Republik Indonesia Tahun 2022 Nomor 4, Tambahan Lembaran Negara Republik Indonesia Nomor 6757);",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan Pemerintah Nomor 35 Tahun 2023 tentang Ketentuan Umum Pajak Daerah dan Retribusi Daerah (Lembaran Negara Republik Indonesia Tahun 2023 Nomor 85, Tambahan Lembaran Negara Republik Indonesia Nomor 6881);",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Qanun Aceh Nomor 4 Tahun 2024 tentang Pajak Aceh dan Retribusi Aceh (Lembaran Aceh Tahun 2024 Nomor 4, Tambahan Lembaran Aceh Nomor 142);",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan.../2",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan Gubernur Aceh Nomor 34 Tahun 2024 tentang Petunjuk Pelaksanaan Qanun Aceh Nomor 4 Tahun 2024 tentang Pajak Aceh dan Retribusi Aceh (Berita Daerah Aceh Tahun 2024 Nomor 34);",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "penetapan",
+      "node_type": "penetapan",
+      "content": "MEMUTUSKAN:",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "penetapan",
+      "node_type": "penetapan",
+      "content": "Menetapkan : PERATURAN GUBERNUR TENTANG PEMBEBASAN PAJAK ATAS KENDARAAN BERMOTOR.",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "batang_tubuh",
+      "node_type": "bab",
+      "label": "BAB I",
+      "content": "KETENTUAN UMUM",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null,
+      "children": [
+        {
+          "section": "batang_tubuh",
+          "node_type": "pasal",
+          "label": "1",
+          "content": "Dalam Peraturan Gubernur ini yang dimaksud dengan: 1. Pajak Aceh yang selanjutnya disebut Pajak adalah kontribusi wajib kepada Aceh yang terutang oleh orang pribadi atau badan yang bersifat memaksa berdasarkan Undang-Undang dengan tidak mendapatkan imbalan secara langsung dan digunakan untuk keperluan Aceh bagi sebesar-besarnya kemakmuran rakyat. 2. Kendaraan Bermotor adalah semua kendaraan beroda beserta gandengannya yang digunakan di semua jenis jalan darat atau kendaraan yang dioperasikan di air yang digerakkan oleh peralatan teknis berupa motor atau peralatan lainnya yang berfungsi untuk mengubah suatu sumber daya energi tertentu menjadi tenaga gerak kendaraan bermotor yang bersangkutan. 3. Pajak Kendaraan Bermotor yang selanjutnya disingkat PKB adalah pajak atas kepemilikan dan/atau penguasaan kendaraan bermotor. 4. Aceh adalah daerah provinsi yang merupakan kesatuan masyarakat hukum yang bersifat istimewa dan diberi kewenangan khusus untuk mengatur dan mengurus sendiri urusan pemerintahan dan kepentingan masyarakat setempat dengan peraturan perundang-undang dalam sistem dan prinsip Negara Kesatuan Republik Indonesia berdasarkan Undang-Undang Dasar Negara Republik Indonesia Tahun 1945, yang dipimpin oleh seorang Gubernur. 5. Pemerintah Aceh adalah unsur penyelenggara Pemerintahan Aceh yang terdiri atas Gubernur dan Perangkat Aceh. 6. Gubernur adalah Kepala Pemerintahan Aceh.",
+          "start_page": 2,
+          "end_page": 2,
+          "warnings": null
+        }
+      ]
+    },
+    {
+      "section": "batang_tubuh",
+      "node_type": "bab",
+      "label": "BAB II",
+      "content": "MAKSUD DAN TUJUAN",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null,
+      "children": [
+        {
+          "section": "batang_tubuh",
+          "node_type": "pasal",
+          "label": "2",
+          "content": "Peraturan Gubernur ini dimaksudkan sebagai pedoman untuk pembebasan Pajak Atas Kendaraan Bermotor.",
+          "start_page": 2,
+          "end_page": 2,
+          "warnings": null
+        },
+        {
+          "section": "batang_tubuh",
+          "node_type": "pasal",
+          "label": "3",
+          "content": "Peraturan Gubernur ini bertujuan untuk:\na. mengurangi dampak resesi ekonomi masyarakat, penurunan daya beli masyarakat Aceh dan inflasi akibat kenaikan harga bahan bakar minyak di Aceh; dan\nb. menindaklanjuti ketentuan terkait penghapusan basis data kendaraan bermotor yang tidak melakukan pendaftaran ulang sekurang-kurangnya 2 (dua) tahun setelah habis masa berlaku Surat Tanda Nomor Kendaraan Bermotor.",
+          "start_page": 2,
+          "end_page": 2,
+          "warnings": null
+        }
+      ]
+    },
+    {
+      "section": "batang_tubuh",
+      "node_type": "bab",
+      "label": "BAB III",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null,
+      "children": [
+        {
+          "section": "batang_tubuh",
+          "node_type": "pasal",
+          "label": "4",
+          "start_page": 2,
+          "end_page": 2,
+          "warnings": null,
+          "children": [
+            {
+              "section": "batang_tubuh",
+              "node_type": "ayat",
+              "label": "1",
+              "content": "Pembebasan tunggakan pokok PKB sebesar 100% (seratus persen), kecuali masa pajak tahun berjalan.",
+              "start_page": 2,
+              "end_page": 2,
+              "warnings": null
+            },
+            {
+              "section": "batang_tubuh",
+              "node_type": "ayat",
+              "label": "2",
+              "content": "Pembebasan .../3",
+              "start_page": 2,
+              "end_page": 2,
+              "warnings": null
+            },
+            {
+              "section": "batang_tubuh",
+              "node_type": "ayat",
+              "label": "2",
+              "content": "Pembebasan tunggakan pokok PKB sebagaimana dimaksud pada ayat (1) tidak termasuk atas keterlambatan membayar PKB atas penyerahan Kendaraan Bermotor pertama dan mutasi keluar, luar Aceh.",
+              "start_page": 3,
+              "end_page": 3,
+              "warnings": null
+            },
+            {
+              "section": "batang_tubuh",
+              "node_type": "ayat",
+              "label": "3",
+              "content": "Pembebasan sanksi administratif atas keterlambatan membayar PKB diberikan pembebasan sebesar 100% (seratus persen).",
+              "start_page": 3,
+              "end_page": 3,
+              "warnings": null
+            },
+            {
+              "section": "batang_tubuh",
+              "node_type": "ayat",
+              "label": "4",
+              "content": "Pembebasan sanksi administratif atas keterlambatan membayar BBNKB diberikan pembebasan sebesar 100% (seratus persen).",
+              "start_page": 3,
+              "end_page": 3,
+              "warnings": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "section": "batang_tubuh",
+      "node_type": "bab",
+      "label": "BAB IV",
+      "content": "MASA BERLAKU",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null,
+      "children": [
+        {
+          "section": "batang_tubuh",
+          "node_type": "pasal",
+          "label": "5",
+          "content": "Pembebasan Pajak atas Kendaraan Bermotor berdasarkan Peraturan Gubernur ini berlaku sampai dengan 30 April 2026.",
+          "start_page": 3,
+          "end_page": 3,
+          "warnings": null
+        }
+      ]
+    },
+    {
+      "section": "batang_tubuh",
+      "node_type": "bab",
+      "label": "BAB V",
+      "content": "KETENTUAN PENUTUP",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null,
+      "children": [
+        {
+          "section": "batang_tubuh",
+          "node_type": "pasal",
+          "label": "6",
+          "start_page": 3,
+          "end_page": 3,
+          "warnings": null,
+          "children": [
+            {
+              "section": "batang_tubuh",
+              "node_type": "ayat",
+              "label": "1",
+              "content": "Petunjuk pelaksanaan pembebasan Pajak atas Kendaraan Bermotor ditetapkan oleh Kepala Satuan Kerja Perangkat Aceh yang menyelenggarakan urusan penunjang bidang keuangan.",
+              "start_page": 3,
+              "end_page": 3,
+              "warnings": null
+            },
+            {
+              "section": "batang_tubuh",
+              "node_type": "ayat",
+              "label": "2",
+              "content": "Satuan Kerja Perangkat Aceh yang menyelenggarakan urusan pemerintahan bidang pendapatan, wajib melakukan sosialisasi Peraturan Gubernur ini.",
+              "start_page": 3,
+              "end_page": 3,
+              "warnings": null
+            },
+            {
+              "section": "batang_tubuh",
+              "node_type": "ayat",
+              "label": "3",
+              "content": "Satuan Kerja Perangkat Aceh yang menyelenggarakan urusan pemerintahan bidang pendapatan, wajib melakukan penyesuaian sistem informasi paling lama 5 (lima) hari kerja terhitung sejak Peraturan Gubernur ini diundangkan.",
+              "start_page": 3,
+              "end_page": 3,
+              "warnings": null
+            }
+          ]
+        },
+        {
+          "section": "batang_tubuh",
+          "node_type": "pasal",
+          "label": "7",
+          "content": "Peraturan Gubernur ini mulai berlaku pada tanggal diundangkan.",
+          "start_page": 3,
+          "end_page": 3,
+          "warnings": null
+        }
+      ]
+    },
+    {
+      "section": "penutup",
+      "node_type": "paragraf_isi",
+      "content": "Agar setiap orang mengetahuinya, memerintahkan pengundangan Peraturan Gubernur ini dengan penempatannya dalam Berita Daerah Aceh.",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null
+    },
+    {
+      "section": "penutup",
+      "node_type": "paragraf_isi",
+      "content": "Ditetapkan di Banda Aceh pada tanggal, 12 November 2025 21 Jumadil Awal 1447",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null
+    },
+    {
+      "section": "penutup",
+      "node_type": "paragraf_isi",
+      "content": "Ttd.",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null
+    },
+    {
+      "section": "penutup",
+      "node_type": "paragraf_isi",
+      "content": "MUZAKIR MANAF",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null
+    },
+    {
+      "section": "penutup",
+      "node_type": "paragraf_isi",
+      "content": "Diundangkan di Banda Aceh pada tanggal, 12 November 2025 21 Jumadil Awal 1447",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null
+    },
+    {
+      "section": "penutup",
+      "node_type": "paragraf_isi",
+      "content": "Salinan sesuai dengan aslinya BERALA BIRO HUKUM,",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null
+    },
+    {
+      "section": "penutup",
+      "node_type": "paragraf_isi",
+      "content": "Ttd. MUHAMMAD JUNAIDI, SH, MH",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null
+    },
+    {
+      "section": "penutup",
+      "node_type": "paragraf_isi",
+      "content": "M. NASIR",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null
+    },
+    {
+      "section": "penutup",
+      "node_type": "paragraf_isi",
+      "content": "BERITA DAERAH ACEH TAHUN 2025 NOMOR 26",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null
+    }
+  ]
+}

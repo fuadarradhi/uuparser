@@ -1,0 +1,113 @@
+=== HASIL OCR — 3 halaman ===
+
+--- IDENTITAS DOKUMEN (hasil classify) ---
+Diputuskan oleh  : regex (deterministik, tanpa model)
+Jenis            : PERATURAN GUBERNUR
+Wilayah          : PEMERINTAH ACEH
+Instansi tertulis: ACEH
+Nomor            : 20
+Tahun            : 2025
+Tentang          : PERUBAHAN RENCANA KERJA PEMERINTAH ACEH TAHUN 2025
+
+(lihat thinking.txt bila kolom KEPUTUSAN di atas = model teks — berisi PERSIS apa yang ditanyakan & dijawab)
+
+--- Halaman 1 — DPI 100 (blur_score probe: 854970260) ---
+GUBERNUR ACEH
+
+PERATURAN GUBERNUR ACEH
+NOMOR 20 TAHUN 2025
+
+TENTANG
+
+PERUBAHAN RENCANA KERJA PEMERINTAH ACEH TAHUN 2025
+
+DENGAN RAHMAT ALLAH YANG MAHA KUASA
+
+GUBERNUR ACEH,
+
+Menimbang : bahwa untuk melaksanakan ketentuan Pasal 355 ayat (1) Peraturan Menteri Dalam Negeri Nomor 86 Tahun 2017 tentang Tata Cara Perencanaan, Pengendalian dan Evaluasi Pembangunan Daerah, Tata Cara Evaluasi Rancangan Peraturan Daerah tentang Rencana Pembangunan Jangka Panjang Daerah dan Rencana Pembangunan Jangka Menengah Daerah dan Rencana Kerja Pemerintah Daerah, perlu menetapkan Peraturan Gubernur tentang Perubahan Rencana Kerja Pemerintah Aceh Tahun 2025;
+
+Mengingat : 1. Pasal 18 ayat (6) Undang-Undang Dasar Negara Republik Indonesia Tahun 1945;
+
+2. Undang-Undang Nomor 24 Tahun 1956 tentang Pembentukan Daerah Otonom Propinsi Atjeh dan Perubahan Peraturan Pembentukan Propinsi Sumatera Utara (Lembaran Negara Republik Indonesia Tahun 1956 Nomor 64, Tambahan Lembaran Negara Republik Indonesia Nomor 1103);
+
+3. Undang-Undang Nomor 44 Tahun 1999 tentang Penyelenggaraan Keistimewaan Propinsi Daerah Istimewa Aceh (Lembaran Negara Republik Indonesia Tahun 1999 Nomor 172, Tambahan Lembaran Negara Republik Indonesia Nomor 3893);
+
+4. Undang-Undang Nomor 17 Tahun 2003 tentang Keuangan Negara (Lembaran Negara Republik Indonesia Tahun 2003 Nomor 47, Tambahan Lembaran Negara Republik Indonesia Nomor 4286);
+
+5. Undang-Undang Nomor 25 Tahun 2004 tentang Sistem Perencanaan Pembangunan Nasional (Lembaran Negara Republik Indonesia Tahun 2004 Nomor 104, Tambahan Lembaran Negara Republik Indonesia Nomor 4421);
+
+6. Undang-Undang Nomor 11 Tahun 2006 tentang Pemerintahan Aceh (Lembaran Negara Republik Indonesia Tahun 2006 Nomor 62, Tambahan Lembaran Negara Republik Indonesia Nomor 4633);
+
+7. Undang-Undang Nomor 17 Tahun 2007 tentang Rencana Pembangunan Jangka Panjang Nasional Tahun 2005-2025 (Lembaran Negara Republik Indonesia Tahun 2007 Nomor 33, Tambahan Lembaran Negara Republik Indonesia Nomor 4700);
+
+8. Undang-.../2
+
+--- Halaman 2 — DPI 100 (DPI mengikuti halaman 1) ---
+8. Undang-Undang Nomor 23 Tahun 2014 tentang Pemerintahan Daerah (Lembaran Negara Republik Indonesia Tahun 2014 Nomor 244, Tambahan Lembaran Negara Republik Indonesia Nomor 5587) sebagaimana telah beberapa kali diubah terakhir dengan Undang-Undang Nomor 6 Tahun 2023 tentang Penetapan Peraturan Pemerintah Pengganti Undang-Undang Nomor 2 Tahun 2022 tentang Cipta Kerja Menjadi Undang-Undang (Lembaran Negara Republik Indonesia Tahun 2023 Nomor 41, Tambahan Lembaran Negara Republik Indonesia Nomor 6841);
+
+9. Undang-Undang Nomor 1 Tahun 2022 tentang Hubungan Keuangan antara Pemerintah Pusat dan Pemerintahan Daerah (Lembaran Negara Republik Indonesia Tahun 2022 Nomor 4, Tambahan Lembaran Negara Republik Indonesia Nomor 6757);
+
+10. Peraturan Pemerintah Nomor 12 Tahun 2019 tentang Pengelolaan Keuangan Daerah (Lembaran Negara Republik Indonesia Tahun 2019 Nomor 42, Tambahan Lembaran Negara Republik Indonesia Nomor 6322);
+
+11. Peraturan Presiden Nomor 18 Tahun 2020 tentang Rencana Pembungunan Jangka Menengah Nasional Tahun 2020-2024 (Lembaran Negara Republik Indonesia Tahun 2020 Nomor 10);
+
+12. Peraturan Menteri Dalam Negeri Nomor 95 Tahun 2016 tentang Perangkat Daerah Aceh (Berita Negara Republik Indonesia Tahun 2016 Nomor 1774);
+
+13. Peraturan Menteri Dalam Negeri Nomor 86 Tahun 2017 tentang Tata Cara Perencanaan, Pengendalian dan Evaluasi Pembangunan Daerah, Tata Cara Evaluasi Rancangan Peraturan Daerah tentang Rencana Pembangunan Jangka Panjang Daerah dan Rencana Pembangunan Jangka Menengah, serta Tata Cara Perubahan Rencana Pembangunan Jangka Panjang Daerah, Rencana Pembangunan Jangka Menengah Daerah dan Rencana Kerja Pemerintah Daerah (Berita Daerah Republik Indonesia Tahun 2017 Nomor 1312);
+
+14. Peraturan Menteri Dalam Negeri Nomor 70 Tahun 2019 tentang Sistem Informasi Pemerintahan Daerah (Berita Daerah Republik Indonesia Tahun 2019 Nomor 1114);
+
+15. Peraturan Menteri Dalam Negeri Nomor 90 Tahun 2019 tentang Klasifikasi, Kodefikasi dan Nomenklatur Perencanaan Pembangunan Keuangan Daerah (Berita Daerah Republik Indonesia Tahun 2019 Nomor 1447);
+
+16. Qanun Aceh Nomor 2 Tahun 2008 tentang Tata Cara Pengalokasian Tambahan Dana Bagi Hasil Minyak dan Gas Bumi dan Dana Otonomi Khusus (Lembaran Aceh Tahun 2008 Nomor 12, Tambahan Lembaran Aceh Nomor 12) sebagaimana telah beberapa kali diubah terakhir dengan Qanun Aceh Nomor 6 Tahun 2024 tentang Perubahan Keempat Atas Qanun Aceh Nomor 2 Tahun 2008 tentang Tata Cara Pengalokasian Tambahan Dana Bagi Hasil Minyak dan Gas Bumi dan Dana Otonomi Khusus (Lembaran Aceh Tahun 2024 Nomor 6);
+
+17. Qanun Aceh Nomor 19 Tahun 2013 tentang Rencana Tata Ruang Wilayah Aceh Tahun 2013-2032 (Lembaran Aceh Tahun 2013 Nomor 1, Tambahan Lembaran Aceh Nomor 6);
+
+18. Qanun Aceh Nomor 3 Tahun 2024 tentang Pengelolaan Keuangan Aceh (Lembaran Daerah Provinsi Nanggroe Aceh Darussalam Tahun 2024 Nomor 3, Tambahan Lembaran Daerah Provinsi Nanggroe Aceh Darussalam Nomor 141);
+
+--- Halaman 3 — DPI 100 (DPI mengikuti halaman 1) ---
+19. Qanun Aceh Nomor 8 Tahun 2025 tentang Rencana Pembangunan Jangka Panjang Aceh (RPJPA) Tahun 2025-2045 (Lembaran Aceh Tahun 2025 Nomor 8, Tambahan Lembaran Daerah Aceh Tahun 2025 Nomor 151);
+
+20. Peraturan Gubernur Aceh Nomor 22 Tahun 2019 tentang Petunjuk Teknis Pengelolaan Tambahan Dana Bagi Hasil Minyak dan Gas Bumi dan Dana Otonomi Khusus (Berita Daerah Aceh Tahun 2019 Nomor 23);
+
+21. Peraturan Gubernur Aceh Nomor 20 Tahun 2024 tentang Rencana Kerja Pemerintah Aceh Tahun 2025 (Berita Daerah Aceh Tahun 2024 Nomor 20);
+
+MEMUTUSKAN:
+
+Menetapkan : PERATURAN GUBERNUR TENTANG PERUBAHAN RENCANA KERJA PEMERINTAH ACEH TAHUN 2025.
+
+Pasal 1
+
+Lampiran Peraturan Gubernur Aceh Nomor 20 Tahun 2024 tentang Rencana Kerja Pemerintah Aceh Tahun 2025 (Berita Daerah Aceh Tahun 2024 Nomor 20) diubah sehingga berbunyi sebagaimana tercantum dalam Lampiran yang merupakan bagian tidak terpisahkan dari Peraturan Gubernur ini.
+
+Pasal 2
+
+Peraturan Gubernur ini mulai berlaku pada tanggal diundangkan.
+
+Agar setiap orang mengetahuinya, memerintahkan pengundangan Peraturan ini dengan penempatannya dalam Berita Daerah Aceh.
+
+Ditetapkan di Banda Aceh
+pada tanggal, 22 September 2025
+29 Rabiul Awal 1447
+
+GUBERNUR ACEH,
+
+Ttd.
+
+MUZAKIR MANAF
+
+Diundangkan di Banda Aceh
+pada tanggal, 22 September 2025
+29 Rabiul Awal 1447
+
+SEKRETARIS DAERAH ACEH,
+
+Ttd.
+
+M. NASIR
+
+MUHAMMAD JUNAIDI, SH, MH
+
+BERITA DAERAH ACEH TAHUN 2025 NOMOR 21
+

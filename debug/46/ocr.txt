@@ -1,0 +1,117 @@
+=== HASIL OCR — 3 halaman ===
+
+--- IDENTITAS DOKUMEN (hasil classify) ---
+Diputuskan oleh  : regex (deterministik, tanpa model)
+Jenis            : KEPUTUSAN GUBERNUR
+Wilayah          : PEMERINTAH ACEH
+Instansi tertulis: ACEH
+Nomor            : 100.3.3.3 /1416/ 2025
+Tahun            : 2025
+Tentang          : PENETAPAN STATUS KEADAAN TANGGAP DARURAT BENCANA HIDROMETEOROLOGI DI ACEH TAHUN 2025
+
+(lihat thinking.txt bila kolom KEPUTUSAN di atas = model teks — berisi PERSIS apa yang ditanyakan & dijawab)
+
+--- Halaman 1 — DPI 100 (blur_score probe: 1808714145) ---
+GUBERNUR ACEH
+
+KEPUTUSAN GUBERNUR ACEH
+NOMOR 100.3.3.3 /1416/ 2025
+
+TENTANG
+
+PENETAPAN STATUS KEADAAN TANGGAP DARURAT
+BENCANA HIDROMETEOROLOGI DI ACEH
+TAHUN 2025
+
+GUBERNUR ACEH,
+
+Menimbang
+
+a. bahwa sehubungan dengan Keputusan Walikota Lhokseumawae Nomor 100.3.3.3.526 Tahun 2025 tentang Penetapan Status Darurat Bencana Banjir, Tanah Longsor dan Angin Kencang di Wilayah Kota Lhokseumawae, Keputusan Bupati Aceh Tamiang Nomor 100.3.3.2/1021/2025 tentang Penetapan Status Keadaan Darurat Bencana Alam Hidrometeorologi (Banjir, Pohon Tumbang dan Tanah Longsor) di Kabupaten Aceh Tamiang, Keputusan Bupati Aceh Utara Nomor 360/845/2025 tentang Penetapan Status Siaga Darurat Penanganan Bencana Alam Banjir Kabupaten Aceh Utara Tahun 2025, Keputusan Bupati Aceh Singkil Nomor 300.2.3/298/2025 tentang Penetapan Status Siaga Bencana Hidrometeorologi di Kabupaten Aceh Singkil, Keputusan Bupati Aceh Selatan Nomor 728 Tahun 2025 tentang Penetapan Status Siaga Darurat Bencana Banjir, Tanah Longsor dan Angin Kencang di Kabupaten Aceh Selatan, Keputusan Bupati Aceh Jaya Nomor 300.2/250/2025 tentang Penetapan Status Tanggap Darurat Bencana Banjir dalam Kabupaten Aceh Jaya Tahun 2025, Keputusan Bupati Aceh Barat Daya Nomor 615 Tahun 2025 tentang Penetapan Status Tanggap Darurat Bencana di Kabupaten Aceh Barat Daya, Keputusan Bupati Aceh Besar Nomor 1106 Tahun 2025 tentang Penetapan Status Siaga Darurat Bencana Hidrometeorologi di Kabupaten Aceh Besar Tahun 2025 dan Keputusan Walikota Subulussalam Nomor 100.3.3.3/217/2025 tentang Penetapan Status Tanggap Darurat Bencana Alam Banjir dan Tanah Longsor di Kota Subulussalam;
+
+b. bahwa adanya surat Pernyataan dari Walikota Lhokseumawae, Walikota Subulussalam, Bupati Aceh Tengah, Bupati Aceh Barat, Bupati Aceh Tenggara dan Bupati Aceh Singkil, berkenaan dengan ketidakmampuan untuk menyelenggarakan penanganan darurat bencana yang terjadi di wilayahnya sehingga perlu meningkatkan status keadaan darurat menjadi status keadaan darurat bencana Aceh;
+
+c. bahwa sehubungan dengan surat Kepala Badan Meteorologi, Klimatologi dan Geofisika Stasiun Meteorologi Kelas I Sultan Iskandar Muda Banda Aceh Nomor ME.02.4/KBTJ/2025 perihal Rekomendasi Siaga Darurat Bencana Hidrometeorologi Provinsi Aceh;
+
+d. bahwa sehubungan dengan surat Plt. Kepala Pelaksana Badan Penanggulangan Bencana Aceh Nomor 300.2/1020 tanggal 27 November 2025 hal Penyampaian Laporan Kaji Cepat Tim Reaksi Cepat (TRC) tentang Darurat Bencana Banjir dan Longsor Aceh Tahun 2025;
+
+e. bahwa .../2
+
+--- Halaman 2 — DPI 100 (DPI mengikuti halaman 1) ---
+e. bahwa dalam rangka menindaklanjuti rapat koordinasi Badan Penanggulangan Bencana Aceh (BPBA) dengan Satuan Kerja Perangkat Aceh (SKPA) dan Unit Kerja terkait dan rapat koordinasi dengan Forum Komunikasi Pimpinan Daerah (Forkopimda) Aceh serta penetapan dan pernyataan sebagaimana dimaksud dalam huruf a, huruf b, huruf c dan huruf d, perlu ditetapkan Status Keadaan Tanggap Darurat Bencana Hidrometeorologi di Aceh Tahun 2025;
+
+f. bahwa berdasarkan pertimbangan sebagaimana dimaksud dalam huruf a, huruf b, huruf c, huruf d dan huruf e, perlu menetapkan Keputusan Gubernur tentang Penetapan Status Keadaan Tanggap Darurat Bencana Hidrometeorologi di Aceh Tahun 2025;
+
+Mengingat
+
+1. Undang-Undang Nomor 24 Tahun 1956 tentang Pembentukan Daerah Otonom Propinsi Atjeh dan Perubahan Peraturan Pembentukan Propinsi Sumatera Utara;
+
+2. Undang-Undang Nomor 11 Tahun 1999 tentang Penyelenggaraan Negara yang Bersih dan Bebas dari Korupsi, Kolusi dan Nepotisme;
+
+3. Undang-Undang Nomor 11 Tahun 2006 tentang Pemerintahan Aceh;
+
+4. Undang-Undang Nomor 24 Tahun 2007 tentang Penanggulangan Bencana;
+
+5. Undang-Undang Nomor 23 Tahun 2014 tentang Pemerintahan Daerah sebagaimana telah beberapa kali diubah terakhir dengan Undang-Undang Nomor 6 Tahun 2023 tentang Penetapan Peraturan Pemerintah Pengganti Undang-Undang Nomor 2 Tahun 2022 tentang Cipta Kerja Menjadi Undang-Undang;
+
+6. Peraturan Pemerintah Nomor 21 Tahun 2008 tentang Penyelenggaraan Penanggulangan Bencana;
+
+7. Peraturan Pemerintah Nomor 22 Tahun 2008 tentang Pendanaan dan Pengelolaan Bantuan Bencana;
+
+8. Peraturan Pemerintah Nomor 12 Tahun 2019 tentang Pengelolaan Keuangan Daerah;
+
+9. Peraturan Presiden Nomor 17 Tahun 2018 tentang Penyelenggaraan Penanggulangan Bencana Dalam Keadaan Tertentu;
+
+10. Peraturan Menteri Dalam Negeri Nomor 77 Tahun 2020 tentang Pedoman Teknis Pengelolaan Keuangan Daerah;
+
+11. Peraturan Badan Nasional Penanggulangan Bencana Nomor 5 Tahun 2018 tentang Kondisi dan Tata Cara Pelaksana Penyelenggaraan Penanggulangan Bencana dalam Keadaan Tertentu;
+
+12. Peraturan Kepala Badan Nasional Penanggulangan Bencana Nomor 3 Tahun 2016 tentang Sistem Komando Penanganan Darurat Bencana;
+
+13. Peraturan Badan Nasional Penanggulangan Bencana Nomor 4 Tahun 2020 tentang Penggunaan Dana Siap Pakai;
+
+14. Peraturan Gubernur Aceh Nomor 1 Tahun 2024 tentang Kedudukan, Susunan Organisasi, Tugas, Fungsi dan Tata Kerja Satuan Kerja Perangkat Aceh, Cabang Dinas dan Unit Kerja Pelaksana Teknis Daerah;
+
+MEMUTUSKAN : .../3
+
+--- Halaman 3 — DPI 100 (DPI mengikuti halaman 1) ---
+MEMUTUSKAN :
+
+Menetapkan :
+KESATU : Menetapkan Status Keadaan Tanggap Darurat Bencana Hidrometeorologi di Aceh Tahun 2025.
+
+KEDUA : Status Tanggap Darurat Bencana Hidrometeorologi di Aceh Tahun 2025 sebagaimana dimaksud pada Diktum Kesatu selama 14 (empat belas) hari sejak tanggal 28 November sampai dengan 11 Desember 2025, dan dapat diperpanjang atau diperpendek sesuai dengan kondisi dan kebutuhan.
+
+KETIGA : Segala biaya yang timbul akibat dikeluarkan Keputusan Gubernur ini dibebankan pada Anggaran Pendapatan dan Belanja Aceh Tahun Anggaran 2025 dan sumber dana lainnya yang sah serta tidak mengikat sesuai ketentuan peraturan perundang-undangan.
+
+KEEMPAT : Keputusan Gubernur ini mulai berlaku pada tanggal ditetapkan.
+
+Ditetapkan di Banda Aceh
+pada tanggal, 27 November 2025
+6 Jumadil Akhir 1447
+
+GUBERNUR ACEH,
+
+Ttd.
+
+MUZAKIR MANAF
+
+SALINAN - dari Keputusan ini disampaikan kepada:
+
+1. Menteri Dalam Negeri RI;
+2. Kepala Badan Nasional Penanggulangan Bencana;
+3. Ketua DPR Aceh;
+4. Para Bupati/Walikota se-Aceh;
+5. Inspektur Aceh;
+6. Kepala Bapped Aceh;
+7. Kepala Badan Pengelolaan Keuangan Aceh;
+8. Kepala Pelaksana BPBA;
+9. Kepala Satpol PP dan Wilayatul Hisbah Aceh;
+10. Kepala Biro Hukum Setda Aceh.
+11. Yang Bersangkutan.
+
+Seliman Sesuai Dengan Aslinya
+KEPALA BIRO HUKUM,
+
+MUHAMMAD JUNAIDI, S.H., M.H
+

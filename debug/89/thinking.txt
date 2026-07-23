@@ -1,0 +1,75 @@
+=== PANGGILAN MODEL TEKS (gate.md / identity.md / penetapan.md) ===
+
+=== PENETAPAN (penetapan.md) ===
+--- PROMPT ---
+Anda membaca bagian penutup sebuah produk hukum Indonesia — bagian yang memuat
+tempat dan tanggal penetapan serta pejabat yang menandatangani.
+
+Jawab HANYA dengan satu objek JSON. Tanpa penjelasan, tanpa tanda kutip
+Markdown, tanpa teks lain.
+
+{"ditetapkan_di": "", "ditetapkan_tanggal": "", "ditetapkan_oleh": "", "ditetapkan_oleh_nama": "", "diundangkan_di": "", "diundangkan_tanggal": "", "diundangkan_oleh": "", "diundangkan_oleh_nama": ""}
+
+Keterangan tiap isian:
+
+- "ditetapkan_di": nama kota setelah kata "Ditetapkan di".
+  Contoh: "Banda Aceh", "Meulaboh".
+- "ditetapkan_tanggal": tanggal setelah "pada tanggal", APA ADANYA.
+  Contoh: "1 Januari 2015", "15 Desember 2020".
+- "ditetapkan_oleh": JABATAN penanda tangan penetapan saja, TANPA nama orang.
+  Contoh: "GUBERNUR ACEH", "BUPATI ACEH BARAT".
+- "ditetapkan_oleh_nama": NAMA ORANG penanda tangan penetapan — biasanya
+  tertulis beberapa baris di bawah jabatan, kadang didahului kata "Ttd.".
+  Contoh: "MUZAKIR MANAF", "Drs. H. Ahmad, M.Si.".
+- Empat isian "diundangkan_*" diisi dengan cara yang sama (jabatan dan nama
+  terpisah) untuk bagian "Diundangkan di", bila ada. Bagian ini biasanya
+  ditandatangani Sekretaris Daerah.
+
+ATURAN:
+
+- Salin apa adanya. Jangan mengubah bentuk tanggal, jangan menerjemahkan nama
+  bulan, jangan mengubah huruf besar/kecil, jangan melengkapi yang tidak
+  tertulis.
+- Bagian yang tidak ada di teks diisi string kosong "".
+- "ditetapkan_oleh"/"diundangkan_oleh" HANYA jabatan — jangan sisipkan nama
+  orang di situ. Nama orang HANYA masuk ke "..._oleh_nama".
+- JANGAN menyalin contoh di atas sebagai jawaban.
+
+Contoh jawaban yang benar:
+
+{"ditetapkan_di": "Banda Aceh", "ditetapkan_tanggal": "5 Maret 2026", "ditetapkan_oleh": "GUBERNUR ACEH", "ditetapkan_oleh_nama": "MUZAKIR MANAF", "diundangkan_di": "Banda Aceh", "diundangkan_tanggal": "6 Maret 2026", "diundangkan_oleh": "SEKRETARIS DAERAH ACEH", "diundangkan_oleh_nama": "BUSTAMI HAMZAH"}
+
+--- TEKS YANG DIKIRIM ---
+- 2 -
+
+Memperhatikan : Surat Edaran Direktur Jenderal Sumber Daya Air Nomor 04/SE/D/2012 tentang Petunjuk Teknis Penyusunan Neraca Air dan Penyelenggaraan Alokasi Air;
+
+MEMUTUSKAN;
+
+Menetapkan :
+KESATU : Menetapkan Rencana Alokasi Air Tahunan Wilayah Sungai Teunom-Lambesoi Tahun 2025/2026 sebagaimana tercantum dalam Lampiran yang merupakan bagian tidak terpisahkan dari Keputusan Gubernur ini.
+
+KEDUA : Rencana Alokasi Air Tahunan Wilayah Sungai Teunom-Lambesoi Tahun 2025/2026 sebagaimana dimaksud pada Diktum Kesatu memuat:
+a. tujuan untuk memberi gambaran secara komprehensif mengenai status dan kendala yang dijumpai;
+b. langkah-langkah identifikasi peningkatan kinerja pengelolaan alokasi air secara adil dan berwawasan lingkungan; dan
+c. tata cara pengaturan air untuk berbagai keperluan air dari waktu ke waktu dengan memperhatikan jumlah dan mutu air.
+
+KETIGA : Keputusan Gubernur ini mulai berlaku pada tanggal ditetapkan.
+
+Ditetapkan di Banda Aceh
+pada tanggal, 30 Oktober 2025
+B Jumadil Awal 1447
+GUBERNUR ACEH
+MUZAKIR MANAF
+
+SALINAN - dari Keputusan ini disampaikan kepada:
+1. Kepala Bapped Aceh;
+2. Kepala Dinas Pengairan Aceh;
+3. Kepala Biro Hukum Setda Aceh;
+4. Kepala Dinas PUPR Kabupaten Aceh Besar;
+5. Kepala Dinas PUPR Kabupaten Pidie;
+6. Kepala Dinas PUPR Kabupaten Aceh Jaya....
+
+--- JAWABAN MENTAH MODEL ---
+{"ditetapkan_di": "Banda Aceh", "ditetapkan_tanggal": "30 Oktober 2025", "ditetapkan_oleh": "GUBERNUR ACEH", "ditetapkan_oleh_nama": "MUZAKIR MANAF", "diundangkan_di": "", "diundangkan_tanggal": "", "diundangkan_oleh": "", "diundangkan_oleh_nama": ""}
+

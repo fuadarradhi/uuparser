@@ -1,0 +1,95 @@
+=== PANGGILAN MODEL TEKS (gate.md / identity.md / penetapan.md) ===
+
+=== PENETAPAN (penetapan.md) ===
+--- PROMPT ---
+Anda membaca bagian penutup sebuah produk hukum Indonesia — bagian yang memuat
+tempat dan tanggal penetapan serta pejabat yang menandatangani.
+
+Jawab HANYA dengan satu objek JSON. Tanpa penjelasan, tanpa tanda kutip
+Markdown, tanpa teks lain.
+
+{"ditetapkan_di": "", "ditetapkan_tanggal": "", "ditetapkan_oleh": "", "ditetapkan_oleh_nama": "", "diundangkan_di": "", "diundangkan_tanggal": "", "diundangkan_oleh": "", "diundangkan_oleh_nama": ""}
+
+Keterangan tiap isian:
+
+- "ditetapkan_di": nama kota setelah kata "Ditetapkan di".
+  Contoh: "Banda Aceh", "Meulaboh".
+- "ditetapkan_tanggal": tanggal setelah "pada tanggal", APA ADANYA.
+  Contoh: "1 Januari 2015", "15 Desember 2020".
+- "ditetapkan_oleh": JABATAN penanda tangan penetapan saja, TANPA nama orang.
+  Contoh: "GUBERNUR ACEH", "BUPATI ACEH BARAT".
+- "ditetapkan_oleh_nama": NAMA ORANG penanda tangan penetapan — biasanya
+  tertulis beberapa baris di bawah jabatan, kadang didahului kata "Ttd.".
+  Contoh: "MUZAKIR MANAF", "Drs. H. Ahmad, M.Si.".
+- Empat isian "diundangkan_*" diisi dengan cara yang sama (jabatan dan nama
+  terpisah) untuk bagian "Diundangkan di", bila ada. Bagian ini biasanya
+  ditandatangani Sekretaris Daerah.
+
+ATURAN:
+
+- Salin apa adanya. Jangan mengubah bentuk tanggal, jangan menerjemahkan nama
+  bulan, jangan mengubah huruf besar/kecil, jangan melengkapi yang tidak
+  tertulis.
+- Bagian yang tidak ada di teks diisi string kosong "".
+- "ditetapkan_oleh"/"diundangkan_oleh" HANYA jabatan — jangan sisipkan nama
+  orang di situ. Nama orang HANYA masuk ke "..._oleh_nama".
+- JANGAN menyalin contoh di atas sebagai jawaban.
+
+Contoh jawaban yang benar:
+
+{"ditetapkan_di": "Banda Aceh", "ditetapkan_tanggal": "5 Maret 2026", "ditetapkan_oleh": "GUBERNUR ACEH", "ditetapkan_oleh_nama": "MUZAKIR MANAF", "diundangkan_di": "Banda Aceh", "diundangkan_tanggal": "6 Maret 2026", "diundangkan_oleh": "SEKRETARIS DAERAH ACEH", "diundangkan_oleh_nama": "BUSTAMI HAMZAH"}
+
+--- TEKS YANG DIKIRIM ---
+11. Peraturan Menteri Dalam Negeri Nomor 80 Tahun 2015 tentang Pembentukan Produk Hukum Daerah sebagaimana telah diubah dengan Peraturan Menteri Dalam Negeri Nomor 120 Tahun 2018 tentang Perubahan Atas Peraturan Menteri Dalam Negeri Nomor 80 Tahun 2015 tentang Pembentukan Produk Hukum Daerah;
+
+12. Qanun Aceh Nomor 17 Tahun 2013 tentang Komisi Kebenaran dan Rekomsiliasi Aceh;
+
+13. Qanun Aceh Nomor 6 Tahun 2015 tentang Badan Reintegrasi Aceh;
+
+14. Qanun Aceh Nomor 13 Tahun 2016 tentang Pembentukan dan Susunan Perangkat Aceh sebagaimana telah diubah dengan Qanun Aceh Nomor 13 Tahun 2019 tentang Perubahan Atas Qanun Aceh Nomor 13 Tahun 2016 tentang Pembentukan dan Susunan Perangkat Aceh;
+
+15. Qanun Aceh Nomor 3 Tahun 2024 tentang Pengelolaan Keuangan Aceh;
+
+MEMUTUSKAN:
+
+Menetapkan :
+KESATU : Menetapkan Pedoman Pelaksanaan Reparasi Penyelesaian Non Yudisial Pelanggaran Hak Asasi Manusia pada Masa Lalu di Aceh.
+
+KEDUA : Pedoman Pelaksanaan Reparasi sebagaimana dimaksud pada Diktum Kesatu meliputi:
+Bab I : Ketentuan Umum
+Bab II : Asas, Maksud, Tujuan dan Ruang Lingkup
+Bab III : Pelaksanaan Reparasi
+Bab IV : Kewajiban Pemerintah Aceh
+Bab V : Data dan Informasi
+Bab VI : Mekanisme Koordinasi
+Bab VII : Partisipasi Masyarakat dan Kemitraan
+Bab VIII : Pelaporan dan Pengawasan
+Bab IX : Monitoring dan Evaluasi
+Bab X : Pembiayaan
+Bab XI : Ketentuan Lain-lain
+Bab XII : Ketentuan Penutup
+
+KETIGA : Pedoman Pelaksanaan Reparasi sebagaimana dimaksud pada Diktum Kedua menjadi pedoman bagi Satuan Kerja Perangkat Aceh dan/atau Lembaga Non Pemerintah yang ditunjuk oleh Pemerintah Aceh dalam Pelaksanaan Pelaksanaan Reparasi Penyelesaian Non Yudisial Pelanggaran Hak Asasi Manusia pada Masa Lalu di Aceh.
+
+KEEMPAT : Pedoman Pelaksanaan Reparasi sebagaimana dimaksud pada Diktum Kesatu, Diktum Kedua dan Diktum Ketiga tercantum dalam Lampiran yang merupakan bagian tidak terpisahkan dari Keputusan Gubernur ini.
+
+KELIMA : Keputusan Gubernur ini mulai berlaku pada tanggal ditetapkan.
+
+Ditetapkan di Banda Aceh
+pada tanggal, 29 September 2025
+7 Rabiul Akhir 1447
+
+SALINAN - dari Keputusan ini disampalkan kepada:
+
+1. Sekretaris Daerah Aceh;
+2. Inspektur Aceh;
+3. Kepala Badan Pengelolaan Keuangan Aceh;
+4. Kepala Badan Kesatu Bangsa dan Politik Aceh;
+5. Ketua BRA;
+6. Kepala Sekretariat BRA;
+7. Ketua Satuan Pelaksana BRA Kabupaten/Kota se Aceh;
+8. Para Kepala Biro Setda Aceh.
+
+--- JAWABAN MENTAH MODEL ---
+{"ditetapkan_di": "Banda Aceh", "ditetapkan_tanggal": "29 September 2025", "ditetapkan_oleh": "GUBERNUR ACEH", "ditetapkan_oleh_nama": "", "diundangkan_di": "", "diundangkan_tanggal": "", "diundangkan_oleh": "", "diundangkan_oleh_nama": ""}
+

@@ -1,0 +1,92 @@
+=== HASIL PARSE — status=SUCCESS — 30 node ===
+
+[judul/judul]  (hal 1-1)
+  NOMOR 11/DPRA/2025
+
+[judul/judul]  (hal 1-1)
+  TENTANG
+
+[judul/judul]  (hal 1-1)
+  PERUBAHAN ATAS KEPUTUSAN DEWAN PERWAKILAN RAKYAT ACEH
+
+[judul/judul]  (hal 1-1)
+  NOMOR 6/DPRA/2025 TENTANG PENETAPAN PROGRAM LEGISLASI ACEH
+
+[judul/judul]  (hal 1-1)
+  PRIORITAS TAHUN 2025
+
+[judul/judul]  (hal 1-1)
+  BISMILLAHIRRAHMANIRRAHIM
+
+[judul/pembukaan]  (hal 1-1)
+  DENGAN RAHMAT ALLAH YANG MAHA KUASA
+
+[judul/judul]  (hal 1-1)
+  DEWAN PERWAKILAN RAKYAT ACEH,
+
+[menimbang/item]  (hal 1-1)
+  bahwa berhubung Keputusan Dewan Perwakilan Rakyat Aceh Nomor 6/DPRA/2025 tentang Penetapan Program Legislasi Aceh Prioritas Tahun 2025 terdapat kekeliruan pegusulan rancangan qanun dalam lampiran keputusan tersebut, maka Keputusan Dewan Perwakilan Rakyat Aceh Nomor 6/DPRA/2025 tentang Penetapan Program Legislasi Aceh Prioritas Tahun 2025 perlu diperbaiki;
+
+[menimbang/item]  (hal 1-1)
+  bahwa berdasarkan surat Badan Legislasi DPR Aceh Nomor 31/BANLEG/DPRA/VII/2025 tanggal 23 Juli 2025, Perihal Penyampaian Penyesuaian Judul Rancangan Qanun Prolega Prioritas Tahun 2025, serta Berita Acara Kesepakatan Bersama Badan Legislasi DPR Aceh dengan Pemerintah Aceh terhadap Penyesuaian Judul Rancangan Qanun Prolega Prioritas Tahun 2025, yang telah menyetujui 12 (dua belas) Rancangan Qanun Program Legislasi Aceh Prioritas Tahun 2025 yang sebelumnya merupakan Usul Inisiatif DPR Aceh menjadi Usul Prakarsa Pemerintah Aceh;
+
+[menimbang/item]  (hal 1-1)
+  bahwa berdasarkan pertimbangan sebagaimana dimaksud dalam huruf a, dan huruf b, perlu menetapkan Keputusan Dewan Perwakilan Rakyat Aceh tentang Perubahan Atas Keputusan Dewan Perwakilan Rakyat Aceh Nomor 6/DPRA/2025 tentang Penetapan Program Legislasi Aceh Prioritas Tahun 2025.
+
+[mengingat/item]  (hal 1-1)
+  Undang-Undang Nomor 24 Tahun 1956 tentang Pembentukan Daerah Otonom Propinsi Atjeh dan Perubahan Peraturan Pembentukan Propinsi Sumatera Utara;
+
+[mengingat/item]  (hal 1-1)
+  Undang-Undang Nomor 44 Tahun 1999 tentang Penyelenggaraan Keistimewaan Propinsi Daerah Istimewa Aceh;
+
+[mengingat/item]  (hal 1-1)
+  Undang-Undang Nomor 11 Tahun 2006 tentang Pemerintahan Aceh;
+
+[mengingat/item]  (hal 1-1)
+  Undang-Undang Nomor 23 Tahun 2014 tentang Pemerintahan Daerah sebagaimana telah beberapa kali diubah terakhir dengan Undang-Undang Nomor 6 Tahun 2023 tentang Penetapan Peraturan Pemerintah Pengganti Undang-Undang Nomor 2 Tahun 2022 tentang Cipta Kerja menjadi Undang-Undang;
+
+[mengingat/item]  (hal 1-1)
+  Peraturan Pemerintah Nomor 12 Tahun 2018 tentang Pedoman Penyusunan Tata Tertib Dewan Perwakilan Rakyat Daerah Provinsi, Kabupaten dan Kota;
+
+[mengingat/item]  (hal 1-1)
+  Peraturan Menteri...../-2-
+
+[mengingat/item]  (hal 2-2)
+  Peraturan Menteri Dalam Negeri Nomor 80 Tahun 2015 tentang Pembentukan Produk Hukum Daerah sebagaimana telah diubah dengan Peraturan Menteri Dalam Negeri Nomor 120 Tahun 2018 tentang Perubahan atas Peraturan Menteri Dalam Negeri Nomor 80 Tahun 2015 tentang Pembentukan Produk Hukum Daerah;
+
+[mengingat/item]  (hal 2-2)
+  Qanun Aceh Nomor 5 Tahun 2011 tentang Tata Cara Pembentukan Qanun;
+
+[mengingat/item]  (hal 2-2)
+  Qanun Aceh Nomor 13 Tahun 2016 tentang Pembentukan dan Susunan Perangkat Aceh sebagaimana telah diubah dengan Qanun Aceh Nomor 13 Tahun 2019 tentang Perubahan Atas Qanun Aceh Nomor 13 Tahun 2016 tentang Pembentukan dan Susunan Perangkat Aceh;
+
+[mengingat/item]  (hal 2-2)
+  Qanun Aceh Nomor 1 Tahun 2025 tentang Anggaran Pendapatan dan Belanja Aceh Tahun Anggaran 2025.
+
+[penetapan/penetapan]  (hal 2-2)
+  MEMUTUSKAN:
+
+[penetapan/penetapan]  (hal 2-2)
+  Menetapkan :
+
+[batang_tubuh/diktum] KESATU (hal 2-2)
+  Lampiran Keputusan Dewan Perwakilan Rakyat Aceh Nomor 6/DPRA/2025 tentang Penetapan Program Legislasi Aceh Prioritas Tahun 2025 diubah sebagaimana tercantum dalam lampiran yang merupakan bagian tidak terpisahkan dari keputusan ini.
+
+[batang_tubuh/diktum] KEDUA (hal 2-2)
+  Keputusan ini mulai berlaku sejak tanggal ditetapkan dengan ketentuan bahwa apabila dikemudian hari ternyata terdapat kekeliruan dalam penetapan ini, akan diperbaiki kembali sebagaimana mestinya.
+
+[penutup/paragraf_isi]  (hal 2-2)
+  Ditetapkan di Banda Aceh pada tanggal 31 Juli 2025 M 6 Safar 1447 H
+
+[penutup/paragraf_isi]  (hal 2-2)
+  Salinan Keputusan ini disampaikan kepada : 1. Menteri Dalam Negeri R.I.; 2. Gubernur Aceh; 3. Pimpinan DPR Aceh; 4. Para Ketua Fraksi DPR Aceh; 5. Para Ketua Komisi DPR Aceh; 6. Ketua Badan Kehormatan DPR Aceh; 7. Ketua Badan Legislasi DPR Aceh; 8. Kepala Biro Hukum Setda Aceh.
+
+[lampiran/paragraf_isi]  (hal 3-3)
+  LAMPIRAN NOMOR : 11/DPRA/2025 TENTANG PENETAPAN PROGRAM LEGISLASI ACEH PRIORITAS TAHUN 2025----------------------------------------------------
+
+[lampiran/paragraf_isi]  (hal 3-3)
+  DAFTAR RANCANGAN QANUN PROGRAM LEGISLASI ACEH PRIORITAS TAHUN 2025
+
+[lampiran/paragraf_isi]  (hal 3-3)
+  NO. RANCANGAN QANUN PENGUSUL 1 Rancangan Qanun Aceh tentang Tata Ruang Wilayah Aceh Tahun 2025-2045 Pemerintah Aceh 2 Rancangan Qanun Aceh tentang Rencana Pembangunan Jangka Menegah Aceh Tahun 2025-2029 Pemerintah Aceh 3 Rancangan Qanun Aceh tentang Perubahan Kedua Atas Qanun Aceh Nomor 13 Tahun 2016 tentang Pembentukan dan Susunan Perangkat Aceh Pemerintah Aceh 4 Rancangan Qanun Aceh tentang Perubahan Kedua Atas Qanun Aceh Nomor 10 Tahun 2018 tentang Baitul Mal Pemerintah Aceh 5 Rancangan Qanun Aceh tentang Keolahragaan Pemerintah Aceh 6 Rancangan Qanun Aceh tentang Perubahan Atas Qanun Aceh Nomor 14 Tahun 2017 tentang Pengelolaan Barang Milik Aceh Pemerintah Aceh 7 Rancangan Qanun Aceh tentang Ketransmigrasian Pemerintah Aceh 8 Rancangan Qanun Aceh tentang Penyelenggaraan Ketertiban Umum, Ketentraman Masyarakat dan Perlindungan Masyarakat Pemerintah Aceh 9 Rancangan Qanun Aceh tentang Pembentukan Perseroaan Terbatas Jaminan Pembiayaan Syariah Aceh Pemerintah Aceh 10 Rancangan Qanun Aceh tentang Perubahan Atas Qanun Aceh Nomor 7 Tahun 2010 tentang Perikanan Pemerintah Aceh 11 Rancangan Qanun Aceh tentang Perubahan Atas Qanun Aceh Nomor 2 Tahun 2023 tentang Wali Nanggroe Pemerintah Aceh 12 Rancangan Qanun Aceh tentang Pertambangan Minyak dan Gas Bumi di Aceh Pemerintah Aceh
+

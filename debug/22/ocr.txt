@@ -1,0 +1,144 @@
+=== HASIL OCR — 5 halaman ===
+
+--- IDENTITAS DOKUMEN (hasil classify) ---
+Diputuskan oleh  : regex (deterministik, tanpa model)
+Jenis            : QANUN
+Wilayah          : PEMERINTAH ACEH
+Instansi tertulis: ACEH
+Nomor            : 5
+Tahun            : 2025
+Tentang          : PEMAJUAN KEBUDAYAAN ACEH BISMILLAHIRRAHMANIRRAHIM DENGAN NAMA ALLAH YANG MAHA PENGASIH LAGI MAHA PENYAYANG ATAS RAHMAT ALLAH YANG MAHA KUASA GUBERNUR ACEH,
+
+(lihat thinking.txt bila kolom KEPUTUSAN di atas = model teks — berisi PERSIS apa yang ditanyakan & dijawab)
+
+--- Halaman 1 — DPI 100 (blur_score probe: 886964112) ---
+QANUN ACEH
+NOMOR 5 TAHUN 2025
+TENTANG
+PEMAJUAN KEBUDAYAAN ACEH
+BISMILLAHIRRAHMANIRRAHIM
+DENGAN NAMA ALLAH YANG MAHA PENGASIH LAGI MAHA PENYAYANG
+ATAS RAHMAT ALLAH YANG MAHA KUASA
+GUBERNUR ACEH,
+
+Menimbang : a. bahwa kebudayaan Aceh merupakan bagian dari kekayaan dan identitas bangsa yang sangat diperlukan untuk memajukan kebudayaan nasional sebagai bentuk dari hasil cipta, rasa, karsa dan karya masyarakat serta mampu menjadi penggerak dalam haluan pembangunan nasional berlandaskan Pancasila;
+
+b. bahwa berdasarkan ketentuan Pasal 221 ayat (5), Pasal 222 ayat (2) Undang-Undang Nomor 11 Tahun 2006 tentang Pemerintahan Aceh, Pasal 96 ayat (1) huruf f Undang-Undang Nomor 11 Tahun 2010 tentang Cagar Budaya, dan Pasal 44 dan Pasal 46 Undang-Undang Nomor 5 Tahun 2017 tentang Pemajuan Kebudayaan, Pemerintah Aceh berwenang untuk menetapkan kebijakan dan melaksanakan pemajuan kebudayaan Aceh;
+
+c. bahwa berdasarkan pertimbangan sebagaimana dimaksud pada huruf a dan huruf b, perlu membentuk Qanun Aceh tentang Pemajuan Kebudayaan Aceh;
+
+Mengingat : 1. Pasal 18 ayat (6) Undang-Undang Dasar Negara Republik Indonesia Tahun 1945;
+
+2. Undang-Undang Nomor 24 Tahun 1956 tentang Pembentukan Daerah Otonom Propinsi Atjeh dan Perubahan Peraturan Pembentukan Propinsi Sumatera Utara (Lembaran Negara Republik Indonesia Tahun 1956 Nomor 64, Tambahan Lembaran Negara Republik Indonesia Nomor 1103);
+
+3. Undang-Undang Nomor 44 Tahun 1999 tentang Penyelenggaraan Keistimewaan Propinsi Daerah Istimewa Aceh (Lembaran Negara Republik Indonesia Tahun 1999 Nomor 172, Tambahan Lembaran Negara Republik Indonesia Nomor 3893);
+
+4. Undang-Undang Nomor 16 Tahun 2001 tentang Yayasan (Lembaran Negara Republik Indonesia Tahun 2001 Nomor 112, Tambahan Lembaran Negara Republik Indonesia Nomor 4132) sebagaimana telah diubah dengan Undang-Undang Nomor 28 Tahun 2004 tentang Perubahan Atas Undang-Undang Nomor 16 tahun 2001 tentang Yayasan (Lembaran Negara Republik Indonesia Tahun 2004 Nomor 115, Tambahan Lembaran Negara Republik Indonesia Nomor 4430);
+
+5. Undang....
+
+--- Halaman 2 — DPI 100 (DPI mengikuti halaman 1) ---
+5. Undang-Undang Nomor 11 Tahun 2006 tentang Pemerintahan Aceh (Lembaran Negara Republik Indonesia Tahun 2006 Nomor 62, Tambahan Lembaran Negara Republik Indonesia Nomor 4633);
+
+6. Undang-Undang Nomor 11 Tahun 2010 tentang Cagar Budaya (Lembaran Negara Republik Indonesia Tahun 2010 Nomor 130, Tambahan Lembaran Negara Republik Indonesia Nomor 5168);
+
+7. Undang Nomor 23 Tahun 2014 tentang Pemerintahan Daerah (Lembaran Negara Republik Indonesia Tahun 2014 Nomor 244, Tambahan Lembaran Negara Republik Indonesia Nomor 5587) sebagaimana telah diubah beberapa kali terakhir dengan Undang-Undang Nomor 6 Tahun 2023 tentang Penetapan Peraturan Pemerintah Pengganti Undang-Undang Nomor 2 Tahun 2022 tentang Cipta Kerja menjadi Undang-Undang (Lembaran Negara Republik Indonesia tahun 2023 Nomor 41, Tambahan Lembaran Negara Republik Indonesia Nomor 6856);
+
+8. Undang-Undang Nomor 5 Tahun 2017 tentang Pemajuan Kebudayaan (Lembaran Negara Republik Indonesia Tahun 2017 Nomor 104, Tambahan Lembaran Negara Republik Indonesia Nomor 5559);
+
+9. Peraturan Pemerintah Nomor 66 Tahun 2015 tentang Museum (Lembaran Negara Republik Indonesia Tahun 2015 Nomor 195, Tambahan Lembaran Negara Republik Indonesia Nomor 5733);
+
+10. Peraturan Pemerintah Nomor 87 Tahun 2021 tentang Peraturan Pelaksanaan Undang-Undang Nomor 5 Tahun 2017 tentang Pemajuan Kebudayaan (Lembaran Negara Republik Indonesia Tahun 2021 Nomor 191, Tambahan Lembaran Negara Republik Indonesia Nomor 6713);
+
+11. Peraturan Pemerintah Nomor I Tahun 2022 tentang Register Nasional Dan Pelestarian Cagar Budaya (Lembaran Negara Republik Indonesia Tahun 2022 Nomor 1, Tambahan Lembaran Negara Republik Indonesia Nomor 6756);
+
+Dengan Persetujuan Bersama
+DEWAN PERWAKILAN RAKYAT ACEH
+dan
+GUBERNUR ACEH
+MEMUTUSKAN:
+Menetapkan : QANUN ACEH TENTANG PEMAJUAN KEBUDAYAAN ACEH.
+BAB I
+KETENTUAN UMUM
+Pasal 1
+Dalam Qanun ini yang dimaksud dengan:
+1. Pemajuan Kebudayaan adalah upaya meningkatkan ketahanan budaya dan kontribusi budaya Indonesia di tengah peradaban dunia melalui pelindungan, pengembangan, pemanfaatan, dan pembinaan Kebudayaan.
+2. Kebudayaan...
+
+--- Halaman 3 — DPI 100 (DPI mengikuti halaman 1) ---
+2. Kebudayaan adalah segala sesuatu yang berkaitan dengan cipta, rasa, karsa, dan hasil karya masyarakat.
+
+3. Aceh adalah daerah Provinsi yang merupakan kesatuan masyarakat hukum yang bersifat istimewa dan diberi kewenangan khusus untuk mengatur dan mengurus sendiri urusan pemerintahan dan kepentingan masyarakat setempat sesuai dengan Peraturan Perundang-undangan dalam sistem dan prinsip Negara Kesatuan Republik Indonesia berdasarkan Undang-Undang Dasar Negara Republik Indonesia Tahun 1945, yang dipimpin oleh seorang Gubernur.
+
+4. Pemerintah Pusat adalah Presiden Republik Indonesia yang memegang kekuasaan pemerintahan negara Republik Indonesia yang dibantu oleh Wakil Presiden dan menteri sebagaimana dimalsud dalam Undang-Undang Dasar Negara Republik Indonesia Tahun 1945.
+
+5. Pemerintahan Aceh adalah Pemerintahan Daerah Provinsi dalam sistem Negara Kesatuan Republik Indonesia berdasarkan Undang-Undang Dasar Negara Republik Indonesia Tahun 1945 yang menyelenggarakan urusan pemerintahan yang dilaksanakan oleh Pemerintah Aceh dan Dewan Perwakilan Rakyat Aceh sesuai dengan fungsi dan kewenangan masing-masing.
+
+6. Pemerintah Aceh adalah unsur penyelenggara Pemerintahan Aceh yang terdiri atas Gubernur dan Perangkat Aceh.
+
+7. Gubernur adalah Kepala Pemerintah Aceh yang dipilih melalui suatu proses demokratis yang dilakukan berdasarkan asas langsung, umum, bebas, rahasia, jujur dan adil.
+
+8. Dewan Perwakilan Rakyat Aceh yang selanjutnya disingkat DPRA adalah unsur penyelenggara Pemerintahan Aceh yang anggotanya dipilih melalui pemilihan umum.
+
+9. Satuan Kerja Perangkat Aceh yang selanjutnya disingkat dengan SKPA adalah organisasi perangkat daerah pada Pemerintah Aceh.
+
+10. Pemerintah Kabupaten/Kota adalah unsur penyelenggara pemerintah kabupaten/kota yang terdiri atas Bupati/Walikota dan perangkat daerah Kabupaten/Kota.
+
+11. Bupati/Walikota adalah Kepala Pemerintah Kabupaten/Kota yang dipilih melalui suatu proses demokratis yang dilakukan berdasarkan asas langsung, umum, bebas, rahasia, jujur dan adil.
+
+12. Dinas adalah satuan kerja perangkat Aceh dan perangkat pemerintah kabupaten/kota yang menyelenggarakan urusan pemerintahan bidang kebudayaan.
+
+13. Data Pokok Kebudayaan yang selanjutnya disebut Dapobud adalah data kebudayaan yang diperbaharui secara daring untuk mewujudkan Data Referensi Kebudayaan yang terintegrasi dari tingkat Kabupaten/Kota, Provinsi, sampai tingkat Pusat.
+
+14. Kebudayaan...
+
+--- Halaman 4 — DPI 100 (DPI mengikuti halaman 1) ---
+14. Kebudayaan Aceh adalah hasil cipta, rasa dan karsa orang yang diperoleh dengan cara belajar yang menimbulkan kebanggaan dan merupakan kebudayaan suku bangsa yang berdiam di Aceh.
+
+15. Pokok Pikiran Kebudayaan Aceh yang selanjutnya disingkat PPKA adalah dokumen yang memuat kondisi faktual dan permasalahan yang dihadapi daerah dalam upaya Pemajuan Kebudayaan beserta usulan penyelesaiannya.
+
+16. Pengarusutamaan kebudayaan adalah proses integrasi nilai-nilai dan praktik kebudayaan ke dalam kebijakan, program, dan kegiatan pembangunan yang dilakukan secara terencana, sistematis, dan berkelanjutan, dengan tujuan agar kebudayaan menjadi bagian utama dalam pengambilan keputusan dan kehidupan publik, sehingga dapat meningkatkan Indeks Pembangunan Kebudayaan (IPK) Aceh.
+
+17. Ekosistem Kebudayaan adalah tatanan yang utuh dan menyeluruh yang berfungsi sebagai ruang tumbuh dengan mendorong interaksi, ekspresi dan apresiasi yang memungkinkan potensi dan hasil karya kebudayaan bermanfaat bagi kesejahteraan.
+
+18. Cagar Budaya adalah warisan budaya bersifat kebendaan berupa Benda Cagar Budaya, Bangunan Cagar Budaya, Struktur Cagar Budaya, Situs Cagar Budaya, dan Kawasan Cagar Budaya di darat dan/atau di air yang perlu dilestarikan keberadaannya karena memiliki nilai penting bagi sejarah, ilmu pengetahuan, pendidikan, agama, dan/atau kebudayaan melalui proses penetapan.
+
+19. Penghargaan adalah bantuan atau Anugerah dari Pemerintah Aceh dan/atau Pemerintah Kabupaten/Kota.
+
+20. Insentif adalah dukungan berupa advokasi, perbantuan, atau bentuk lain bersifat nondana untuk mendorong pelestarian Cagar Budaya dari Pemerintah Aceh atau Pemerintah Kabupaten/Kota.
+
+21. Kurator adalah yang karena Kompetensi keahliannya bertanggungjawab dalam pengelolaan koleksi museum.
+
+22. Pelestarian adalah upaya dinamis untuk mempertahankan keberadaan Cagar Budaya dan nilainya dengan cara melindungi, mengembangkan, dan memanfaatkannya.
+
+23. Adat-istiadat adalah tata kelakuan yang kekal dan turuntemurun dari generasi pendahulu yang kekal dan turuntemurun dari generasi pendahulu yang dihormati dan dimuliakan sebagai warisan yang bersendikan syariat Islam.
+
+24. Lembaga Wali Nanggroe adalah Lembaga kepemimpinan adat sebagai pemersatu masyarakat dan pelestarian kehidupan adat dan budaya.
+
+25. Majelis Adat Aceh yang selanjutnya disingkat MAA adalah Majelis pembina kehidupan adat yang bersendikan agama Islam yang menjadi kewenangan pemerintahan Aceh.
+
+--- Halaman 5 — DPI 100 (DPI mengikuti halaman 1) ---
+26. Warisan Budaya Takbenda yang selanjutnya disingkat WBTb adalah berbagai hasil praktek, perwujudan, ekspresi pengetahuan dan keterampilan, yang terkait dengan lingkup budaya, yang diwariskan dari generasi ke generasi secara terus menerus melalui pelestarian dan/atau penciptaan kembali serta merupakan hasil kebudayaan yang berwujud budaya takbenda setelah melalui proses penetapan budaya takbenda.
+
+27. Museum adalah lembaga yang berfungsi melindungi, mengembangkan, memanfaatkan koleksi, dan mengomunikasikannya kepada masyarakat.
+
+28. Setiap Orang adalah perseorangan, kelompok orang, masyarakat, badan usaha berbadan hukum, dan/atau badan usaha bukan berbadan hukum.
+
+29. Masyarakat Hukum Adat adalah kelompok masyarakat yang bermukim di wilayah geografis tertentu yang memiliki perasaan kelompok, pranata pemerintahan adat, harta kekayaan/benda adat, dan perangkat norma hukum adat.
+
+30. Pekan Kebudayaan Aceh yang selanjutnya disingkat PKA adalah kegiatan budaya yang diselenggarakan oleh Pemerintah Aceh atau pemerintah kabupaten/kota setiap lima tahunan.
+
+31. Anugerah Budaya adalah penghargaan yang diberikan oleh Pemerintah Aceh kepada individu/personal yang melestarikan dan memajukan kebudayaan Aceh baik benda (tangible) maupun takbenda (intangible), mencakup bidang adat, kesenian, warisan budaya, sejarah dan peradaban, serta produk budaya.
+
+32. Tim Ahli Cagar Budaya yang selanjutnya disingkat TACB adalah kelompok ahli pelestarian dari berbagai bidang ilmu yang memiliki sertifikat kompetensi untuk memberikan rekomendasi penetapan, pemeringkatan, dan penghapusan Cagar Budaya.
+
+33. Tim Ahli Warisan Budaya takbenda yang selanjutnya disingkat dengan TAWBTb adalah kelompok ahli pelestarian dari berbagai bidang ilmu yang memiliki sertifikat kompetensi untuk memberikan rekomendasi penetapan WBTb.
+
+34. Perkumpulan adalah badan hukum yang merupakan kumpulan orang didirikan untuk mewujudkan kesamaan maksud dan tujuan tertentu di bidang sosial, keagamaan, dan kemanusiaan dan tidak membagikan keuntungan kepada anggotanya.
+
+35. Yayasan adalah badan hukum yang terdiri atas kekayaan yang dipisahkan dan diperuntukkan untuk mencapai tujuan tertentu di bidang sosial, keagamaan, dan kemanusiaan, yang tidak mempunyai anggota.
+
+36. Komunitas adalah lembaga yang tidak berbadan hukum yang bergerak di bidang seni dan budaya.
+
+37. Dewan Pemajuan Kebudayaan Aceh yang selanjutnya disingkat DPKA adalah mitra kerja Pemerintah Aceh dalam upaya Pemajuan Kebudayaan Aceh.
+

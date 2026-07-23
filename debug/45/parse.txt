@@ -1,0 +1,83 @@
+=== HASIL PARSE — status=SUCCESS — 27 node ===
+
+[judul/judul]  (hal 1-1)
+  QANUN ACEH
+
+[judul/judul]  (hal 1-1)
+  RENCANA PEMBANGUNAN JANGKA PANJANG ACEH (RPJPA) TAHUN 2025-2045
+
+[judul/judul]  (hal 1-1)
+  PEMERINTAH ACEH TAHUN 2025
+
+[judul/judul]  (hal 2-2)
+  RENCANA PEMBANGUNAN JANGKA PANJANG ACEH TAHUN 2025-2045
+
+[judul/judul]  (hal 2-2)
+  BISMILLAHIRRAHMANIRRAHIM
+
+[judul/pembukaan]  (hal 2-2)
+  DENGAN NAMA ALLAH YANG MAHA PENGASIH LAGI MAHA PENYAYANG
+
+[judul/judul]  (hal 2-2)
+  ATAS RAHMAT ALLAH YANG MAHA KUASA
+
+[judul/judul]  (hal 2-2)
+  GUBERNUR ACEH,
+
+[menimbang/item]  (hal 2-2)
+  bahwa dalam rangka pelaksanaan nota kesepahaman antara Pemerintah Republik Indonesia dan Gerakan Aceh Merdeka (Memorandum of Understanding Between The Government of Republic Indonesia and The Free Aceh Movement Helsinki 15 Agustus 2005), Pemerintah Republik Indonesia dan Gerakan Aceh Merdeka menegaskan komitmen meraka untuk menyelesaikan konflik Aceh secara damai, menyeluruh, berkelanjutan dan bermartabat bagi semua, dan para pihak bertekad untuk menciptakan kondisi sehingga Pemerintahan Rakyat Aceh dapat diwujudkan melalui suatu proses yang demokratif dan adil dalam Negara Kesatuan Republik Indonesia;
+
+[menimbang/item]  (hal 2-2)
+  bahwa Aceh memerlukan perencanaan pembangunan jangka panjang sebagai pedoman dalam menentukan arah dan prioritas pembangunan secara menyeluruh yang-akan dilakukan secara bertahap untuk mewujudkan masyarakat islam, maju dan berkelanjutan;
+
+[menimbang/item]  (hal 2-2)
+  bahwa berdasarkan ketentuan Pasal 141 Undang-Undang Nomor 11 Tahun 2006 tentang Pemerintahan Aceh, perencanaan pembangunan Aceh disusun secara komprehensif sebagai bagian dari sistem perencanaan pembangunan nasional dalam kerangka Negara Kesatuan Republik Indonesia dengan memperhatikan nilai-nilai Islam, sosial budaya, berkelanjutan dan berwawasan lingkungan, keadilan dan pemerataan, dan kebutuhan;
+
+[menimbang/item]  (hal 3-3)
+  bahwa berdasarkan ketentuan Pasal 13 ayat (2) Undang-Undang Nomor 25 Tahun 2004 tentang Sistem Perencanaan Pembangunan Nasional, Rencana Pembangunan Jangka Panjang Daerah ditetapkan dengan Peraturan Daerah;
+
+[menimbang/item]  (hal 3-3)
+  bahwa berdasarkan pertimbangan sebagaimana dimaksud dalam huruf a sampai dengan huruf d, perlu membentuk Qanun Aceh tentang Rencana Pembangunan Jangka Panjang Aceh Tahun 2025-2045;
+
+[mengingat/item]  (hal 3-3)
+  Pasal 18 ayat (6) dan Pasal 18B Undang-Undang Dasar Negara Republik Indonesia Tahun 1945;
+
+[mengingat/item]  (hal 3-3)
+  Undang-Undang Nomor 24 Tahun 1956 tentang Pembentukan Daerah Otonom Propinsi Atjeh dan Perubahan Peraturan Pembentukan Propinsi Sumatera Utara (Lembaran Negara Republik Indonesia Tahun 1956 Nomor 64, Tambahan Lembaran Negara Republik Indonesia Nomor 1103);
+
+[mengingat/item]  (hal 3-3)
+  Undang-Undang Nomor 17 Tahun 2003 tentang Keuangan Negara (Lembaran Negara Republik Indonesia Tahun 2003 Nomor 47, Tambahan Lembaran Negara Republik Indonesia Nomor 4286);
+
+[mengingat/item]  (hal 3-3)
+  Undang-Undang Nomor 25 Tahun 2004 tentang Sistem Perencanaan Pembangunan Nasional (Lembaran Negara Republik Indonesia Tahun 2004 Nomor 104, Tambahan Lembaran Negara Republik Indonesia Nomor 4421);
+
+[mengingat/item]  (hal 3-3)
+  Undang-Undang Nomor 11 Tahun 2006 tentang Pemerintahan Aceh (Lembaran Negara Republik Indonesia Tahun 2006 Nomor 62, Tambahan Lembaran Negara Republik Indonesia Nomor 4633);
+
+[mengingat/item]  (hal 3-3)
+  Undang-Undang Nomor 23 Tahun 2014 tentang Pemerintahan Daerah (Lembaran Negara Republik Indonesia Tahun 2014 Nomor 244, Tambahan Lembaran Negara Republik Indonesia Nomor 5587) sebagaimana telah beberapa kali diubah terakhir dengan Undang-Undang Nomor 6 Tahun 2023 tentang Penetapan Peraturan Pemerintah Pengganti Undang-Undang Nomor 2 Tahun 2022 tentang Cipta Kerja Menjadi Undang-Undang (Lembaran Negara Republik Indonesia Tahun 2023 Nomor 41, Tambahan Lembaran Negara Republik Indonesia Nomor 6856);
+
+[mengingat/item]  (hal 4-4)
+  Undang-Undang Nomor 1 Tahun 2022 tentang Hubungan Keuangan antara Pemerintah Pusat dan Pemerintahan Daerah (Lembaran Negara Republik Indonesia Tahun 2022 Nomor 4, Tambahan Lembaran Negara Republik Indonesia Nomor 6757);
+
+[mengingat/item]  (hal 4-4)
+  Undang-Undang Nomor 6 Tahun 2023 tentang Penetapan Peraturan Pemerintah Pengganti Undang-Undang Nomor 2 Tahun 2022 tentang Cipta Kerja Menjadi Undang-Undang (Lembaran Negara Republik Indonesia Tahun 2023 Nomor 41, Tambahan Lembaran Negara Republik Indonesia Nomor 6856);
+
+[mengingat/item]  (hal 4-4)
+  Undang-Undang Nomor 59 Tahun 2024 tentang Rencana Pembangunan Jangka Panjang Nasional Tahun 2025 - 2045 (Lembaran Negara Republik Indonesia Tahun 2024 Nomor 194, Tambahan Lembaran Negara Republik Indonesia Nomor 6987);
+
+[mengingat/item]  (hal 4-4)
+  Qanun Aceh Nomor 19 Tahun 2013 tentang Rencana Tata Ruang Wilayah Aceh Tahun 2013 – 2033 (Lembaran Aceh tahun 2014 Nomor 1, Tambahan Lembaran Aceh Nomor 62); Dengan Persetujuan Bersama DEWAN PERWAKILAN RAKYAT ACEH dan GUBERNUR ACEH
+
+[penetapan/penetapan]  (hal 4-4)
+  MEMUTUSKAN:
+
+[penetapan/penetapan]  (hal 4-4)
+  Menetapkan : QANUN ACEH TENTANG RENCANA PEMBANGUNAN JANGKA PANJANG ACEH TAHUN 2025 – 2045.
+
+[batang_tubuh/bab] BAB 1 (hal 4-4)
+  KETENTUAN UMUM
+
+    [batang_tubuh/pasal] 1 (hal 4-5)
+      Dalam Qanun ini yang dimaksud dengan: 1. Pemerintah Pusat yang selanjutnya disebut Pemerintah adalah Presiden Republik Indonesia yang memegang kekuassaan pemerintahan Negara Republik Indonesia sebagaimana dimaksud dalam Undang-Undang Dasar Negara Republik Indonesia Tahun 1945. 2. Aceh adalah kesatuan masyarakat hukum yang bersifat istimewa dan diberi kewenangan khusus untuk mengatur dan mengurus sendiri urusan pemerintahan dan kepentingan masyarakat setempat sesuai dengan peraturan perundang-undangan dalam sistem dan prinsip Negara Kesatuan Republik Indonesia berdasarkan Undang-Undang Dasar Negara Republik Indonesia Tahun 1945, yang dipimpin oleh seorang Kepala Pemerintah Aceh. 3. Gubernur adalah Kepala Pemerintah Aceh yang dipilih melalui suatu proses pemilihan secara demokratis berdasarkan asas langsung, umum, bebas, rahasia, jujur, dan adil. 4. Dewan Perwakilan Rakyat Aceh yang selanjutnya disingkat DPRA adalah unsur penyelenggara Pemerintahan Aceh yang anggotanya dipilih melalui pemilihan umum. 5. Pemerintahan Aceh adalah pemerintahan daerah provinsi dalam sistem Negara Kesatuan Republik Indonesia berdasarkan Undang-undang Dasar Negara Republik Indonesia tahun 1945 yeng menyelenggarakan urusan pemerintahan yang dilaksanakan oleh Pemerintahan Daerah Aceh dan Dewan Perwakilan Rakyat Aceh sesuai dengan fungsi dan kewenangan masing-masing. 6. Pemerintah Aceh adalah unsur penyelenggara Pemerintahan Aceh yang terdiri atas Gubernur dan perangkat Aceh. 7. Kabupaten/kota adalah bagian dari provinsi Aceh sebagai suatu kesatuan masyarakat hukum yang diberi kewenangan khusus untuk mengatur dan mengurus sendiri urusan pemerintahan dan kepentingan masyarakat setempat sesuai dengan peraturan perundang-undangan dalam sistem dan prinsip Negara Kesatuan Republik Indonesia berdasarkan Undang-Undang Dasar Negara Republik Indonesia Tahun 1945, yang dipimpin oleh seorang bupati/walikota. 8. Bupati/Walikota adalah kepala pemerintah daerah kabupaten/kota yang dipilih melalui suatu proses pemilihan secara demokratis berdasarkan asas langsung, umum, bebas, rahasia, jujur, dan adil. 9. Dewan Perwakilan Rakyat Kabupaten/Kota yang selanjutnya disingkat DPRK adalah unsur penyelenggara Pemerintahan Kabupaten/Kota yang anggotanya dipilih melalui pemilihan umum.
+

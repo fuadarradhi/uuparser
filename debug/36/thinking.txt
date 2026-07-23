@@ -1,0 +1,232 @@
+=== PANGGILAN MODEL TEKS (gate.md / identity.md / penetapan.md) ===
+
+=== GERBANG (gate.md) ===
+--- PROMPT ---
+Anda memeriksa satu halaman hasil pemindaian (OCR) dari situs JDIH pemerintah
+Indonesia. Tugas Anda HANYA menjawab satu pertanyaan: apakah halaman ini
+bagian dari PRODUK HUKUM RESMI?
+
+Jawab HANYA dengan satu objek JSON. Tanpa penjelasan, tanpa tanda kutip
+Markdown, tanpa teks lain.
+
+{"produk_hukum": true, "alasan": ""}
+
+Bernilai true bila halaman memuat ciri produk hukum resmi yang ditetapkan
+pejabat berwenang, misalnya:
+- judul berpola "<JENIS> <PEJABAT/DAERAH> NOMOR ... TAHUN ... TENTANG ..."
+- kata MENIMBANG, MENGINGAT, MEMUTUSKAN, MENETAPKAN
+- struktur Pasal/Ayat, atau diktum KESATU/KEDUA/KETIGA
+
+Bernilai false untuk: naskah akademik, rancangan yang belum ditetapkan,
+kajian, laporan, notulen, berita, formulir, brosur, daftar isi, atau halaman
+yang hanya berisi sampul tanpa isi peraturan.
+
+Bila false, isi "alasan" dengan satu kalimat singkat. Bila true, kosongkan.
+
+Contoh jawaban yang benar:
+{"produk_hukum": true, "alasan": ""}
+{"produk_hukum": false, "alasan": "dokumen ini naskah akademik, bukan peraturan yang ditetapkan"}
+
+--- TEKS YANG DIKIRIM ---
+GUBERNUR ACEH
+INSTRUKSI GUBERNUR ACEH
+NOMOR 08/INSTR/2025
+
+TENTANG
+
+PENATAAN DAN PENERTIBAN PERIZINAN/NON PERIZINAN BERUSAHA
+SEKTOR SUMBER DAYA ALAM
+
+GUBERNUR ACEH,
+
+Dalam rangka penataan dan penertiban perizinan/non perizinan berusaha sektor sumber daya alam menuju tata kelola yang strategis, terpadu, terkoordinir dan berkelanjutan, bahwa berdasarkan ketentuan Pasal 142 ayat (3) dan ayat (4), Pasal 143, Pasal 149, Pasal 150, Pasal 156, Pasal 157, Pasal 158, Pasal 159, Pasal 165, dan Pasal 181 ayat (1) huruf b dan ayat (3) Undang-Undang Nomor 11 Tahun 2006 tentang Pemerintahan Aceh, dengan ini menginstruksikan :
+
+Kepada : 1. Bupati/Walikota se-Aceh;
+2. Kepala Dinas Penanaman Modal dan Pelayanan Terpadu Satu Pintu Aceh;
+3. Kepala Dinas Energi dan Sumber Daya Mineral Aceh;
+4. Kepala Dinas Lingkungan Hidup dan Kehutanan Aceh;
+5. Kepala Dinas Pertanian dan Perkebunan Aceh; dan
+6. Kepala Dinas Perindustrian dan Perdagangan Aceh.
+
+Untuk :
+
+KESATU : Bupati/Walikota se-Aceh :
+a. melakukan penertiban pertambangan ilegal dalam Kabupaten/Kota setelah berkoordinasi dengan Pemerintah Aceh melalui tim penertiban pertambangan ilegal bersama aparat penegak hukum;
+b. melakukan koordinasi dengan Pemerintah Aceh melalui Dinas Energi dan Sumber Daya Mineral Aceh dan Dinas Penanaman Modal dan Pelayanan Terpadu Satu Pintu Aceh terhadap penerbitan rekomendasi permohonan Izin Usaha Pertambangan (IUP) komoditas mineral logam, mineral bukan logam jenis tertentu dan batubara;
+c. melakukan koordinasi dengan Pemerintah Aceh melalui Dinas Pertanian dan Perkebunan Aceh, Dinas Lingkungan Hidup dan Kehutanan Aceh dan Dinas Penanaman Modal dan Pelayanan Terpadu Satu Pintu Aceh terhadap penerbitan rekomendasi permohonan Izin Usaha Perkebunan (IUP), Izin Usaha Perkebunan Budidaya (IUP-B) dan Izin Usaha Perkebunan Pengolahan (IUP-P) serta fasilitasi pembangunan kebun masyarakat;
+d. menghentikan penggunaan dan pendistribusian merkuri/air raksa (Hg) dan sianida (CN) yang digunakan dalam kegiatan penambangan;
+e. melakukan inventarisasi dan verifikasi seluruh perizinan berusaha/non perizinan berusaha di luar Kawasan Hutan pada wilayah masing-masing;
+
+--- JAWABAN MENTAH MODEL ---
+{"produk_hukum": true, "alasan": ""}
+
+=== IDENTITAS (identity.md) ===
+--- PROMPT ---
+Anda membaca halaman pertama sebuah produk hukum Indonesia. Salin identitasnya
+APA ADANYA dari teks.
+
+Jawab HANYA dengan satu objek JSON. Tanpa penjelasan, tanpa tanda kutip
+Markdown, tanpa teks lain.
+
+{"jenis": "", "instansi_tertulis": "", "nomor": "", "tahun": "", "tentang": ""}
+
+Keterangan tiap isian:
+
+- "jenis": nama jenis peraturannya saja, TANPA nama daerah atau pejabat.
+  Contoh: "PERATURAN DAERAH", "QANUN", "PERATURAN GUBERNUR",
+  "KEPUTUSAN GUBERNUR", "PERATURAN BUPATI", "KEPUTUSAN BUPATI",
+  "PERATURAN WALI KOTA", "UNDANG-UNDANG", "PERATURAN PEMERINTAH".
+
+- "instansi_tertulis": nama daerah ATAU jabatan PERSIS seperti tertulis di
+  dokumen. Jangan diubah, jangan diterjemahkan, jangan dilengkapi.
+  Contoh yang benar: "ACEH", "GUBERNUR ACEH", "KABUPATEN ACEH BARAT",
+  "BUPATI ACEH BARAT", "KOTA BANDA ACEH", "PROPINSI DAERAH ISTIMEWA ACEH".
+
+- "nomor": nomor peraturan PERSIS seperti tertulis, termasuk garis miring,
+  titik, dan spasi. JANGAN disederhanakan menjadi angka saja.
+  Contoh yang benar: "5", "12A", "300.2/ 69 /2026", "188.44/123/2020".
+
+- "tahun": empat angka saja. Contoh: "2015", "1979".
+
+- "tentang": judul lengkap setelah kata TENTANG, apa adanya.
+
+ATURAN YANG TIDAK BOLEH DILANGGAR:
+
+- Salin apa yang tertulis. Jangan menebak, jangan melengkapi, jangan
+  memperbaiki. Bila suatu bagian tidak terbaca, isi dengan string kosong "".
+- JANGAN menyalin contoh di atas sebagai jawaban.
+- JANGAN menulis tanda titik-titik ("...") di dalam jawaban.
+- Dokumen lama memakai ejaan lama (Propinsi, Atjeh, Dati II, Kotamadya).
+  Pertahankan apa adanya, jangan dimodernkan.
+- Jangan memakai pengetahuan Anda tentang peraturan Indonesia. Laporkan HANYA
+  yang benar-benar tertulis pada teks yang diberikan.
+
+Contoh jawaban yang benar untuk halaman berjudul
+"KEPUTUSAN GUBERNUR ACEH NOMOR 300.2/ 69 /2026 TENTANG PENETAPAN PANITIA":
+
+{"jenis": "KEPUTUSAN GUBERNUR", "instansi_tertulis": "GUBERNUR ACEH", "nomor": "300.2/ 69 /2026", "tahun": "2026", "tentang": "PENETAPAN PANITIA"}
+
+--- TEKS YANG DIKIRIM ---
+GUBERNUR ACEH
+INSTRUKSI GUBERNUR ACEH
+NOMOR 08/INSTR/2025
+
+TENTANG
+
+PENATAAN DAN PENERTIBAN PERIZINAN/NON PERIZINAN BERUSAHA
+SEKTOR SUMBER DAYA ALAM
+
+GUBERNUR ACEH,
+
+Dalam rangka penataan dan penertiban perizinan/non perizinan berusaha sektor sumber daya alam menuju tata kelola yang strategis, terpadu, terkoordinir dan berkelanjutan, bahwa berdasarkan ketentuan Pasal 142 ayat (3) dan ayat (4), Pasal 143, Pasal 149, Pasal 150, Pasal 156, Pasal 157, Pasal 158, Pasal 159, Pasal 165, dan Pasal 181 ayat (1) huruf b dan ayat (3) Undang-Undang Nomor 11 Tahun 2006 tentang Pemerintahan Aceh, dengan ini menginstruksikan :
+
+Kepada : 1. Bupati/Walikota se-Aceh;
+2. Kepala Dinas Penanaman Modal dan Pelayanan Terpadu Satu Pintu Aceh;
+3. Kepala Dinas Energi dan Sumber Daya Mineral Aceh;
+4. Kepala Dinas Lingkungan Hidup dan Kehutanan Aceh;
+5. Kepala Dinas Pertanian dan Perkebunan Aceh; dan
+6. Kepala Dinas Perindustrian dan Perdagangan Aceh.
+
+Untuk :
+
+KESATU : Bupati/Walikota se-Aceh :
+a. melakukan penertiban pertambangan ilegal dalam Kabupaten/Kota setelah berkoordinasi dengan Pemerintah Aceh melalui tim penertiban pertambangan ilegal bersama aparat penegak hukum;
+b. melakukan koordinasi dengan Pemerintah Aceh melalui Dinas Energi dan Sumber Daya Mineral Aceh dan Dinas Penanaman Modal dan Pelayanan Terpadu Satu Pintu Aceh terhadap penerbitan rekomendasi permohonan Izin Usaha Pertambangan (IUP) komoditas mineral logam, mineral bukan logam jenis tertentu dan batubara;
+c. melakukan koordinasi dengan Pemerintah Aceh melalui Dinas Pertanian dan Perkebunan Aceh, Dinas Lingkungan Hidup dan Kehutanan Aceh dan Dinas Penanaman Modal dan Pelayanan Terpadu Satu Pintu Aceh terhadap penerbitan rekomendasi permohonan Izin Usaha Perkebunan (IUP), Izin Usaha Perkebunan Budidaya (IUP-B) dan Izin Usaha Perkebunan Pengolahan (IUP-P) serta fasilitasi pembangunan kebun masyarakat;
+d. menghentikan penggunaan dan pendistribusian merkuri/air raksa (Hg) dan sianida (CN) yang digunakan dalam kegiatan penambangan;
+e. melakukan inventarisasi dan verifikasi seluruh perizinan berusaha/non perizinan berusaha di luar Kawasan Hutan pada wilayah masing-masing;
+
+--- JAWABAN MENTAH MODEL ---
+{"jenis": "INSTRUKSI GUBERNUR", "instansi_tertulis": "GUBERNUR ACEH", "nomor": "08/INSTR/2025", "tahun": "2025", "tentang": "PENATAAN DAN PENERTIBAN PERIZINAN/NON PERIZINAN BERUSAHA SEKTOR SUMBER DAYA ALAM"}
+
+=== PENETAPAN (penetapan.md) ===
+--- PROMPT ---
+Anda membaca bagian penutup sebuah produk hukum Indonesia — bagian yang memuat
+tempat dan tanggal penetapan serta pejabat yang menandatangani.
+
+Jawab HANYA dengan satu objek JSON. Tanpa penjelasan, tanpa tanda kutip
+Markdown, tanpa teks lain.
+
+{"ditetapkan_di": "", "ditetapkan_tanggal": "", "ditetapkan_oleh": "", "ditetapkan_oleh_nama": "", "diundangkan_di": "", "diundangkan_tanggal": "", "diundangkan_oleh": "", "diundangkan_oleh_nama": ""}
+
+Keterangan tiap isian:
+
+- "ditetapkan_di": nama kota setelah kata "Ditetapkan di".
+  Contoh: "Banda Aceh", "Meulaboh".
+- "ditetapkan_tanggal": tanggal setelah "pada tanggal", APA ADANYA.
+  Contoh: "1 Januari 2015", "15 Desember 2020".
+- "ditetapkan_oleh": JABATAN penanda tangan penetapan saja, TANPA nama orang.
+  Contoh: "GUBERNUR ACEH", "BUPATI ACEH BARAT".
+- "ditetapkan_oleh_nama": NAMA ORANG penanda tangan penetapan — biasanya
+  tertulis beberapa baris di bawah jabatan, kadang didahului kata "Ttd.".
+  Contoh: "MUZAKIR MANAF", "Drs. H. Ahmad, M.Si.".
+- Empat isian "diundangkan_*" diisi dengan cara yang sama (jabatan dan nama
+  terpisah) untuk bagian "Diundangkan di", bila ada. Bagian ini biasanya
+  ditandatangani Sekretaris Daerah.
+
+ATURAN:
+
+- Salin apa adanya. Jangan mengubah bentuk tanggal, jangan menerjemahkan nama
+  bulan, jangan mengubah huruf besar/kecil, jangan melengkapi yang tidak
+  tertulis.
+- Bagian yang tidak ada di teks diisi string kosong "".
+- "ditetapkan_oleh"/"diundangkan_oleh" HANYA jabatan — jangan sisipkan nama
+  orang di situ. Nama orang HANYA masuk ke "..._oleh_nama".
+- JANGAN menyalin contoh di atas sebagai jawaban.
+
+Contoh jawaban yang benar:
+
+{"ditetapkan_di": "Banda Aceh", "ditetapkan_tanggal": "5 Maret 2026", "ditetapkan_oleh": "GUBERNUR ACEH", "ditetapkan_oleh_nama": "MUZAKIR MANAF", "diundangkan_di": "Banda Aceh", "diundangkan_tanggal": "6 Maret 2026", "diundangkan_oleh": "SEKRETARIS DAERAH ACEH", "diundangkan_oleh_nama": "BUSTAMI HAMZAH"}
+
+--- TEKS YANG DIKIRIM ---
+b. melakukan koordinasi dengan Kanwil BPN Aceh untuk melakukan penataan dan penertiban terhadap pemanfaatan lahan HGU; dan
+
+c. mempersiapkan pangkalan data (database) Izin Usaha Perkebunan (IUP), Izin Usaha Perkebunan Budidaya (IUP-B) dan Izin Usaha Perkebunan Pengolahan (IUP-P) sesuai kewenangan.
+
+KEENAM : Kepala Dinas Perindustrian dan Perdagangan Aceh:
+
+a. melakukan penataan dan penertiban terhadap kegiatan ekspor produksi pertambangan Komoditas Mineral Logam, Mineral Bukan Logam Jenis Tertentu dan Batu Bara oleh pemegang IUP eksisting sesuai ketentuan peraturan perundang-undangan; dan
+
+b. melakukan pengawasan dan penertiban perizinan berusaha terhadap peredaran dan penggunaan merkuri/air raksa (Hg) dan sianida (CN) berdasarkan ketentuan peraturan perundang-undangan.
+
+KETUJUH : melaksanakan Instruksi ini dengan penuh tanggung jawab.
+
+Instruksi Gubernur ini mulai berlaku pada tanggal ditetapkan.
+
+Ditetapkan di Banda Aceh
+pada tanggal, 29 September 2025
+7 Rabiul Akhir 1447
+
+GUBERNUR ACEH
+
+MUZAKIR MANAF
+
+SALINAN - dari Instruksi ini disampaikan kapada:
+
+1. Menteri Dalam Negeri RI;
+2. Menteri Investasi dan Hillrisasi/Kepala Badan Koordinasi Penanaman Modal RI;
+3. Menteri Energi dan Sumber Daya Mineral RI;
+4. Menteri Lingkungan Hidup/Badan Pengendalian Lingkungan Hidup RI;
+5. Menteri Kehutanan RI;
+6. Menteri Pertanian RI;
+7. Menteri Kelautan dan Perikanan RI;
+8. Menteri Perindustrian RI;
+9. Menteri Agraria dan Tata Ruang/Kepala Badan Pertanahan Nasional RI;
+10. Panglima TNI;
+11. Kapolri;
+12. Jaksa Agung;
+13. Wali Nanggroe Aceh;
+14. Ketua DPR Aceh;
+15. Pangdam Iskandar Muda;
+16. Kapolda Aceh;
+17. Kepala Kejaksaan Tinggi Aceh;
+18. Ketua Pengadilan Tinggi Banda Aceh;
+19. Kabinda Aceh;
+20. DAN LANAL Sabang;
+21. DAN LANUD Sultan Iskandar Muda;
+22. Para Rektor Perguruan Tinggi Negeri dan Swasta;
+23. Ketua KADIN Aceh.
+
+--- JAWABAN MENTAH MODEL ---
+{"ditetapkan_di": "Banda Aceh", "ditetapkan_tanggal": "29 September 2025", "ditetapkan_oleh": "GUBERNUR ACEH", "ditetapkan_oleh_nama": "MUZAKIR MANAF", "diundangkan_di": "", "diundangkan_tanggal": "", "diundangkan_oleh": "", "diundangkan_oleh_nama": ""}
+

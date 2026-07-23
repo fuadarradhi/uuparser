@@ -1,0 +1,168 @@
+=== HASIL OCR — 5 halaman ===
+
+--- IDENTITAS DOKUMEN (hasil classify) ---
+Diputuskan oleh  : regex (deterministik, tanpa model)
+Jenis            : KEPUTUSAN GUBERNUR
+Wilayah          : PEMERINTAH ACEH
+Instansi tertulis: ACEH
+Nomor            : 600.1.4 /152/ 2026
+Tahun            : 2026
+Tentang          : PENETAPAN RENCANA ALOKASI AIR TAHUNAN WILAYAH SUNGAI TAMIANG-LANGSA TAHUN 2025/2026
+
+(lihat thinking.txt bila kolom KEPUTUSAN di atas = model teks — berisi PERSIS apa yang ditanyakan & dijawab)
+
+--- Halaman 1 — DPI 150 (blur_score probe: 329348656) ---
+GUBERNUR ACEH
+
+KEPUTUSAN GUBERNUR ACEH
+NOMOR 600.1.4 /152/ 2026
+
+TENTANG
+
+PENETAPAN RENCANA ALOKASI AIR TAHUNAN WILAYAH
+SUNGAI TAMIANG-LANGSA TAHUN 2025/2026
+
+GUBERNUR ACEH,
+
+Menimbang
+a. bahwa untuk menindaklanjuti Undang-Undang Nomor 17 Tahun 2019 tentang Sumber Daya Air, telah disusun Rencana Alokasi Air Tahunan (RAAT) Wilayah Sungai Tamiang-Langsa oleh Tim Koordinasi Pengelolaan Sumber Daya Air Wilayah Sungai Tamiang-Langsa;
+b. bahwa untuk Rencana Alokasi Air Tahunan (RAAT) yang telah disusun sebagaimana yang dimaksud dalam huruf a, perlu ditetapkan Rencana Alokasi Air Tahunan Wilayah Sungai Tamiang-Langsa Tahun 2025/2026;
+c. bahwa berdasarkan pertimbangan sebagaimana dimaksud dalam huruf a dan huruf b, perlu menetapkan Keputusan Gubernur tentang Penetapan Rencana Alokasi Air Tahunan Wilayah Sungai Tamiang-Langsa Tahun 2025/2026;
+
+Mengingat
+1. Undang-Undang Nomor 24 Tahun 1956 tentang Pembentukan Daerah Otonom Propinsi Atjeh dan Perubahan Peraturan Pembentukan Propinsi Sumatera Utara;
+2. Undang-Undang Nomor 11 Tahun 2006 tentang Pemerintahan Aceh;
+3. Undang-Undang Nomor 23 Tahun 2014 tentang Pemerintahan Daerah sebagaimana telah beberapa kali diubah terakhir dengan Undang-Undang Nomor 6 Tahun 2023 tentang Penetapan Peraturan Pemerintah Pengganti Undang-Undang Nomor 2 Tahun 2022 tentang Cipta Kerja Menjadi Undang-Undang;
+4. Undang-Undang Nomor 17 Tahun 2019 tentang Sumber Daya Air;
+5. Peraturan Pemerintah Nomor 30 Tahun 2024 tentang Pengelolaan Sumber Daya Air;
+6. Peraturan Menteri Pekerjaan Umum dan Perumahan Rakyat Nomor 04/PRT/M/2015 tentang Kriteria dan Penetapan Wilayah Sungai;
+7. Peraturan Menteri Pekerjaan Umum dan Perumahan Rakyat Nomor 09/PRT/M/2015 tentang Penggunaan Sumber Daya Air;
+8. Peraturan Menteri Pekerjaan Umum dan Perumahan Rakyat Nomor 14/PRT/M/2015 tentang Kriteria dan Penetapan Status Daerah Irigasi;
+9. Peraturan Menteri Pekerjaan Umum Nomor 2 Tahun 2024 tentang Pedoman Pembentukan Wadah Koordinasi Pengelolaan Sumber Daya Air pada Tingkat Wilayah Sungai;
+
+Memperhatikan .../2
+
+--- Halaman 2 — DPI 150 (DPI mengikuti halaman 1) ---
+Memperhatikan : Surat Edaran Direktur Jenderal Sumber Daya Air Nomor 04/SE/D/2012 tentang Petunjuk Teknis Penyusunan Neraca Air dan Penyelenggaraan Alokasi Air;
+
+MEMUTUSKAN:
+
+Menetapkan :
+
+KESATU : Menetapkan Rencana Alokasi Air Tahunan Wilayah Sungai Tamiang-Langsa Tahun 2025/2026 sebagaimana tercantum dalam Lampiran yang merupakan bagian tidak terpisahkan dari Keputusan Gubernur ini.
+
+KEDUA : Rencana Alokasi Air Tahunan Wilayah Sungai Tamiang-Langsa Tahun 2025/2026 dimaksudkan sebagai kerangka dasar dalam pembagian air di Wilayah Sungai Tamiang-Langsa.
+
+KETIGA : Rencana Alokasi Air Tahunan Wilayah Sungai Tamiang-Langsa Tahun 2025/2026 sebagaimana dimaksud pada Diktum Kesatu memuat:
+a. tujuan untuk memberi gambaran secara komprehensif mengenai status dan kendala yang dijumpai;
+b. mengidentifikasi langkah-langkah peningkatan kinerja pengelolaan alokasi air secara adil dan berwawasan lingkungan; dan
+c. upaya pengaturan air untuk berbagai keperluan air dari waktu ke waktu dengan memperhatikan jumlah dan mutu air.
+
+KEEMPAT : Keputusan Gubernur ini mulai berlaku pada tanggal ditetapkan.
+
+Ditetapkan di Banda Aceh
+pada tanggal, 29Januari 2026
+10 Sya'ban 1447
+GUBERNUR ACEH,
+MUZAKIR MANAF
+
+SALINAN - dari Keputusan ini disampaikan kepada:
+
+1. Kepala Bappeda Aceh;
+2. Kepala Dinas Pengairan Aceh;
+3. Kepala Biro Hukum Setda Aceh;
+4. Kepala Dinas PUPR Kabupaten Aceh Timur;
+5. Kepala Dinas PUPR Kabupaten Gayo Lues;
+6. Kepala Dinas PUPR Kabupaten Aceh Tamiang;
+7. Kepala Dinas PUPR Kota Langsa.
+
+--- Halaman 3 — DPI 150 (DPI mengikuti halaman 1) ---
+A. Latar Belakang
+
+Pengelolaan Sumber Daya Air (SDA) yang mencakup aspek Konservasi SDA, Pendayagunaan SDA dan Pengendalian daya rusak air bertujuan untuk mewujudkan kemanfaatan SDA yang berkelanjutan untuk sebesar-besarnya kemakmuran rakyat. Sebagai bagian dari pendayagunaan SDA, untuk meningkatkan kemanfaatan SDA di setiap Wilayah Sungai (WS) ataupun Daerah Aliran Sungai (DAS) disusun rencana penyediaan SDA dalam bentuk Rencana Alokasi Air Tahunan (RAAT) dengan memperhatikan ketersediaan air pada musim hujan dan musim kemarau. Penyediaan SDA adalah upaya mewujudkan kebutuhan pokok air sehari-hari sebagai prioritas utama dan kebutuhan air irigasi untuk pertanian rakyat dalam sistem irigasi yang ada baru dilanjutkan untuk kebutuhan lainnya seperti kebutuhan untuk energi, pariwisata, industri dan lain sebagainya dengan memperhatikan ekosistem dan lingkungan. Penyediaan air ini berupa alokasi optimal air dari waktu ke waktu dari lokasi pengambilan (Intake) yang terhubung secara hidrolis pada sumber air dengan prinsip adil dan efisien.
+
+B. Dasar Hukum
+
+a. Undang-Undang Nomor 17 Tahun 2019 tentang Sumber Daya Air.
+b. Undang-Undang Nomor 11 Tahun 2020 tentang Cipta Kerja.
+c. Peraturan Pemerintah Nomor 30 Tahun 2024 tentang Pengelolaan Sumber Daya Air.
+d. Peraturan Menteri PUPR Nomor 04/PRT/M/2015 tentang Kriteria Penetapan Wilayah Sungai.
+e. Peraturan Menteri PUPR Nomor 09/PRT/M/2015 tentang Penggunaan Sumber Daya Air.
+f. Peraturan Menteri Pekerjaan Umum dan Perumahan Rakyat Nomor 14/PRT/M/2015 tentang Kriteria dan Penetapan Status Daerah Irigasi.
+g. Peraturan Menteri Pekerjaan Umum Nomor 02 Tahun 2024 tentang Pedoman Pembentukan Wadah Koordinasi Pengelolaan Sumber Daya Air pada Tingkat Wilayah Sungai.
+h. Surat Edaran Direktur Jenderal Sumber Daya Air Nomor 04/SE/D/2012 tentang Petunjuk Teknis Penyusunan Neraca Air dan Penyelenggaraan Alokasi Air.
+
+C. Maksud & Tujuan
+
+a) Maksud RAAT adalah melaksanakan sebagian wewenang pemerintah dalam mewujudkan kemanfaatan SDA yang adil, efisien dan berkelanjutan.
+b) Tujuan RAAT adalah memberikan prediksi gambaran besaran debit, lokasi dan waktu penyediaan air atas kebutuhan multi sektor sesuai prioritas berdasarkan ketersediaan air tiap periode setengah bulanan disetiap bangunan pengambilan air untuk 1 tahun Hidrologi.
+
+D. Ruang Lingkup Wilayah
+
+Wilayah Sungai (WS) Tamiang-Langsa merupakan WS lintas Kabupaten yang meliputi 4 (empat) Kabupaten/Kota, yaitu Kabupaten Aceh Tamiang, Kabupaten Gayo Lues, Kabupaten Aceh Timur dan Kota Langsa dengan luas 6.265,88 Km². WS Tamiang-Langsa mempunyai 17 (tujuh belas) Daerah Aliran Sungai (DAS), yaitu Raya, Bayeun, Tengku Armiyah, Brimpotang, Langsa, Manyak Payed, Raja Muda, Putaurukut, Bunin, Simpang Kiri, Genting, Paya Udang, Sallau, Kermiri, Matang Muku, Masin Tamiang.
+
+Wilayah Sungai (WS) Tamiang-Langsa memiliki Batas Administrasi antara lain, sebelah utara dengan sebagai Kabupaten Aceh Timur, sebelah timur dengan Kabupaten Langkat, sebelah selatan dengan sebagai Kabupaten Aceh Tengah dan Gayo lues, sebelah barat dengan Kabupaten Aceh Tenggara. Selain Batas Administrasi Wilayah Sungai (WS) Tamiang-Langsa memiliki Batas Hidrologis antara lain, sebelah utara dengan WS. Jambo Aye, sebelah timur dengan WS. Wampu-Besitang, sebelah selatan dengan WS. Alas Singkil dan sebelah barat dengan WS. Woyla-Batee.
+
+--- Halaman 4 — DPI 150 (DPI mengikuti halaman 1) ---
+E. Jangka Waktu Perencanaan
+Jangka waktu perencanaan kegiatan Rencana Alokasi Air Tahunan adalah selama 1 (satu) tahun dan berlaku pada tahun berikutnya. Rencana Alokasi Air pada WS. Tamiang-Langsa ini ditetapkan oleh Gubernur Aceh sesuai dengan kewenangannya setiap tahun dengan memperhatikan pertimbangan dari Tim Koordinasi Pengelolaan Sumber Daya Air (TKPSDA) WS. Tamiang-Langsa. Rencana Alokasi Air Tahunan (RAAT) ini dapat diubah apabila terjadi perubahan ketersediaan air yang diakibatkan oleh peristiwa alam atau perubahan kondisi lingkungan dan/atau kerusakan jaringan sumber air yang tak terduga.
+
+F. Pembahasan Usulan Penetapan Rencana Alokasi Air Tahunan
+Pembahasan untuk penetapan Rencana Alokasi Air Tahunan (RAAT) WS. Tamiang-Langsa ini telah melibatkan berbagai pihak yang terkait dengan pemanfaatan SDA maupun kelestarian SDA, melibatkan para pengguna air baik dari unsur pemerintah maupun unsur non pemerintah yang tergabung dalam wadah Tim Koordinasi Pengelolaan Sumber Daya Air (TKPSDA) WS. Tamiang-Langsa. Sebagai wadah koordinasi pengelolaan SDA, TKPSDA WS. Tamiang-Langsa telah sepakat mengeluarkan rekomendasi Rencana Alokasi Air Tahunan (RAAT) pada WS. Tamiang-Langsa berdasarkan hasil peramalan dari BMKG dan dengan memperhatikan asas kelestarian lingkungan SDA, pertumbuhan ekonomi, kesejahteraan sosial dan urutan prioritas penyediaan air yang telah ditetapkan.
+
+G. Sosialisasi Kegiatan Pengelolaan Alokasi Air
+Agar supaya seluruh pengguna air mempunyai visi dan misi yang sama dalam kegiatan pengelolaan air perlu dilakukan sosialisasi pengelolaan alokasi air dan selanjutnya perlu melakukan:
+a. Membangun sistem komunikasi intensif dengan para pemanfaat air agar terjamin kelancaran informasi mengenai kondisi aktual air yang tersedia dan volume penggunaan air termasuk pada saat terjadi krisis air (neraca air defisit); dan
+b. Peningkatan partisipasi dari para pengguna agar secara aktif mereka dapat melaporkan bila terdapat penggunaan/pengambilan air liar/ilegal.
+
+H. Implementasi Rencana Alokasi Air Tahunan
+Implementasi Rencana Alokasi Air Tahunan perlu didukung oleh beberapa tahapan yang meliputi:
+a. Standar Operasi Prosedur (SOP)
+   SOP merupakan dokumen yang berisikan prosedur rinci bagi pengelola sumber daya air untuk penyelenggaraan alokasi air. Prosedur yang dimaksud termasuk tata cara pemberitahuan bilamana terjadi atau diperkirakan akan terjadi penyimpangan penyelenggaraan alokasi air. SOP disusun dan ditetapkan oleh pengelola sumber daya air wilayah sungai dan dipublikasikan. SOP disusun minimal memuat:
+   1. Pengaturan pelaksana alokasi air.
+   2. Pengendalian alokasi air.
+   3. Tata cara pemanfaatan dan evaluasi.
+   4. Peta dan data kondisi prasarana sumber daya air.
+   5. Struktur kelembagaan meliputi daftar nama petugas dan alat komunikasi.
+   6. Tugas dan tanggung jawab masing-masing pelaksana di prasarana sumber daya air.
+b. Persiapan
+   1. Pemeriksaan kesiapan prasarana sumber daya air.
+   2. Penyiapan sumber daya manusia yang terkait dalam penyelenggaraan alokasi air perlu ditingkatkan kesiapannya melalui pelatihan/penyegaran dan diskusi pemahaman rencana alokasi air dari SOP.
+   3. Pemeriksaan peralatan pengukuran/pemantauan termasuk kalibrasi alat ukur.
+   4. Kesiapan SOP.
+   5. Pemeriksaan alat pendukung seperti sarana komunikasi, komputer, perangkat lunak untuk sistem monitoring (realtime monitoring system).
+   6. Pembiayaan.
+
+c. Operasional .../3
+
+--- Halaman 5 — DPI 150 (DPI mengikuti halaman 1) ---
+c. Operasional
+1. Pencatatan data penggunaan dan kondisi air yang meliputi nama pengguna/pemakai air, lokasi (Gampong/Kecamatan/Kabupaten), nama sungai tempat pengambilan, kapasitas pengambilan, tinggi muka air dan kualitas air.
+2. Pengamatan dan pemeriksaan kondisi operasi bangunan ukur.
+3. Pengaturan distribusi air disesuaikan dengan rencana alokasi air dan pencatatan pelaksanaan sebagai bahan pengendalian alokasi air.
+4. Pelaksanaan penertiban terhadap pelanggaran pengambilan air baik yang mempunyai izin dan non izin.
+
+d. Pelaksanaan
+Pelaksana pengaturan alokasi air dilakukan oleh pengelola sumber daya air berdasarkan rencana alokasi air rinci yang sudah ditetapkan. Pelaksana pengaturan alokasi air ditetapkan berdasarkan Surat Keputusan Kepala Dinas Pengairan Aceh.
+
+I. Implementasi Rencana Alokasi Air Tahunan
+Monitoring pelaksanaan rencana alokasi air dilaksanakan oleh pengelola sumber daya air dengan tujuan agar pelaksanaannya sesuai dengan persyaratan teknis yang telah ditetapkan dan dapat mengurangi terjadinya penyimpangan pelaksanaan alokasi air. Kegiatan monitoring pelaksanaan rencana alokasi air tahunan dibagi dalam dua bagian yaitu:
+a. Pengawasan, periode pengawasan dilakukan minimal dua kali dalam setahun yang dilaksanakan pada awal musim hujan dan awal musim kemarau. Bentuk pengawasan dilakukan dengan cara:
+1. Kontrol pelaksanaan alokasi air di lapangan.
+2. Penilaian kinerja sarana dan prasarana sumber daya air.
+3. Penertiban penggunaan air.
+
+b. Pengendalian, dapat dilakukan dengan melaksanakan:
+1. Koreksi terhadap pelaksanaan alokasi air, dilakukan apabila penyimpangannya masih dalam batas toleransi yang telah disepakati, dengan melakukan upaya pencegahan.
+2. Koreksi terhadap alokasi air rinci, dilakukan apabila terjadi penyimpangan yang melebihi batas toleransi yang telah disepakati antara lain yang disebabkan oleh perubahan kondisi cuaca, bencana alam serta perubahan kebijakan.
+
+J. Evaluasi Pelaksanaan Alokasi Air
+Evaluasi terhadap pelaksanaan alokasi air dilakukan pada setiap akhir kegiatan alokasi air. Penyimpangan dalam penyelenggaraan alokasi air di lapangan umumnya disebabkan karena beberapa kekurangan antara lain:
+1. Skema rencana alokasi air yang dipergunakan dalam model belum menunjukkan keadaan yang sebenarnya.
+2. Data input yang belum divalidasi.
+3. Petugas penjaga pintu air dan/atau masyarakat setempat yang kurang disiplin/tidak menaati rencana alokasi air yang disarankan.
+4. Rencana tata tanam yang sudah disepakati bersama dalam forum rapat TKPSDA tidak ditaati.
+5. Perlu tambahan kebutuhan air untuk penggelontoran akibat kuantitas dan kualitas air limbah yang telah lewat dari ambang batas.
+
+Hasil evaluasi pelaksanaan alokasi air merupakan salah satu agenda yang harus dibahas dalam sidang pleno Tim Koordinasi Pengelolaan Sumber Daya Air (TKPSDA) WS. Tamiang-Langsa.
+

@@ -1,0 +1,155 @@
+=== HASIL PARSE — status=SUCCESS — 40 node ===
+
+[judul/judul]  (hal 1-1)
+  QANUN ACEH
+
+[judul/judul]  (hal 1-1)
+  NOMOR 7 TAHUN 2025
+
+[judul/judul]  (hal 1-1)
+  TENTANG
+
+[judul/judul]  (hal 1-1)
+  RENCANA INDUK PELAKSANAAN SYARIAT ISLAM BISMILLAHIRRAHMANIRRAHIM
+
+[judul/pembukaan]  (hal 1-1)
+  DENGAN NAMA ALLAH YANG MAHA PENGASIH LAGI MAHA PENYAYANG
+
+[judul/judul]  (hal 1-1)
+  ATAS RAHMAT ALLAH YANG MAHA KUASA GUBERNUR ACEH,
+
+[menimbang/item]  (hal 1-1)
+  bahwa kehidupan rakyat Aceh yang religius dan menjunjung tinggi ajaran Islam, merupakan modal dalam meningkatkan peran serta masyarakat untuk mewujudkan keadilan, kemakmuran dan kesejahtera serta memantapkan kemampuan Aceh dalam menghadapi tantangan global;
+
+[menimbang/item]  (hal 1-1)
+  bahwa sebagai wujud pelaksanaan keistimewaan Aceh yang antara lain meliputi penyelenggaraan kehidupan beragama dalam bentuk pelaksanaan Syari'at Islam bagi pemeluknya di Aceh dengan tetap menjaga kerukunan hidup antarumat beragama, maka dipandang perlu menetapkan nilai dan prinsip dasar Islami sebagai pedoman semua pihak dalam penerapan Syariat Islam dalam kehidupan bermasyarakat, berbangsa dan bernegara;
+
+[menimbang/item]  (hal 1-1)
+  bahwa berdasarkan ketentuan Pasal 125 ayat (1) dan ayat (3), serta Pasal 127 ayat (1) Undang-Undang Nomor 11 Tahun 2006 tentang Pemerintahan Aceh, pelaksanaan syariat Islam meliputi Aqidah, Syariat dan Akhlaq yang menjadi tanggung jawab Pemerintahan Aceh diatur dengan Qanun Aceh;
+
+[menimbang/item]  (hal 1-1)
+  bahwa berdasarkan ketentuan sebagaimana dimaksud dalam huruf a, huruf b dan huruf c, perlu membentuk Qanun tentang Rencana Induk Pelaksanaan Syariat Islam;
+
+[mengingat/item]  (hal 1-1)
+  Pasal 18 Ayat (6), Pasal 18B Undang-Undang Dasar Negara Republik Indonesia Tahun 1945;
+
+[mengingat/item]  (hal 1-1)
+  Undang-Undang Nomor 24 Tahun 1956 tentang Pembentukan Daerah Otonomi Propinsi Atjeh dan Perubahan Peraturan Pembentukan Propinsi Sumatera Utara (Lembaran Negara Republik Indonesia Tahun 1956 Nomor 64, Tambahan Lembaran Negara Republik Indonesia Nomor 1103);
+
+[mengingat/item]  (hal 1-1)
+  Undang-Undang Nomor 44 Tahun 1999 tentang Penyelenggaraan Keistimewaan Propinsi Daerah Istimewa Aceh (Lembaran Negara Republik Indonesia Tahun 1999 Nomor 172, Tambahan Lembaran Negara Republik Indonesia Nomor 3893);
+
+[mengingat/item]  (hal 1-1)
+  Undang-Undang...
+
+[mengingat/item]  (hal 2-2)
+  Undang-Undang Nomor 11 Tahun 2006 tentang Pemerintahan Aceh (Lembaran Negara Republik Indonesia Tahun 2006 Nomor 62, Tambahan Lembaran Negara Republik Indonesia Nomor 4633);
+
+[mengingat/item]  (hal 2-2)
+  Undang-Undang Nomor 23 Tahun 2014 tentang Pemerintahan Daerah (Lembaran Negara Republik Indonesia Tahun 2014 Nomor 244, Tambahan Lembaran Negara Republik Indonesia Nomor 5587) sebagaimana telah diubah beberapa kali terakhir dengan Undang-Undang Nomor 6 Tahun 2023 tentang Penetapan Peraturan Pemerintah Pengganti Undang-Undang Nomor 2 Tahun 2022 tentang Cipta Kerja Menjadi Undang-Undang (Lembaran Negara Republik Indonesia Tahun 2023 Nomor 41, Tambahan Lembaran Negara Nomor 6841); Dengan Persetujuan DEWAN PERWAKILAN RAKYAT ACEH DAN GUBERNUR ACEH
+
+[penetapan/penetapan]  (hal 2-2)
+  MEMUTUSKAN:
+
+[penetapan/penetapan]  (hal 2-2)
+  Menetapkan: QANUN TENTANG RENCANA INDUK PELAKSANAAN SYARIAT ISLAM.
+
+[batang_tubuh/bab] BAB I (hal 2-2)
+  KETENTUAN UMUM
+
+    [batang_tubuh/pasal] 1 (hal 2-3)
+      Dalam Qanun ini yang dimaksud dengan: 1. Rencana Induk Pelaksanaan Syariat Islam adalah rancangan induk yang berisi peta jalan pelaksanaan Syariat Islam, yang menjadi pedoman dan acuan bagi pemerintah dan masyarakat. 2. Syariat Islam adalah tuntunan ajaran Islam dalam semua aspek kehidupan. 3. Aceh adalah provinsi yang merupakan kesatuan masyarakat hukum yang bersifat istimewa dan diberi kewenangan khusus untuk mengatur dan mengurus sendiri urusan pemerintahan dan kepentingan masyarakat setempat sesuai dengan ketentuan peraturan perundang-undangan dalam sistem dan prinsip Negara Kesatuan Republik Indonesia berdasarkan Undang-Undang Dasar Negara Republik Indonesia Tahun 1945, yang dipimpin oleh seorang Gubernur. 4. Kabupaten/Kota adalah bagian dari daerah provinsi sebagai suatu kesatuan masyarakat hukum yang diberi kewenangan khusus untuk mengatur dan mengurus sendiri urusan pemerintahan dan kepentingan masyarakat setempat sesuai dengan peraturan perundang-undangan dalam sistem dan prinsip Negara Kesatuan Republik Indonesia berdasarkan Undang-Undang Dasar 1945 yang dipimpin oleh seorang Bupati/Walikota. Undang Dasar 1945 yang dipimpin oleh seorang Bupati/Walikota. 5. Pemerintahan Aceh adalah penyelenggara urusan pemerintahan yang dilaksanakan oleh Pemerintah Aceh dan Dewan Perwakilan Rakyat Aceh sesuai dengan fungsi dan kewenangan masing-masing. 6. Pemerintahan... 6. Pemerintahan Kabupaten/Kota adalah penyelenggaraan urusan pemerintahan yang dilaksanakan oleh Pemerintah Kabupater/Kota dan Dewan Perwakilan Rakyat Kabupaten/Kota sesuai dengan fungsi dan kewenangan masing-masing. 7. Pemerintah Aceh adalah unsur penyelenggara Pemerintahan Aceh yang terdiri atas Gubernur dan Perangkat Aceh. 8. Pemerintah Kabupaten/Kota adalah unsur penyelenggara Pemerintahan Daerah Kabupaten/Kota yang terdiri atas Bupati/Walikota dan perangkat daerah Kabupaten/Kota. 9. Gubernur adalah Kepala Pemerintah Aceh. 10. Bupati/Walikota adalah kepala pemerintah daerah Kabupaten/Kota. 11. Dewan Perwakilan Rakyat Aceh yang selanjutnya disingkat DPRA adalah unsur penyelenggara Pemerintahan Aceh yang anggotanya dipilih melalui pemilihan umum. 12. Dewan Perwakilan Rakyat Kabupaten/Kota yang selanjutnya disingkat DPRK adalah unsur penyelenggara Pemerintahan Kabupaten/Kota yang anggotanya dipilih melalui pemilihan umum. 13. Majelis Permusyawaratan Ulama Aceh yang selanjutnya disebut MPU Aceh adalah majelis yang anggotanya terdiri atas ulama dan cendekiawan muslim yang merupakan mitra kerja Pemerintah Aceh dan DPRA. 14. Satuan Kerja Perangkat Aceh yang selanjutnya disingkat SKPA adalah organisasi perangkat daerah pada Pemerintah Aceh. 15. Satuan Kerja Perangkat Kabupaten/Kota yang selanjutnya disingkat SKPK adalah organisasi perangkat daerah pada Pemerintah Kabupaten/Kota. 16. Urusan Pemerintahan Aceh adalah semua urusan wajib, urusan wajib lainnya yang menjadi kewenangan Aceh yang merupakan pelaksanaan keistimewaan Aceh serta urusan pilihan yang telah didesentralisasikan kepada Pemerintah Aceh. 17. Birokrasi adalah semua organisasi Perangkat Daerah Pemerintah Aceh yang bertugas sebagai Satuan Kerja Perangkat Aceh selanjutnya disingkat SKPA yang menyelenggarakan urusan tertentu dari urusan Pemerintahan Aceh. 18. Badan Usaha adalah lembaga yang berbadan hukum dan tidak berbadan hukum yang melakukan kegiatan di Aceh. 19. Organisasi Kemasyarakatan yang selanjutnya disebut Ormas adalah organisasi yang didirikan dan dibentuk oleh masyarakat secara sukarela berdasarkan kesamaan aspirasi, kehendak, kebutuhan, kepentingan, kegiatan, dan tujuan untuk berpartisipasi dalam pembangunan demi tercapainya tujuan Negara Kesatuan Republik Indonesia yang berdasarkan Pancasila.
+
+    [batang_tubuh/pasal] 2 (hal 3-4)
+      Qanun ini berasaskan:
+      a. Ke-Islaman;
+      b. kekhususan dan keistimewaan Aceh;
+      c. kepastian hukum;
+      d. kepentingan...
+      d. kepentingan umum;
+      e. tertib penyelenggaraan pemerintahan;
+      f. keterbukaan;
+      g. proporionalitas;
+      h. profesionalitas;
+      i. akuntabilitas;
+      j. efisiensi;
+      k. efektivitas; dan
+      l. kesetaraan.
+
+    [batang_tubuh/pasal] 3 (hal 4-4)
+      Qanun ini dimaksudkan sebagai pedoman pelaksanaan keistimewaan Aceh yang antara lain meliputi penyelenggaraan kehidupan beragama dalam bentuk pelaksanaan Syari'at Islam bagi pemeluknya di Aceh dengan tetap menjaga kerukunan hidup antarumat beragama.
+
+    [batang_tubuh/pasal] 4 (hal 4-4)
+      Qanun ini bertujuan untuk mewujudkan penyelenggaraan Syariat Islam di Aceh melalui rancangan induk yang berisi peta jalan pelaksanaan Syariat Islam, yang menjadi pedoman dan acuan bagi Pemerintah Aceh, Pemerintah Kabupaten/Kota, dunia usaha dan masyarakat.
+
+    [batang_tubuh/pasal] 5 (hal 4-4)
+      Ruang lingkup pengaturan dalam Qanun ini meliputi:
+      a. penetapan Rencana Induk Pelaksanaan Syariat Islam;
+      b. sistematika Rencana Induk Pelaksanaan Syariat Islam;
+      c. penyelenggaraan Rencana Induk Pelaksanaan Syariat Islam;
+      d. pembinaan, pengawasan, dan evaluasi;
+      e. peran serta masyarakat;
+      f. kerjasama;
+      g. pendanaan; dan
+      h. sanksi administratif.
+
+[batang_tubuh/bab] BAB II (hal 4-4)
+  PENETAPAN RENCANA INDUK PELAKSANAAN SYARIAT ISLAM
+
+    [batang_tubuh/pasal] 6 (hal 4-4)
+
+      [batang_tubuh/ayat] 1 (hal 4-4)
+        Dengan Qanun ini ditetapkan Rencana Induk Pelaksanaan Syariat Islam.
+
+      [batang_tubuh/ayat] 2 (hal 4-4)
+        Rencana Induk Pelaksanaan Syariat Islam sebagaimana dimaksud pada ayat (1) disusun dalam rangka melaksanakan Syariat Islam secara kaffah di Aceh.
+
+      [batang_tubuh/ayat] 3 (hal 4-4)
+        Rencana Induk Pelaksanaan Syariat Islam sebagaimana dimaksud pada ayat (1) menjadi acuan penyusunan Rencana Induk Pelaksanaan Syariat Islam pada Pemerintah Kabupaten/Kota.
+
+      [batang_tubuh/ayat] 4 (hal 4-4)
+        Rencana Induk Pelaksanaan Syariat Islam sebagaimana dimaksud pada ayat (1) ditetapkan untuk jangka waktu 20 (dua puluh) tahun, terhitung sejak tahun 2025-2045.
+
+[batang_tubuh/bab] BAB III (hal 5-5)
+  SISTEMATIKA RENCANA INDUK PELAKSANAAN SYARIAT ISLAM
+
+    [batang_tubuh/pasal] 7 (hal 5-5)
+
+      [batang_tubuh/ayat] 1 (hal 5-5)
+        Dokumen Rencana Induk Pelaksanaan Syariat Islam meliputi:
+        a. pendahuluan, merupakan ringkasan materi dari Rencana Induk Pelaksanaan Syariat Islam;
+        b. materi kebijakan strategis, merupakan integrasi pada program dan kegiatan Pemerintahan Aceh yang terdiri dari kebijakan, strategi, sasaran, tahapan, indikator, dan evaluasi.
+        c. Pedoman rencana induk pelaksanaan syariat Islam terdiri atas bidang:
+        (1) Pemerintahan, Hukum dan Politik, Perlindungan Masyarakat dan Kesatuan Bangsa;
+        (2) Pendidikan, Pelatihan, Kebudayaan dan Pariwisata;
+        (3) Kesehatan dan Fasilitas Pelayanan Kesehatan;
+        (4) Lingkungan Hidup, Kehutanan, Pertambangan, Kelautan, Peternakan, Perkebunan, Pertanian, dan Pengairan;
+        (5) Perindustrian dan Perdagangan, Koperasi dan Usaha Mikro Kecil Menengah;
+        (6) Pemuda dan Olahraga;
+        (7) Keuangan perbankan dan seluruh aktivitas Ekonomi Syariah;
+        (8) Perhubungan, Komunikasi, Informasi dan Telematika;
+        (9) Tenaga Kerja dan Mobilitas Penduduk;
+        (10) Sosial, Kependudukan; dan
+        (11) Penanggulangan Bencana dan Pemberdayaan Masyarakat.
+
+      [batang_tubuh/ayat] 2 (hal 5-5)
+        Dokumen Rencana Induk Pelaksanaan Syariat Islam sebagaimana dimaksud pada ayat (1) disusun dengan sistematika sebagai berikut:
+
+[batang_tubuh/bab] BAB I (hal 5-5)
+  : pendahuluan;
+
+[batang_tubuh/bab] BAB II (hal 5-5)
+  : materi kebijakan strategis;
+
+[batang_tubuh/bab] BAB III (hal 5-5)
+  : pedoman Rencana Induk Pelaksanaan Syariat Islam; dan
+
+[batang_tubuh/bab] BAB IV (hal 5-5)
+  : penutup.
+
+      [batang_tubuh/ayat] 3 (hal 5-5)
+        Selain pelaksanaan syariat Islam dalam bidang sebagaimana dimaksud pada ayat (1) huruf c, Rencana Induk Pelaksanaan Syariat Islam juga dilaksanakan untuk penguatan syariat Islam dalam bidang ibadah, ahwal al-syakhshiyah (hukum keluarga), muamalah (hukum perdata), jinayah (hukum pidana), qadha' (peradilan), tarbiyah (pendidikan), dakwah, syiar dan pembelaan Islam.
+
+      [batang_tubuh/ayat] 4 (hal 5-5)
+        Dokumen Rencana Induk Pelaksanaan Syariat Islam sebagaimana dimaksud pada ayat (2) tercantum dalam lampiran yang merupakan bagian tidak terpisahkan dari Qanun ini.
+

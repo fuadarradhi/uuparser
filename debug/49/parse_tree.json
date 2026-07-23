@@ -1,0 +1,482 @@
+{
+  "status": "SUCCESS",
+  "nodes": [
+    {
+      "section": "judul",
+      "node_type": "judul",
+      "content": "SALINAN",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "judul",
+      "node_type": "judul",
+      "content": "GUBERNUR ACEH",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "judul",
+      "node_type": "judul",
+      "content": "PERATURAN GUBERNUR ACEH",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "judul",
+      "node_type": "judul",
+      "content": "NOMOR 24 TAHUN 2025",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "judul",
+      "node_type": "judul",
+      "content": "TENTANG",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "judul",
+      "node_type": "judul",
+      "content": "TENAGA PROFESIONAL BAITUL MAL ACEH",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "judul",
+      "node_type": "pembukaan",
+      "content": "DENGAN RAHMAT ALLAH YANG MAHA KUASA",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "judul",
+      "node_type": "judul",
+      "content": "GUBERNUR ACEH,",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "menimbang",
+      "node_type": "item",
+      "content": "Bahwa untuk melaksanakan ketentuan Pasal 8A ayat (3) Qanun Aceh Nomor 3 Tahun 2021 tentang Perubahan Atas Qanun Aceh Nomor 10 Tahun 2018 tentang Baitul Mal, perlu menetapkan Peraturan Gubernur tentang Tenaga Professional Baitul Mal Aceh;",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Pasal 18 ayat (6) Undang-Undang Dasar Negara Republik Indonesia Tahun 1945;",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 24 Tahun 1956 tentang Pembentukan Daerah Otonom Propinsi Atjeh dan Perubahan Peraturan Pembentukan Propinsi Sumatera Utara (Lembaran Negara Republik Indonesia Tahun 1956 Nomor 64, Tambahan Lembaran Negara Republik Indonesia Nomor 1103);",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 44 Tahun 1999 tentang Penyelenggaraan Keistimewaan Propinsi Daerah Istimewa Aceh (Lembaran Negara Republik Indonesia Tahun 1999 Nomor 172, Tambahan Lembaran Negara Republik Indonesia Nomor 3893);",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 11 Tahun 2006 tentang Pemerintahan Aceh (Lembaran Negara Republik Indonesia Tahun 2006 Nomor 62, Tambahan Lembaran Negara Republik Indonesia Nomor 4633);",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 23 Tahun 2011 tentang Pengelolaan Zakat (Lembaran Negara Republik Indonesia Tahun 2011 Nomor 115, Tambahan Lembaran Negara Republik Indonesia Nomor 5255);",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 23 Tahun 2014 tentang Pemerintahan Daerah (Lembaran Negara Republik Indonesia Tahun 2014 Nomor 244, Tambahan Lembaran Negara Republik Indonesia Nomor 5587), sebagaimana telah beberapa kali diubah terakhir dengan Undang-Undang Nomor 6 Tahun 2023 tentang Penetapan Peraturan Pemerintah Pengganti Undang-Undang Nomor 2 Tahun 2022 tentang Cipta Kerja Menjadi Undang-Undang (Lembaran Negara Republik Indonesia Tahun 2023 Nomor 41, Tambahan Lembaran Negara Republik Indonesia Nomor 6856);",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Undang-Undang Nomor 20 Tahun 2023 tentang Aparatur Sipil Negara (Lembaga Negara Republik Indonesia Tahun 2023 Nomor 141, Tambahan Lembaran Negara Republik Indonesia Nomor 6897);",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan .../2",
+      "start_page": 1,
+      "end_page": 1,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Peraturan Pemerintah Nomor 14 Tahun 2014 tentang Pelaksanaan Undang-Undang Nomor 23 Tahun 2011 tentang Pengelolaan Zakat (Lembaran Negara Republik Indonesia Tahun 2014 Nomor 38, Tambahan Lembaran Negara Republik Indonesia Nomor 5508);",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "mengingat",
+      "node_type": "item",
+      "content": "Qanun Aceh Nomor 10 Tahun 2018 tentang Baitul Mal (Lembaran Aceh Tahun 2018 Nomor 07) sebagaimana telah diubah dengan Qanun Aceh Nomor 3 Tahun 2021 tentang Perubahan Atas Qanun Aceh Nomor 10 Tahun 2018 tentang Baitul Mal (Lembaran Aceh Tahun 2021 Nomor 8, Tambahan Lembaran Aceh Nomor 129);",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "penetapan",
+      "node_type": "penetapan",
+      "content": "MEMUTUSKAN:",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "penetapan",
+      "node_type": "penetapan",
+      "content": "Menetapkan : PERATURAN GUBERNUR TENTANG TENAGA PROFESIONAL BAITUL MAL ACEH.",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null
+    },
+    {
+      "section": "batang_tubuh",
+      "node_type": "bab",
+      "label": "BAB I",
+      "content": "KETENTUAN UMUM",
+      "start_page": 2,
+      "end_page": 2,
+      "warnings": null,
+      "children": [
+        {
+          "section": "batang_tubuh",
+          "node_type": "pasal",
+          "label": "1",
+          "content": "Dalam Peraturan Gubernur ini yang dimaksud dengan: 1. Aceh adalah daerah provinsi yang merupakan kesatuan masyarakat hukum yang bersifat istimewa dan diberi kewenangan khusus untuk mengatur dan mengurus sendiri urusan pemerintahan dan kepentingan masyarakat setempat sesuai dengan peraturan perundang-undangan dalam sistem dan prinsip Negara Kesatuan Republik Indonesia berdasarkan Undang-Undang Dasar Negara Republik Indonesia Tahun 1945, yang dipimpin oleh seorang Gubernur. 2. Pemerintah Aceh adalah unsur penyelenggara pemerintahan Aceh yang terdiri atas Gubernur dan Perangkat Aceh. 3. Gubernur adalah Gubernur Aceh. 4. Baitul Mal adalah lembaga keistimewaan dan kekhususan pada Pemerintah Aceh yang dalam melaksanakan tugasnya bersifat independen berwenang untuk menjaga, mengelihara, mengelola dan mengembangkan zakat, infak, harta wakaf dan harta keagamaan lainnya dan pengawasan perwalian berdasarkan Syariat Islam. 5. Baitul Mal Aceh yang selanjutnya disingkat BMA adalah Baitul Mal pada tingkat Aceh. 6. Badan Baitul Mal Aceh yang selanjutnya disebut Badan BMA adalah unsur penyusun dan pembua kebijakan pengelolaan zakat, infak, harta wakaf, harta keagamaan lainnya dan pengawasan perwalian pada tingkat provinsi di Aceh. 7. Sekretariat Baitul Mal Aceh yang selanjutnya disebut Sekretariat BMA adalah unsur penyelenggara pelayanan dan pengelolaan zakat, infak, harta wakaf dan harta keagamaan lainnya dan pengawasan perwalian pada tingkat Provinsi Aceh. 8. Dewan Pertimbangan Syariah Baitul Mal Aceh yang selanjutnya disebut DPS adalah unsur yang memberikan pertimbangan dan pengawasan syariah terhadap penyelenggara kebijakan dan penyelenggara pengelolaan zakat, infak, harta wakaf dan harta keagamaan lainnya serta pengawasan perwalian oleh Badan BMA dan Sekretariat BMA. 9. Tenaga .../3 9. Tenaga Profesional BMA adalah tenaga non aparatur sipil negara yang karena keahliannya diangkat untuk membantu pelaksanaan tugas, fungsi dan kewenangan BMA yang secara administratif bertanggung jawab Kepala Sekretariat BMA dan secara fungsional bertanggung jawab kepada Ketua Badan BMA.",
+          "start_page": 2,
+          "end_page": 3,
+          "warnings": null
+        },
+        {
+          "section": "batang_tubuh",
+          "node_type": "pasal",
+          "label": "2",
+          "content": "Peraturan Gubernur ini dimaksudkan sebagai pedoman pelaksanaan pemilihan, pengangkatan, pemberhentian, pembinaan dan perlindungan Tenaga Profesional BMA.",
+          "start_page": 3,
+          "end_page": 3,
+          "warnings": null
+        },
+        {
+          "section": "batang_tubuh",
+          "node_type": "pasal",
+          "label": "3",
+          "content": "Peraturan Gubernur ini bertujuan untuk memperoleh Tenaga Profesional BMA yang memiliki keahlian dalam membantu kelancaran tugas Badan BMA.",
+          "start_page": 3,
+          "end_page": 3,
+          "warnings": null
+        },
+        {
+          "section": "batang_tubuh",
+          "node_type": "pasal",
+          "label": "4",
+          "content": "Ruang lingkup dari Peraturan Gubernur ini meliputi:\na. tugas dan fungsi;\nb. persyaratan;\nc. pemilihan, pengangkatan, pemberhentian dan pergantian antarwaktu;\nd. pembinaan; dan\ne. perlindungan.",
+          "start_page": 3,
+          "end_page": 3,
+          "warnings": null
+        }
+      ]
+    },
+    {
+      "section": "batang_tubuh",
+      "node_type": "bab",
+      "label": "BAB II",
+      "content": "TUGAS DAN FUNGSI",
+      "start_page": 3,
+      "end_page": 3,
+      "warnings": null,
+      "children": [
+        {
+          "section": "batang_tubuh",
+          "node_type": "pasal",
+          "label": "5",
+          "start_page": 3,
+          "end_page": 3,
+          "warnings": null,
+          "children": [
+            {
+              "section": "batang_tubuh",
+              "node_type": "ayat",
+              "label": "1",
+              "content": "Tenaga Profesional BMA bertugas:\na. mengidentifikasi dan merumuskan isu strategis dalam pengelolaan dan pengembangan;\nb. menyusun rekomendasi terhadap isu strategis dalam pengelolaan dan pengembangan;\nc. mempelajari, menganalisis serta memberikan penilaian terhadap program dan kegiatan yang akan dan telah dilaksanakan BMA;\nd. menyusun perencanaan, program, kegiatan serta petunjuk teknis pelaksanaannya;\ne. membantu Badan BMA dalam perumusan kebijakan dan penyusunan Peraturan Badan BMA;\nf. berkoordinasi dengan Badan BMA dalam rangka pelaksanaan tugas Tenaga Profesional;\ng. melaporkan hasil pelaksanaan tugas kepada Badan BMA sebagai bahan evaluasi dan pertanggungjawaban; dan\nh. menerima tugas lainnya dari Badan BMA.",
+              "start_page": 3,
+              "end_page": 3,
+              "warnings": null
+            },
+            {
+              "section": "batang_tubuh",
+              "node_type": "ayat",
+              "label": "2",
+              "content": "Tenaga Profesional BMA menyelenggarakan fungsi:\na. dukungan kepada Badan BMA dalam penyusunan dan perumusan kebijakan pengelolaan dan pengembangan pada BMA;\nb. dukungan kepada DPS dalam penyusunan kebijakan dan peraturan DPS; dan\nc. dukungan .../4\nc. dukungan Sekretariat BMA dalam penyelenggaraan kebijakan pengelolaan dan pengembangan pada BMA.",
+              "start_page": 3,
+              "end_page": 4,
+              "warnings": null
+            },
+            {
+              "section": "batang_tubuh",
+              "node_type": "ayat",
+              "label": "3",
+              "content": "Ketentuan mengenai tugas dan fungsi Tenaga Profesional BMA sebagaimana dimaksud pada ayat (1) dan ayat (2) diatur dengan Peraturan Badan BMA.",
+              "start_page": 4,
+              "end_page": 4,
+              "warnings": null
+            }
+          ]
+        },
+        {
+          "section": "batang_tubuh",
+          "node_type": "pasal",
+          "label": "6",
+          "content": "Penempatan dan pembagian tugas Tenaga Profesional BMA ditetapkan dengan Keputusan Ketua Badan BMA.",
+          "start_page": 4,
+          "end_page": 4,
+          "warnings": null
+        }
+      ]
+    },
+    {
+      "section": "batang_tubuh",
+      "node_type": "bab",
+      "label": "BAB III",
+      "content": "PERSYARATAN",
+      "start_page": 4,
+      "end_page": 4,
+      "warnings": null,
+      "children": [
+        {
+          "section": "batang_tubuh",
+          "node_type": "pasal",
+          "label": "7",
+          "start_page": 4,
+          "end_page": 4,
+          "warnings": null,
+          "children": [
+            {
+              "section": "batang_tubuh",
+              "node_type": "ayat",
+              "label": "1",
+              "content": "Calon Tenaga Profesional BMA harus memenuhi persyaratan sebagai berikut:\na. Penduduk Aceh/Warga Negara Indonesia yang berdomisili di Aceh;\nb. beragama Islam;\nc. mampu membaca Al-Qur'an;\nd. sehat jasmani dan rohani;\ne. berusia paling tinggi 55 (lima puluh lima) tahun pada saat pendaftaran dilakukan;\nf. pendidikan minimal Sarjana (Strata-1);\ng. tidak sedang menjadi anggota atau pengurus partai politik atau terlibat politik praktis pada saat pendaftaran; dan\nh. mempunyai pengalaman kerja sesuai bidang yang dibutuhkan.",
+              "start_page": 4,
+              "end_page": 4,
+              "warnings": null
+            },
+            {
+              "section": "batang_tubuh",
+              "node_type": "ayat",
+              "label": "2",
+              "content": "Tenaga Profesional BMA sebagaimana dimaksud pada ayat (1) harus memiliki keahlian di bidang:\na. penyusunan program dan perencanaan;\nb. penganggaran dan pengelolaan keuangan;\nc. akuntansi dan pelaporan keuangan;\nd. pemanfaatan teknologi informasi dan pengelolaan data;\ne. penyusunan produk hukum dan peraturan perundang-undangan;\nf. pemberdayaan ekonomi masyarakat yakni, pertanian, perikanan, peternakan, perkebunan, usaha mikro kecil dan sektor lainnya yang relevan dengan BMA;\ng. komunikasi dan hubungan masyarakat;\nh. monitoring dan evaluasi program/kegiatan;\ni. penghimpun dana;\nj. riset dan pengembangan kelembagaan;\nk. pengembangan sumber daya manusia;\nl. manajemen penyertaan modal dan investasi syariah; dan/atau\nm. pengkajian hukum syariah tentang zakat, infak, harta wakaf dan/atau harta keagamaan lainnya.",
+              "start_page": 4,
+              "end_page": 4,
+              "warnings": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "section": "batang_tubuh",
+      "node_type": "bab",
+      "label": "BAB IV",
+      "content": "PEMILIHAN, PENGANGKATAN, PEMBERHENTIAN DAN PERGANTIAN ANTAR WAKTU",
+      "start_page": 5,
+      "end_page": 5,
+      "warnings": null,
+      "children": [
+        {
+          "section": "batang_tubuh",
+          "node_type": "bagian",
+          "label": "Bagian 1",
+          "content": "Pemilihan",
+          "start_page": 5,
+          "end_page": 5,
+          "warnings": null,
+          "children": [
+            {
+              "section": "batang_tubuh",
+              "node_type": "paragraf",
+              "label": "1",
+              "content": "Uumum",
+              "start_page": 5,
+              "end_page": 5,
+              "warnings": null,
+              "children": [
+                {
+                  "section": "batang_tubuh",
+                  "node_type": "pasal",
+                  "label": "8",
+                  "start_page": 5,
+                  "end_page": 5,
+                  "warnings": null,
+                  "children": [
+                    {
+                      "section": "batang_tubuh",
+                      "node_type": "ayat",
+                      "label": "1",
+                      "content": "Pemilihan Tenaga Profesional BMA dilaksanakan oleh Kepala Sekretariat BMA.",
+                      "start_page": 5,
+                      "end_page": 5,
+                      "warnings": null
+                    },
+                    {
+                      "section": "batang_tubuh",
+                      "node_type": "ayat",
+                      "label": "2",
+                      "content": "Untuk kesinambungan program dan kegiatan BMA serta transisi tugas dan fungsi Tenaga Profesional BMA, pemilihan Tenaga Profesional dilaksanakan paling lambat 3 (tiga) bulan sebelum masa keanggotaan Tenaga Profesional berakhir.",
+                      "start_page": 5,
+                      "end_page": 5,
+                      "warnings": null
+                    }
+                  ]
+                },
+                {
+                  "section": "batang_tubuh",
+                  "node_type": "paragraf",
+                  "label": "2",
+                  "content": "Tim Seleksi",
+                  "start_page": 5,
+                  "end_page": 5,
+                  "warnings": null,
+                  "children": [
+                    {
+                      "section": "batang_tubuh",
+                      "node_type": "pasal",
+                      "label": "9",
+                      "start_page": 5,
+                      "end_page": 5,
+                      "warnings": null,
+                      "children": [
+                        {
+                          "section": "batang_tubuh",
+                          "node_type": "ayat",
+                          "label": "1",
+                          "content": "Untuk melaksanakan pemilihan sebagaimana dimaksud dalam Pasal 8, Kepala Sekretariat BMA mengusulkan tim seleksi kepada Badan BMA.",
+                          "start_page": 5,
+                          "end_page": 5,
+                          "warnings": null
+                        },
+                        {
+                          "section": "batang_tubuh",
+                          "node_type": "ayat",
+                          "label": "2",
+                          "content": "Tim seleksi sebagaimana dimaksud pada ayat (1) ditetapkan dalam Keputusan Ketua Badan BMA.",
+                          "start_page": 5,
+                          "end_page": 5,
+                          "warnings": null
+                        },
+                        {
+                          "section": "batang_tubuh",
+                          "node_type": "ayat",
+                          "label": "3",
+                          "content": "Tim seleksi sebagaimana dimaksud pada ayat (2) berjumlah 5 (lima) orang, terdiri atas:\na. 1 (satu) orang unsur DPS;\nb. 2 (dua) orang unsur Badan BMA; dan\nc. 2 (dua) orang unsur Sekretariat BMA.",
+                          "start_page": 5,
+                          "end_page": 5,
+                          "warnings": null
+                        },
+                        {
+                          "section": "batang_tubuh",
+                          "node_type": "ayat",
+                          "label": "4",
+                          "content": "Komposisi tim seleksi sebagaimana dimaksud pada ayat (2) dan ayat (3) terdiri atas:\na. 1 (satu) orang ketua merangkap anggota;\nb. 1 (satu) orang sekretaris merangkap anggota; dan\nc. 3 (tiga) orang anggota.",
+                          "start_page": 5,
+                          "end_page": 5,
+                          "warnings": null
+                        },
+                        {
+                          "section": "batang_tubuh",
+                          "node_type": "ayat",
+                          "label": "5",
+                          "content": "Dalam melaksanakan tugas tim seleksi dibantu oleh Sekretariat BMA.",
+                          "start_page": 5,
+                          "end_page": 5,
+                          "warnings": null
+                        }
+                      ]
+                    },
+                    {
+                      "section": "batang_tubuh",
+                      "node_type": "paragraf",
+                      "label": "3",
+                      "content": "Tahapan",
+                      "start_page": 5,
+                      "end_page": 5,
+                      "warnings": null,
+                      "children": [
+                        {
+                          "section": "batang_tubuh",
+                          "node_type": "pasal",
+                          "label": "10",
+                          "start_page": 5,
+                          "end_page": 5,
+                          "warnings": null,
+                          "children": [
+                            {
+                              "section": "batang_tubuh",
+                              "node_type": "ayat",
+                              "label": "1",
+                              "content": "Tim seleksi sebagaimana dimaksud dalam Pasal 9 memulai tugasnya paling lambat 5 (lima) hari kerja setelah ditetapkan dengan keputusan Ketua Badan BMA.",
+                              "start_page": 5,
+                              "end_page": 5,
+                              "warnings": null
+                            },
+                            {
+                              "section": "batang_tubuh",
+                              "node_type": "ayat",
+                              "label": "2",
+                              "content": "Pemilihan calon Tenaga Profesional BMA sebagaimana dimaksud pada ayat (1) dilakukan melalui tahapan sebagai berikut:\na. mengumumkan penerimaan pendaftaran calon Tenaga Profesional BMA melalui media massa;\nb. melakukan verifikasi administrasi calon Tenaga Profesional BMA;\nc. mengumumkan .../6",
+                              "start_page": 5,
+                              "end_page": 5,
+                              "warnings": null
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

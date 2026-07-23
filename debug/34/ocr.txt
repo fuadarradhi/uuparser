@@ -1,0 +1,80 @@
+=== HASIL OCR — 2 halaman ===
+
+--- IDENTITAS DOKUMEN (hasil classify) ---
+Diputuskan oleh  : model teks (gate.md + identity.md)
+Jenis            : INSTRUKSI GUBERNUR
+Wilayah          : PEMERINTAH ACEH
+Instansi tertulis: GUBERNUR ACEH
+Nomor            : 03/INSTR/2025
+Tahun            : 2025
+Tentang          : GERAKAN ACEH BERWAKAF
+
+(lihat thinking.txt bila kolom KEPUTUSAN di atas = model teks — berisi PERSIS apa yang ditanyakan & dijawab)
+
+--- Halaman 1 — DPI 100 (blur_score probe: 2110938525) ---
+GUBERNUR ACEH
+
+INSTRUKSI GUBERNUR ACEH
+NOMOR 03/INSTR/2025
+
+TENTANG
+GERAKAN ACEH BERWAKAF
+
+Dalam rangka menindaklanjuti peluncuran Gerakan Aceh Berwakaf (GAB) di Masjid Raya Baiturrahaman, Banda Aceh, pada tanggal 16 Maret 2025 bertepatan dengan peringatan Nuzulul Quran 17 Ramadhan 1446 Hijriah, serta sesuai dengan ketentuan Undang-Undang Nomor 41 Tahun 2004 tentang Wakaf, Pasal 191 Undang-Undang Nomor 11 Tahun 2006 tentang Pemerintahan Aceh dan Qanun Aceh Nomor 10 Tahun 2018 tentang Baitul Mal sebagaimana telah diubah dengan Qanun Aceh Nomor 3 Tahun 2021 tentang Perubahan Atas Qanun Aceh Nomor 10 Tahun 2018 tentang Baitul Mal, maka dengan ini menginstruksikan:
+
+Kepada : 1. Para Bupati/Walikota Se-Aceh.
+2. Kepala Sekretariat Baitul Mal Aceh.
+3. Ketua Badan Baitul Mal Aceh.
+4. Kepala Badan Perencanaan Pembangunan Daerah Aceh.
+5. Kepala Sekretariat Majelis Permusyawaratan Ulama Aceh.
+6. Kepala Dinas Syariat Islam Aceh.
+7. Kepala Dinas Pemberdayaan Masyarakat dan Gampong Aceh.
+
+Untuk :
+
+KESATU : Bupati/Walikota melakukan percepatan pembentukan dan penguatan kelembagaan Baitul Mal Gampong (BMG), sesuai Qanun Aceh Nomor 10 Tahun 2018 tentang Baitul Mal sebagaimana telah diubah dengan Qanun Aceh Nomor 3 Tahun 2021 tentang Perubahan Atas Qanun Aceh Nomor 10 Tahun 2018 tentang Baitul Mal, sehingga dapat mengoptimalan fungsinya dalam pengelolaan dan pengembangan wakaf.
+
+KEDUA : Kepala Sekretariat Baitul Mal Aceh memfasilitasi pembentukan Satuan Tugas Gerakan Aceh Berwakaf (Satgas GAB) yang terdiri dari instansi terkait, yang berfungsi merencanakan, mengoordinasikan dan mengevaluasi pelaksanaan GAB.
+
+KETIGA : Ketua Badan Baitul Mal Aceh melakukan langkah-langkah sistematis dan berkelanjutan dalam GAB melalui kegiatan antara lain:
+a. menyusun Rencana Induk Wakaf Aceh;
+b. melakukan penguatan kelembagaan Baitul Mal Gampong atau nama lain;
+c. menyempurnakan regulasi wakaf;
+d. mengoptimalan pengumpulan dan pemberdayaan wakaf;
+e. mengintensifkan sosialisasi dan literasi wakaf;
+f. meningkatkan kapasitas sumber daya nazir;
+g. memfasilitasi pembentukan nazir wakaf di lingkungan dayah, masjid, perguruan tinggi dan sekolah; dan
+h. menyiapkan pembentukan kelembagaan dan pengelolaan Dana Abadi Wakaf Aceh.
+
+--- Halaman 2 — DPI 100 (DPI mengikuti halaman 1) ---
+- 2 -
+
+KEEMPAT : Kepala Badan Perencanaan Pembangunan Daerah Aceh
+mengoordinasikan perencanaan anggaran untuk keberhasilan GAB.
+
+KELIMA : Kepala Sekretariat Majelis Permusyawaratan Ulama Aceh (MPU
+Aceh) memfasilitasi penyusunan fatwa atau tausiah terkait wakaf.
+
+KEENAM : Kepala Dinas Syariat Islam Aceh menyiapkan bahan sosialisasi
+tentang wakaf untuk disampaikan pada khutbah Jumat, pengajian,
+serta menyampaikannya kepada pengurus Badan Kemakmuran
+Masjid (BKM), Balai Pengajian dan Ormas Islam/Lembaga Dakwah
+secara berkala.
+
+KETUJUH : Kepala Dinas Pemberdayaan Masyarakat dan Gampong Aceh
+bersama Kepala Sekretariat Baitul Mal Aceh melakukan pendataan
+wakaf berbasis gampong atau nama lain di seluruh Kabupaten/Kota
+di Aceh.
+
+KEDELAPAN : Melaksanakan Instruksi ini dengan penuh tanggung jawab.
+
+Instruksi Gubernur ini mulai berlaku pada tanggal ditetapkan.
+
+Ditetapkan di Banda Aceh
+pada tanggal, 25 Juli 2025
+29 Muharram 1447
+
+GUBERNUR ACEH
+
+MUZAKIR MANAF
+
