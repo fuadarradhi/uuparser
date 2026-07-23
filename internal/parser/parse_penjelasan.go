@@ -19,28 +19,43 @@ var rePenjHead = regexp.MustCompile(`^([IVXLCDM]+|[A-Z])\.\s+(.+)$`)
 
 func parsePenjelasanUmum(lines []Line) *builder {
 	b := newBuilder(SectionPenjelasanUmum)
+	// [Diperbaiki 2026-07-23] Sebelumnya syarat "node baru" hanya "belum ada
+	// node Penjelasan Umum sama sekali" — sekali node pertama terbentuk,
+	// SELURUH paragraf sisanya (walau dipisah baris kosong = paragraf demi
+	// paragraf yang benar-benar berbeda di naskah asli) ikut tergabung jadi
+	// SATU node raksasa; arah kebalikan dari bug paragraf_isi yang dilaporkan
+	// user, tapi akar masalahnya sama: baris kosong (batas paragraf asli,
+	// sudah disimpan stitch.go) dibuang tanpa dipakai. Sekarang baris kosong
+	// dipakai sebagai batas yang sebenarnya.
+	boundary := true
 	for _, raw := range lines {
 		line := strings.TrimSpace(raw.Text)
 		if line == "" {
+			boundary = true
 			continue
 		}
 		b.curLinePage = raw.Page
 
 		// buang baris header "PENJELASAN" / "UMUM" itu sendiri.
 		if rePenjelasan.MatchString(line) || reUmumHead.MatchString(line) {
+			boundary = true // header bukan bagian paragraf; paragraf setelahnya tetap baru
 			continue
 		}
 		// sub-heading naratif (opsional) -> node paragraf baru.
 		if m := rePenjHead.FindStringSubmatch(line); m != nil {
 			b.emitNarrative(m[2])
+			boundary = false
 			continue
 		}
-		// paragraf naratif: baris non-kosong memulai/ melanjutkan paragraf.
-		if b.activeIdx < 0 || b.nodes[b.activeIdx].Section != SectionPenjelasanUmum {
+		// paragraf naratif: baris kosong sebelumnya (atau belum ada node
+		// Penjelasan Umum sama sekali) -> paragraf baru; selain itu, baris
+		// ini menyambung (wrap) paragraf yang sama seperti baris sebelumnya.
+		if boundary || b.activeIdx < 0 || b.nodes[b.activeIdx].Section != SectionPenjelasanUmum {
 			b.emitNarrative(line)
 		} else {
 			b.appendText(line)
 		}
+		boundary = false
 	}
 	b.flushOrphan()
 	return b

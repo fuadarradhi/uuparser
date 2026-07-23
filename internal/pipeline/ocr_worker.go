@@ -20,9 +20,21 @@ import (
 // dokumen yang gagal di halaman 1 langsung ditinggalkan tanpa membuang waktu
 // meng-OCR sisanya.
 //
-// Kedua model (visi + teks) dimuat SEKALI dan tetap menempel selama masih ada
-// antrian; keduanya dilepas bersamaan hanya ketika tidak ada lagi pekerjaan.
-// Tidak ada bongkar-pasang model per halaman.
+// Kedua model (visi + teks) dimuat SEKALI (lewat warmup() di main.go) dan
+// tetap menempel SEPANJANG UMUR SERVICE secara bawaan. Tidak ada
+// bongkar-pasang model per halaman ataupun per dokumen.
+//
+// [Diperbaiki 2026-07-23, permintaan user] Sebelumnya KEDUA model dilepas
+// setiap kali antrian OCR kosong, TANPA syarat LOW_MEMORY — jadi kalau
+// dokumen tiba satu-satu (mis. sedang uji coba dengan -ids, atau downloader
+// belum sempat mendaftarkan dokumen berikutnya), model dilepas lalu harus
+// dimuat ulang dari nol untuk SETIAP dokumen, walau LOW_MEMORY=false
+// (bawaan) — bertentangan dengan niat "dimuat sekali" yang justru tertulis
+// di komentar ini sendiri. Sekarang pelepasan-saat-idle HANYA terjadi bila
+// LOW_MEMORY=true — itulah satu-satunya alasan sah untuk mau melepas
+// memori demi ruang, dan itu sudah eksplisit diminta lewat env itu sendiri.
+// Bawaan (LOW_MEMORY=false): model tetap dimuat menunggu dokumen
+// berikutnya, seberapa pun lama jedanya.
 
 const (
 	ocrIdleInterval = 30 * time.Second
@@ -37,10 +49,12 @@ func ocrWorker(ctx context.Context, deps Deps) {
 		}
 		worked := drainOCR(ctx, deps)
 		if !worked {
-			// Antrian habis: lepaskan KEDUA model agar memori tidak tertahan
-			// selama menunggu (penting di mesin 8 GB).
-			deps.Vision.Release()
-			deps.Text.Release()
+			// Lihat catatan di atas: hanya lepas kedua model saat memang
+			// diminta lewat LOW_MEMORY=true. Bawaan: biarkan tetap dimuat.
+			if deps.LowMemory {
+				deps.Vision.Release()
+				deps.Text.Release()
+			}
 			select {
 			case <-ctx.Done():
 				return
@@ -91,8 +105,19 @@ type docSink struct {
 // OnProgress mencetak baris kemajuan [diperbaiki/di-OCR/total]. Dipanggil
 // juga SEBELUM halaman pertama di-OCR, sehingga konsol langsung menunjukkan
 // [0/0/N] alih-alih diam sampai halaman pertama selesai.
+// OnProgress mencetak baris kemajuan [halaman-sedang-dikerjakan/total].
+// Dipanggil BERKALI-KALI selama satu halaman dikerjakan, termasuk SEBELUM
+// halaman itu selesai — jadi angka pertama SENGAJA memakai `page` (halaman
+// yang SEDANG diproses), bukan d.ocred (halaman yang sudah SELESAI).
+//
+// [Diperbaiki 2026-07-23, permintaan user] Sebelumnya baris ini memakai
+// d.ocred untuk angka pertama, yang masih menyimpan hitungan SEBELUM
+// halaman ini — sehingga baris kemajuan tampil "[0/5] hal 1" (bukan
+// "[1/5] hal 1") selama seluruh proses halaman 1 berlangsung, baru
+// menjadi "[1/5]" setelah hal 1 SELESAI. Sinkron dengan "hal N" di
+// belakangnya sekarang: [1/5] tampil SEJAK halaman 1 mulai dikerjakan.
 func (d *docSink) OnProgress(page, total int, detail string) {
-	logx.Progress(d.ocred, total, "hal %d · %s", page, detail)
+	logx.Progress(page, total, "hal %d · %s", page, detail)
 }
 
 func (d *docSink) HasPage(ctx context.Context, page int) (bool, error) {
@@ -326,14 +351,52 @@ func processDocument(ctx context.Context, deps Deps, job store.OCRJob) {
 	sink := &docSink{deps: deps, docID: job.ID, prompts: deps.Prompts}
 	if deps.DebugResult {
 		sink.debug = newDebugWriter(deps.DebugDir, job.ID)
+		// Isi ulang dengan halaman yang SUDAH tersimpan dari penjalanan
+		// sebelumnya SEBELUM halaman baru diproses — tanpa ini, ocr.txt
+		// cuma menunjukkan sisa halaman yang diproses run ini, seolah
+		// dokumennya cuma sepanjang itu (lihat catatan di
+		// store.ListSavedPages).
+		if saved, serr := deps.Store.ListSavedPages(ctx, job.ID); serr != nil {
+			logx.Warn("debug: baca halaman tersimpan: %v", serr)
+		} else {
+			for _, p := range saved {
+				sink.debug.tambahHalaman(extractor.PageResult{
+					Page: p.Page, Text: p.Text, IsEmpty: p.IsEmpty, IsTruncated: p.IsTruncated,
+					InkRatio: p.InkRatio, CroppedPct: p.CroppedPct, DPI: p.DPI,
+					DurationMS: p.DurationMS, Notes: p.Notes,
+				})
+			}
+		}
 	}
 	defer sink.debug.tutup()
 
 	// Jumlah halaman diambil lebih dulu supaya baris kemajuan sudah punya
 	// angka total sejak tahap melanjutkan, bukan menunggu halaman pertama
-	// diproses (yang membuat persentase tampil 0% terus).
-	if n, perr := extractor.PageCount(job.PDFPath); perr == nil {
-		sink.total = n
+	// diproses (yang membuat persentase tampil 0% terus). Angka ASLI ini
+	// juga dipakai untuk pemeriksaan MinPage di bawah — SEBELUM potongan
+	// MaxPage diterapkan di extractor.Document, karena MinPage menyoal
+	// keaslian dokumen (sampul-saja?), bukan versi yang sudah dipotong.
+	nAsli, perr := extractor.PageCount(job.PDFPath)
+	if perr == nil {
+		sink.total = nAsli
+	}
+
+	// MinPage (2026-07-23): dokumen yang secara ASLI kurang dari MinPage
+	// halaman ditolak sebagai "bukan peraturan" TANPA di-OCR sama sekali —
+	// permintaan user berdasarkan temuan nyata: banyak berkas sependek itu
+	// ternyata cuma sampul/pengumuman, bukan naskah peraturan utuh. perr!=nil
+	// (PDF tak terbaca) sengaja DIBIARKAN LEWAT ke jalur OCR normal supaya
+	// galat aslinya (rusak/terkunci, dst) tetap tercatat sebagai biasa,
+	// bukan disamarkan jadi "bukan peraturan".
+	if perr == nil && deps.MinPage > 0 && nAsli < deps.MinPage {
+		alasan := fmt.Sprintf("dokumen hanya %d halaman (< MIN_PAGE=%d) — kemungkinan sampul/pengumuman, bukan naskah peraturan utuh",
+			nAsli, deps.MinPage)
+		if err := deps.Store.RejectNotRegulation(ctx, job.ID, alasan); err != nil {
+			logx.Warn("ocr: tandai ditolak (MinPage): %v", err)
+		} else {
+			logx.Skip("dokumen dihentikan — %s", alasan)
+		}
+		return
 	}
 
 	// Rapikan sisa pekerjaan dari penjalanan sebelumnya SEBELUM meng-OCR
@@ -365,6 +428,7 @@ func processDocument(ctx context.Context, deps Deps, job store.OCRJob) {
 		DPIPaksa:  dpiPaksa,
 		AutoCrop:  ocrAutoCrop,
 		OCRClient: deps.Vision, OCRMaxTokens: ocrMaxTokens,
+		MaxPage: deps.MaxPage,
 	}, sink)
 
 	total, stopped, err := ex.Document(ctx, job.PDFPath)

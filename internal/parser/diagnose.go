@@ -29,10 +29,16 @@ type Issue struct {
 
 // Stats ringkasan jumlah node per jenis.
 type Stats struct {
-	Bab           int `json:"bab"`
-	Bagian        int `json:"bagian"`
-	Paragraf      int `json:"paragraf"`
-	Pasal         int `json:"pasal"`
+	Bab      int `json:"bab"`
+	Bagian   int `json:"bagian"`
+	Paragraf int `json:"paragraf"`
+	Pasal    int `json:"pasal"`
+	// Diktum (2026-07-23): dokumen Keputusan/Instruksi berstruktur Diktum
+	// (KESATU/KEDUA/dst) alih-alih Pasal — dihitung terpisah supaya
+	// diagnosa "tidak ada batang tubuh" (lihat di bawah) tidak salah
+	// menganggap dokumen jenis ini gagal parse hanya karena ia memang
+	// tidak dan tidak seharusnya punya Pasal sama sekali.
+	Diktum        int `json:"diktum"`
 	Ayat          int `json:"ayat"`
 	ItemPreamble  int `json:"item_preamble"`
 	NodeWarnings  int `json:"node_warnings"`
@@ -78,10 +84,12 @@ func Diagnose(res Result) Report {
 		})
 	}
 
-	// --- cek keberadaan batang tubuh ---
-	if st.Pasal == 0 {
+	// --- cek keberadaan batang tubuh (Pasal ATAU Diktum — keduanya
+	// eksklusif tapi SAMA-SAMA sah sebagai struktur batang tubuh; lihat
+	// Stats.Diktum) ---
+	if st.Pasal == 0 && st.Diktum == 0 {
 		issues = append(issues, Issue{SeverityNeedsReview, "NO_PASAL",
-			"Tidak ada satupun Pasal terdeteksi di batang tubuh"})
+			"Tidak ada satupun Pasal maupun Diktum terdeteksi di batang tubuh"})
 	}
 
 	// --- cek celah penomoran Pasal (batang tubuh) ---
@@ -99,6 +107,15 @@ func Diagnose(res Result) Report {
 	// --- cek pasal "kosong" (tak punya teks, ayat, maupun huruf) ---
 	issues = append(issues, checkEmptyPasal(res)...)
 
+	// --- cek kebocoran penanda section (2026-07-23, lihat catatan
+	// reAnchorLeak) — jaring pengaman untuk KELAS bug yang baru ditemukan:
+	// section yang gagal terdeteksi batasnya, isinya tersedot ke node
+	// tetangga TANPA memicu warning APA PUN (Memperhatikan ke Mengingat,
+	// LAMPIRAN ke penutup) karena secara struktural node-nya tetap terlihat
+	// "valid" (tidak ada celah nomor, tidak ada orphan). Heuristik, BUKAN
+	// jaminan — lihat catatan di checkAnchorLeak.
+	issues = append(issues, checkAnchorLeak(res)...)
+
 	// tentukan status akhir.
 	status := StatusSuccess
 	for _, is := range issues {
@@ -107,7 +124,7 @@ func Diagnose(res Result) Report {
 			break
 		}
 	}
-	if st.Pasal == 0 {
+	if st.Pasal == 0 && st.Diktum == 0 {
 		status = StatusFail
 	}
 
@@ -133,6 +150,10 @@ func computeStats(res Result) Stats {
 		case NodePasal:
 			if n.Section == SectionBatangTubuh {
 				s.Pasal++
+			}
+		case NodeDiktum:
+			if n.Section == SectionBatangTubuh {
+				s.Diktum++
 			}
 		case NodeAyat:
 			if n.Section == SectionBatangTubuh {
@@ -232,6 +253,64 @@ func checkPenjelasanRefs(res Result) []Issue {
 	return issues
 }
 
+// reAnchorLeak (2026-07-23) menangkap kata kunci PENANDA SECTION yang
+// SEHARUSNYA selalu membuka node/section-nya sendiri, tapi ditemukan DI
+// TENGAH teks node lain — sinyal bahwa section itu gagal terdeteksi
+// batasnya dan isinya "bocor"/tersedot ke node tetangga (persis pola dua
+// bug nyata 2026-07-23: "Memperhatikan" tersedot ke item Mengingat
+// terakhir, "LAMPIRAN" tersedot ke node penutup — KEDUANYA tidak memicu
+// warning apa pun sebelumnya karena struktur node-nya sendiri tetap
+// terlihat sah).
+//
+// Case-SENSITIVE dengan sengaja (huruf besar semua, ATAU diikuti titik
+// dua) — supaya TIDAK salah tangkap penyebutan biasa di tengah kalimat
+// yang memang lazim di naskah hukum, mis. "sebagaimana tercantum dalam
+// Lampiran yang merupakan bagian tidak terpisahkan..." (huruf awal
+// kapital biasa, tanpa titik dua — itu rujukan prosa, BUKAN penanda
+// section). Penanda section asli selalu tercetak SELURUHNYA huruf besar
+// (LAMPIRAN/MEMUTUSKAN/MENIMBANG/MENGINGAT) atau diikuti titik dua
+// (Memperhatikan :/Menetapkan :).
+var reAnchorLeak = regexp.MustCompile(`\b(LAMPIRAN|MEMUTUSKAN|MENIMBANG|MENGINGAT)\b|(Memperhatikan|Menetapkan)\s*:`)
+
+// AnchorLeakNodes mengembalikan INDEKS (ke res.Nodes) semua node yang
+// terdeteksi reAnchorLeak — diekspor supaya PEMANGGIL (lihat
+// internal/pipeline) bisa mengambil node yang sama persis untuk dikirim ke
+// model peninjau, tanpa menduplikasi logika deteksinya.
+func AnchorLeakNodes(res Result) []int {
+	var idxs []int
+	for i, n := range res.Nodes {
+		if loc := reAnchorLeak.FindStringIndex(n.Text); loc != nil && loc[0] > 0 {
+			idxs = append(idxs, i)
+		}
+	}
+	return idxs
+}
+
+// checkAnchorLeak memeriksa SETIAP node: kalau salah satu penanda di atas
+// muncul BUKAN di posisi paling awal teks node itu (indeks 0 = penanda itu
+// milik node ini sendiri, sah), berarti kemungkinan besar bocoran dari
+// section lain yang gagal terdeteksi.
+//
+// PENTING (jujur soal batasnya): ini heuristik penjaga untuk KELAS bug yang
+// SUDAH PERNAH terjadi — kata kunci berbentuk khas (huruf besar semua /
+// diikuti titik dua) muncul di tengah teks. Ia TIDAK bisa mendeteksi setiap
+// kemungkinan salah-parse; kesalahan yang tidak meninggalkan jejak kata
+// kunci semacam ini (mis. tanggal salah dibaca, urutan tersalah tempat
+// tanpa kata kunci apa pun) tetap tidak akan tertangkap di sini. Tinjauan
+// manusia atas dokumen nyata tetap satu-satunya jaring pengaman lengkap.
+func checkAnchorLeak(res Result) []Issue {
+	var issues []Issue
+	for _, i := range AnchorLeakNodes(res) {
+		n := res.Nodes[i]
+		loc := reAnchorLeak.FindStringIndex(n.Text) // aman: AnchorLeakNodes sudah memastikan ada & loc[0]>0
+		issues = append(issues, Issue{SeverityNeedsReview, "ANCHOR_LEAK",
+			fmt.Sprintf("Node [%s/%s] memuat penanda section (%q) di tengah teksnya — "+
+				"kemungkinan isi section lain tersedot ke sini karena batasnya gagal terdeteksi",
+				n.Section, n.NodeType, n.Text[loc[0]:loc[1]])})
+	}
+	return issues
+}
+
 // checkEmptyPasal: pasal batang tubuh tanpa teks, tanpa ayat, tanpa huruf anak.
 func checkEmptyPasal(res Result) []Issue {
 	// petakan pasal -> apakah punya anak (ayat/huruf) atau teks.
@@ -300,4 +379,3 @@ func intsToStr(v []int) string {
 	}
 	return strings.Join(parts, ", ")
 }
-

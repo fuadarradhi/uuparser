@@ -145,7 +145,8 @@ func run() int {
 		Prompts: pset, DataDir: cfg.DataDir,
 		DPIJelas: cfg.DPIJelas, DPISedang: cfg.DPISedang, DPIBlur: cfg.DPIBlur,
 		AmbangJelas: cfg.AmbangJelas, AmbangSedang: cfg.AmbangSedang,
-		LowMemory: cfg.LowMemory, MinTahun: cfg.MinTahun,
+		LowMemory: cfg.LowMemory, Tahun: cfg.Tahun,
+		MaxPage: cfg.MaxPage, MinPage: cfg.MinPage,
 		DebugResult: cfg.DebugResult, DebugDir: cfg.DebugDir,
 	})
 	return 0

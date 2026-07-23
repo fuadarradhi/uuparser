@@ -77,17 +77,17 @@ func registerNewURLs(ctx context.Context, deps Deps) {
 		baru := 0
 		lewati := 0
 		for _, d := range docs {
-			// MinTahun menyaring SEBELUM didaftarkan — dokumen yang lolos
+			// Tahun menyaring SEBELUM didaftarkan — dokumen yang lolos
 			// tetap dipakai sort_tahun-nya untuk urutan seperti biasa.
 			//
-			// Ketika MinTahun > 0, dokumen TANPA sort_tahun (nil) IKUT
-			// disaring (tidak didaftarkan) — permintaan user: kalau
-			// MIN_TAHUN diisi, harus benar-benar ada tahun yang memenuhi,
-			// bukan lolos karena tidak diketahui. Hanya saat MinTahun == 0
-			// (tanpa saringan) dokumen tanpa tahun boleh masuk. Lihat
-			// config.Config.MinTahun.
-			if deps.MinTahun > 0 {
-				if d.SortTahun == nil || *d.SortTahun < deps.MinTahun {
+			// Ketika filter aktif, dokumen TANPA sort_tahun (nil) IKUT
+			// disaring (tidak didaftarkan) — permintaan user: kalau TAHUN
+			// diisi, harus benar-benar ada tahun yang memenuhi operatornya,
+			// bukan lolos karena tidak diketahui. Hanya saat filter tidak
+			// aktif (TAHUN kosong) dokumen tanpa tahun boleh masuk. Lihat
+			// config.Config.Tahun / config.TahunFilter.
+			if deps.Tahun.Aktif() {
+				if d.SortTahun == nil || !deps.Tahun.Cocok(*d.SortTahun) {
 					lewati++
 					continue
 				}
@@ -107,7 +107,8 @@ func registerNewURLs(ctx context.Context, deps Deps) {
 			logx.Info("%s: %d tautan baru", row.Code, baru)
 		}
 		if lewati > 0 {
-			logx.Info("%s: %d tautan dilewati (tahun < MIN_TAHUN atau tahun tidak diketahui)", row.Code, lewati)
+			logx.Info("%s: %d tautan dilewati (tahun tidak cocok TAHUN=%s, atau tahun tidak diketahui)",
+				row.Code, lewati, deps.Tahun.String())
 		}
 	}
 }

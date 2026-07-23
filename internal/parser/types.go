@@ -15,14 +15,25 @@ var ErrEmptyInput = errors.New("uuparser: input kosong")
 type Section string
 
 const (
-	SectionJudul           Section = "judul"
-	SectionMenimbang       Section = "menimbang"
-	SectionMengingat       Section = "mengingat"
+	SectionJudul     Section = "judul"
+	SectionMenimbang Section = "menimbang"
+	SectionMengingat Section = "mengingat"
+	// SectionMemperhatikan (2026-07-23): section opsional antara Mengingat
+	// dan Penetapan — lihat catatan reMemperhatikan di patterns.go.
+	SectionMemperhatikan   Section = "memperhatikan"
 	SectionPenetapan       Section = "penetapan"
 	SectionBatangTubuh     Section = "batang_tubuh"
 	SectionPenjelasanUmum  Section = "penjelasan_umum"
 	SectionPenjelasanPasal Section = "penjelasan_pasal"
 	SectionPenutup         Section = "penutup" // pengesahan/tempat-tanggal/ttd di akhir batang tubuh
+	// SectionLampiran (2026-07-23): lampiran (attachment) yang menyusul
+	// SETELAH tanda tangan penutup — dokumen sendiri, punya identitas
+	// ulang (KEPUTUSAN .../NOMOR/TENTANG) dan sub-bagian berlabel huruf
+	// (A./B./C./dst) sendiri, BUKAN bagian dari penutup. Ditemukan lewat
+	// bug nyata: sebelum ini, sekali reClosing (lihat parse_batangtubuh.go)
+	// aktif, ia tetap aktif SELAMANYA sampai akhir dokumen — jadi seluruh
+	// isi Lampiran ikut tersedot masuk sebagai node penutup.
+	SectionLampiran Section = "lampiran"
 )
 
 // NodeType adalah jenis unit struktural pada satu baris.
@@ -101,6 +112,14 @@ type Node struct {
 
 	Text     string    `json:"text"`
 	Warnings []Warning `json:"warnings,omitempty"`
+
+	// IsAppendix (2026-07-23): true HANYA untuk node dari SectionLampiran
+	// — lihat parseLampiran. Isi Lampiran berguna saat menelusuri dokumen
+	// tapi tidak relevan saat benar-benar mencari isi aturan (Pasal/Ayat/
+	// Diktum); flag ini biarkan query/RAG memilih menyertakan atau
+	// mengecualikannya tanpa perlu menghapus datanya. Default false untuk
+	// SEMUA node lain — jangan diset manual di tempat lain.
+	IsAppendix bool `json:"is_appendix,omitempty"`
 }
 
 // Result adalah keluaran Parse.

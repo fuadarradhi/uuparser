@@ -18,6 +18,89 @@ import (
 	"strings"
 )
 
+// TahunFilter adalah hasil urai env TAHUN — operator perbandingan + nilai
+// tahun. Op kosong berarti tanpa saringan sama sekali (lihat Aktif()).
+type TahunFilter struct {
+	Op    string // "", "=", ">=", "<=", ">", "<"
+	Value int
+}
+
+// Aktif melaporkan apakah filter ini benar-benar menyaring sesuatu.
+func (f TahunFilter) Aktif() bool { return f.Op != "" }
+
+// Cocok membandingkan satu tahun dokumen terhadap filter ini. Hanya masuk
+// akal dipanggil bila Aktif() true.
+func (f TahunFilter) Cocok(tahun int) bool {
+	switch f.Op {
+	case "=":
+		return tahun == f.Value
+	case ">=":
+		return tahun >= f.Value
+	case "<=":
+		return tahun <= f.Value
+	case ">":
+		return tahun > f.Value
+	case "<":
+		return tahun < f.Value
+	default:
+		return true // Op kosong = tidak menyaring apa pun
+	}
+}
+
+// String untuk log/pesan (mis. "TAHUN>=2023").
+func (f TahunFilter) String() string {
+	if !f.Aktif() {
+		return "(tanpa saringan)"
+	}
+	return f.Op + strconv.Itoa(f.Value)
+}
+
+// parseTahunFilter mengurai isi env TAHUN. Operator dikenali sebagai PREFIKS
+// (urutan pemeriksaan sengaja ">="/"<=" dulu sebelum ">"/"<" tunggal, supaya
+// tidak salah potong). Tanpa operator sama sekali -> ">=" (kompatibel dengan
+// perilaku lama MIN_TAHUN, yang selalu berarti "minimal tahun ini"). String
+// kosong atau angka tak valid -> filter tidak aktif (Op kosong).
+func parseTahunFilter(raw string) TahunFilter {
+	s := strings.TrimSpace(raw)
+	if s == "" {
+		return TahunFilter{}
+	}
+	op := ">="
+	switch {
+	case strings.HasPrefix(s, ">="):
+		op, s = ">=", s[2:]
+	case strings.HasPrefix(s, "<="):
+		op, s = "<=", s[2:]
+	case strings.HasPrefix(s, "="):
+		op, s = "=", s[1:]
+	case strings.HasPrefix(s, ">"):
+		op, s = ">", s[1:]
+	case strings.HasPrefix(s, "<"):
+		op, s = "<", s[1:]
+	}
+	v, err := strconv.Atoi(strings.TrimSpace(s))
+	if err != nil || v <= 0 {
+		return TahunFilter{}
+	}
+	return TahunFilter{Op: op, Value: v}
+}
+
+// pageLimitNum mengurai MAX_PAGE/MIN_PAGE — BEDA dari num() karena di sini
+// 0 adalah nilai SAH (berarti "tanpa batas"/"tanpa minimum"), bukan sinyal
+// "pakai nilai bawaan". Hanya string kosong/tak-numerik/negatif yang jatuh
+// ke nilai bawaan.
+func pageLimitNum(s string, def int) int {
+	t := strings.TrimSpace(s)
+	if t == "" {
+		return def
+	}
+	v, err := strconv.Atoi(t)
+	if err != nil || v < 0 {
+		return def
+	}
+	return v
+}
+
 // Config adalah seluruh pengaturan aplikasi — HANYA hal yang berbeda per mesin.
 type Config struct {
 	// DatabaseURL: connection string Postgres PRODUKSI (lihat schema.sql).
@@ -76,21 +159,44 @@ type Config struct {
 	AmbangJelas  float64
 	AmbangSedang float64
 
-	// MinTahun menyaring dokumen SAAT DIDAFTARKAN dari sumber: hanya yang
-	// sort_tahun-nya (metadata JDIH, HANYA untuk urutan — lihat
-	// downloader.RemoteDoc) >= MinTahun yang didaftarkan. 0 berarti tanpa
-	// saringan. Ini KEBALIKAN dari filosofi "tombol yang jawabannya sudah
-	// pasti tidak perlu jadi .env": jawabannya justru BELUM pasti secara
-	// sengaja — dipakai untuk memperkecil cakupan uji coba parser
-	// (mis. MIN_TAHUN=2020 dulu, diperbesar bertahap) sambil mengamati tahun
-	// berapa parser sudah bagus dan tahun berapa masih perlu perbaikan.
+	// Tahun menyaring dokumen SAAT DIDAFTARKAN dari sumber, berdasarkan
+	// sort_tahun (metadata JDIH, HANYA untuk urutan — lihat
+	// downloader.RemoteDoc). Menggantikan MIN_TAHUN (2026-07-23): dulu hanya
+	// bisa ">=", sekarang mendukung operator eksplisit lewat env TAHUN, mis.
+	// "=2023" (persis tahun itu saja), ">=2023" (minimal), ">2020", "<=2019",
+	// "<2019". Tanpa operator (mis. "2023" polos) diperlakukan sebagai ">="
+	// untuk kompatibilitas dengan perilaku lama. String kosong (bawaan) =
+	// tanpa saringan sama sekali.
 	//
-	// Saat MinTahun > 0: dokumen TANPA sort_tahun (metadata sumber tak
-	// menyediakannya) IKUT disaring — tidak didaftarkan. Permintaan user:
-	// kalau MIN_TAHUN diisi, harus benar-benar ada tahun yang memenuhi,
-	// bukan lolos karena tidak diketahui. Hanya saat MinTahun == 0 (tanpa
+	// Ini KEBALIKAN dari filosofi "tombol yang jawabannya sudah pasti tidak
+	// perlu jadi .env": jawabannya justru BELUM pasti secara sengaja — dipakai
+	// untuk memperkecil cakupan uji coba parser (mis. TAHUN=>=2020 dulu,
+	// diperbesar bertahap) sambil mengamati tahun berapa parser sudah bagus.
+	//
+	// Saat filter aktif (Tahun.Aktif()): dokumen TANPA sort_tahun (metadata
+	// sumber tak menyediakannya) IKUT disaring — tidak didaftarkan. Permintaan
+	// user: kalau TAHUN diisi, harus benar-benar ada tahun yang memenuhi,
+	// bukan lolos karena tidak diketahui. Hanya saat TAHUN kosong (tanpa
 	// saringan sama sekali) dokumen tanpa tahun boleh masuk.
-	MinTahun int
+	Tahun TahunFilter
+
+	// MaxPage (2026-07-23): batas jumlah halaman yang BENAR-BENAR di-OCR
+	// dan diurai per dokumen — sisanya diabaikan begitu saja, seolah
+	// dokumen itu hanya sepanjang MaxPage halaman. SENGAJA dibuat sebagai
+	// pengaturan sementara khusus masa debug: permintaan eksplisit user,
+	// supaya satu peraturan yang tebal tidak menyita seluruh waktu uji coba
+	// sampai peraturan lain tak sempat diperiksa. 0 berarti TANPA batas
+	// (matikan sepenuhnya setelah masa debug selesai). Bawaan: 5.
+	MaxPage int
+
+	// MinPage (2026-07-23): dokumen dengan jumlah halaman ASLI (sebelum
+	// dipotong MaxPage) kurang dari ini langsung ditolak sebagai "bukan
+	// peraturan" TANPA di-OCR sama sekali — permintaan user berdasarkan hasil
+	// uji nyata: banyak berkas 1 halaman ternyata cuma sampul/pengumuman,
+	// bukan naskah peraturan utuh (Lampiran II UU 12/2011 mensyaratkan
+	// Judul+Menimbang+Mengingat+Memutuskan+batang tubuh+penutup, yang hampir
+	// tak mungkin muat 1 halaman). 0 berarti TANPA batas minimum. Bawaan: 2.
+	MinPage int
 
 	// DebugResult (2026-07-22): saat true, tiap dokumen menulis
 	// <DebugDir>/<id>/ocr.txt + thinking.txt (jika ada panggilan model) +
@@ -161,7 +267,9 @@ func Load(path string) (Config, error) {
 		DPIBlur:      num(get("DPI_BLUR", "200"), 200),
 		AmbangJelas:  floatNum(get("BLUR_AMBANG_JELAS", "5e8"), 5e8),
 		AmbangSedang: floatNum(get("BLUR_AMBANG_SEDANG", "5e7"), 5e7),
-		MinTahun:     num(get("MIN_TAHUN", "0"), 0),
+		Tahun:        parseTahunFilter(get("TAHUN", "")),
+		MaxPage:      pageLimitNum(get("MAX_PAGE", "5"), 5),
+		MinPage:      pageLimitNum(get("MIN_PAGE", "2"), 2),
 		DebugResult:  boolean(get("DEBUG_RESULT", "false")),
 		DebugDir:     get("DEBUG_DIR", "debug"),
 

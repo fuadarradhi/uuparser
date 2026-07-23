@@ -2,8 +2,9 @@ package parser
 
 import "strings"
 
-// parse_flat.go menangani Menimbang & Mengingat: daftar poin datar (huruf a.b.c.
-// untuk Menimbang, angka 1.2.3. untuk Mengingat), tanpa hierarki Bab/Pasal.
+// parse_flat.go menangani Menimbang, Mengingat & Memperhatikan (opsional):
+// daftar poin datar (huruf a.b.c. untuk Menimbang, angka 1.2.3. untuk
+// Mengingat/Memperhatikan), tanpa hierarki Bab/Pasal.
 // Semua poin menjadi NodeItem (dengan label huruf/angka terisi), agar tidak
 // tercampur dengan konteks huruf/angka batang tubuh. TIDAK terpengaruh oleh
 // keputusan fold-huruf-ke-Ayat (itu spesifik batang tubuh) — poin di sini
@@ -31,8 +32,9 @@ func parseFlat(section Section, lines []Line) *builder {
 		}
 		b.curLinePage = raw.Page
 
-		// Baris header ("Menimbang :", "Mengingat :"): buang kata kunci, tangkap sisa.
-		if reMenimbang.MatchString(line) || reMengingat.MatchString(line) {
+		// Baris header ("Menimbang :", "Mengingat :", "Memperhatikan :"):
+		// buang kata kunci, tangkap sisa.
+		if reMenimbang.MatchString(line) || reMengingat.MatchString(line) || reMemperhatikan.MatchString(line) {
 			if i := strings.Index(line, ":"); i >= 0 {
 				rest := strings.TrimSpace(line[i+1:])
 				if rest != "" {

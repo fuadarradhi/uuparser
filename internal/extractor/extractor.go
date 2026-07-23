@@ -98,6 +98,13 @@ type Config struct {
 	AutoCrop     bool
 	OCRClient    *localllm.Client
 	OCRMaxTokens int
+
+	// MaxPage (2026-07-23), bila > 0, membatasi jumlah halaman yang BENAR-
+	// BENAR di-OCR/diurai untuk SATU dokumen — sisanya diabaikan seolah
+	// dokumen itu hanya sepanjang MaxPage halaman (lihat Document). 0 berarti
+	// tanpa batas. Permintaan eksplisit user untuk mempercepat iterasi debug
+	// parser lintas banyak peraturan.
+	MaxPage int
 }
 
 // DefaultOCRPrompt adalah SATU-SATUNYA prompt yang didukung GLM-OCR untuk teks
@@ -154,6 +161,16 @@ func (e *Extractor) Document(ctx context.Context, pdfPath string) (totalPages in
 	n := doc.NumPages()
 	if n == 0 {
 		return 0, false, fmt.Errorf("pdf tanpa halaman")
+	}
+
+	// MaxPage: potong seolah dokumen ini hanya sepanjang itu — sisanya
+	// diabaikan SEPENUHNYA (bukan di-render sama sekali), sehingga baris
+	// kemajuan, jumlah halaman tersimpan (documents.total_pages), dan hasil
+	// urai parser semuanya konsisten memperlakukan potongan ini sebagai
+	// "seluruh" dokumen. Lihat Config.MaxPage.
+	if e.cfg.MaxPage > 0 && n > e.cfg.MaxPage {
+		logx.Info("dokumen %d halaman, dibatasi MAX_PAGE=%d — sisanya diabaikan", n, e.cfg.MaxPage)
+		n = e.cfg.MaxPage
 	}
 
 	for i := 1; i <= n; i++ {

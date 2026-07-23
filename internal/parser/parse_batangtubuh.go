@@ -19,10 +19,12 @@ var reClosing = regexp.MustCompile(`(?i)^(ditetapkan\s+di|diundangkan\s+di|agar\
 func parseBatangTubuh(lines []Line) *builder {
 	b := newBuilder(SectionBatangTubuh)
 	inClosing := false
+	boundary := true // baris pertama pada penutup selalu membuka node baru
 
 	for _, raw := range lines {
 		line := strings.TrimSpace(raw.Text)
 		if line == "" {
+			boundary = true
 			continue
 		}
 		b.curLinePage = raw.Page
@@ -31,9 +33,30 @@ func parseBatangTubuh(lines []Line) *builder {
 			inClosing = true
 		}
 		if inClosing {
-			b.emitPenutup(line)
+			// [Diperbaiki 2026-07-23] Sebelumnya SETIAP baris di bagian
+			// penutup jadi node paragraf_isi terpisah tanpa syarat — baris
+			// lanjutan yang di-wrap (mis. "Ditetapkan di Banda Aceh" lalu
+			// "pada tanggal, 7 Januari 2026" tanpa baris kosong di antaranya,
+			// keduanya satu kalimat/keterangan yang sama) berakhir sebagai
+			// dua paragraf_isi terpisah, padahal itu satu item. Sekarang:
+			// node baru HANYA dibuka saat ada baris kosong sejak baris
+			// sebelumnya (boundary), belum ada node aktif sama sekali, ATAU
+			// baris ini sendiri mencocokkan salah satu penanda baku
+			// reClosing (setiap penanda seperti itu SELALU memulai field
+			// baru — "Ditetapkan di ..." tak pernah menyambung ke
+			// "Diundangkan di ..." sebelumnya meski tanpa baris kosong).
+			// Baris lain digabung sebagai sambungan ke node aktif.
+			startNew := boundary || b.activeIdx < 0 || b.nodes[b.activeIdx].Section != SectionPenutup ||
+				reClosing.MatchString(line)
+			if startNew {
+				b.emitPenutup(line)
+			} else {
+				b.appendText(line)
+			}
+			boundary = false
 			continue
 		}
+		boundary = false
 
 		m := detectStructural(line)
 		switch m.kind {

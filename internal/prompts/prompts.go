@@ -23,6 +23,15 @@ type Set struct {
 	Gate      string // apakah halaman ini produk hukum?
 	Identity  string // jenis, instansi, nomor, tahun, tentang
 	Penetapan string // tempat/tanggal/penanda tangan penetapan & pengundangan
+	// Tinjau (2026-07-23): dipakai HANYA saat parser sendiri mencurigai
+	// hasilnya (lihat parser.AnchorLeakNodes + pipeline's tinjauan
+	// mechanism) — model diminta menilai APAKAH satu potongan node hasil
+	// parse benar-benar tercampur dua bagian berbeda, dan menjelaskan
+	// singkat kalau ya. Beda dari Gate/Identity/Penetapan: prompt ini
+	// TIDAK PERNAH dipakai untuk mengisi kolom data — jawabannya murni
+	// catatan tinjauan untuk manusia, tidak pernah divalidasi/disimpan
+	// sebagai nilai terstruktur.
+	Tinjau string
 
 	Hash string // sidik jari gabungan, disimpan bersama metadata dokumen
 }
@@ -41,6 +50,7 @@ func Load(dir string) (Set, error) {
 		{"gate.md", &s.Gate},
 		{"identity.md", &s.Identity},
 		{"penetapan.md", &s.Penetapan},
+		{"tinjau.md", &s.Tinjau},
 	} {
 		var h string
 		if *it.dst, h, err = readOne(filepath.Join(dir, it.name)); err != nil {

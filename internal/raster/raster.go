@@ -13,9 +13,55 @@ import (
 	"fmt"
 	"image"
 	"image/png"
+	"os"
+	"syscall"
 
 	"github.com/gen2brain/go-fitz"
 )
+
+// suppressCStderr menahan sementara SEMUA tulisan ke fd 2 (stderr) di level
+// OS SELAMA fn dijalankan.
+//
+// [Ditambahkan 2026-07-23, permintaan user] MuPDF (dipakai go-fitz lewat
+// CGo) menulis peringatan PDF rusak ("broken xref subsection, proceeding
+// anyway", "trying to repair broken xref", "repairing PDF document", "PDF
+// stream Length incorrect") LANGSUNG lewat fprintf(stderr, ...) di kode C —
+// tidak lewat io.Writer Go mana pun, sehingga TIDAK BISA disaring lewat
+// logx (lihat catatan "Known cosmetic issue" sebelumnya) dan merusak
+// tampilan baris kemajuan konsol. Satu-satunya cara membungkamnya adalah di
+// level file descriptor OS, bukan level Go: dup fd 2 asli, tempelkan
+// /dev/null ke fd 2 selama fn berjalan, lalu kembalikan fd 2 asli sesudahnya.
+//
+// AMAN untuk kasus pemakaian proyek ini: rendering PDF berjalan SATU
+// goroutine pada satu waktu (bukan konkuren — lihat catatan localllm soal
+// OCR single-worker), jadi tidak ada tulisan stderr lain yang ikut
+// terbungkam secara tak sengaja SELAIN peringatan MuPDF itu sendiri.
+// Kegagalan pada langkah manapun (buka /dev/null, dup, dup2) jatuh balik
+// ke menjalankan fn TANPA membungkam apa pun — lebih baik peringatannya
+// tetap tampil daripada rendering gagal total.
+func suppressCStderr(fn func()) {
+	devNull, err := os.OpenFile(os.DevNull, os.O_WRONLY, 0)
+	if err != nil {
+		fn()
+		return
+	}
+	defer devNull.Close()
+
+	origFd := int(os.Stderr.Fd())
+	savedFd, err := syscall.Dup(origFd)
+	if err != nil {
+		fn()
+		return
+	}
+	defer syscall.Close(savedFd)
+
+	if err := syscall.Dup2(int(devNull.Fd()), origFd); err != nil {
+		fn()
+		return
+	}
+	fn()
+	_ = syscall.Dup2(savedFd, origFd) // memulihkan stderr asli; kegagalan di sini di luar kendali kita
+}
 
 // Doc adalah handle dokumen PDF yang terbuka.
 type Doc struct {
@@ -25,7 +71,13 @@ type Doc struct {
 
 // Open membuka PDF. Pemanggil wajib memanggil Close.
 func Open(path string) (*Doc, error) {
-	d, err := fitz.New(path)
+	var d *fitz.Document
+	var err error
+	// suppressCStderr: PDF rusak memicu "repairing PDF document" dkk saat
+	// dibuka — lihat catatan di suppressCStderr.
+	suppressCStderr(func() {
+		d, err = fitz.New(path)
+	})
 	if err != nil {
 		return nil, fmt.Errorf("buka pdf: %w", err)
 	}
@@ -90,7 +142,13 @@ func (d *Doc) Render(page int, o Opts) (Page, error) {
 	if page < 1 || page > d.NumPages() {
 		return Page{}, fmt.Errorf("halaman %d di luar jangkauan (1..%d)", page, d.NumPages())
 	}
-	img, err := d.doc.ImageDPI(page-1, float64(dpi)) // go-fitz memakai indeks 0-based
+	var img image.Image
+	var err error
+	// suppressCStderr: dekode halaman rusak memicu "PDF stream Length
+	// incorrect" dkk — lihat catatan di suppressCStderr.
+	suppressCStderr(func() {
+		img, err = d.doc.ImageDPI(page-1, float64(dpi)) // go-fitz memakai indeks 0-based
+	})
 	if err != nil {
 		return Page{}, fmt.Errorf("render hal %d: %w", page, err)
 	}

@@ -349,6 +349,60 @@ func (s *Store) IsClassified(ctx context.Context, documentID int64) (bool, error
 	return done, err
 }
 
+// SavedPage adalah SATU baris document_pages LENGKAP dengan metadata
+// render/OCR-nya — dipakai ListSavedPages untuk merekonstruksi entri
+// extractor.PageResult bagi halaman yang sudah tersimpan dari penjalanan
+// SEBELUMNYA (lihat catatan di ListSavedPages).
+type SavedPage struct {
+	Page        int
+	Text        string
+	IsEmpty     bool
+	IsTruncated bool
+	InkRatio    float64
+	CroppedPct  float64
+	DPI         int
+	DurationMS  int
+	Notes       []string
+}
+
+// ListSavedPages mengembalikan SEMUA halaman yang sudah tersimpan untuk satu
+// dokumen, urut nomor halaman, lengkap dengan metadata render/OCR-nya.
+//
+// [Ditambahkan 2026-07-23] Sebelumnya, ocr.txt mode debug (lihat
+// debug_writer.go) HANYA berisi halaman yang diproses pada PENJALANAN INI —
+// halaman yang sudah tersimpan dari penjalanan sebelumnya (dokumen yang
+// sempat berhenti lalu dilanjutkan) tidak pernah tampil lagi, sehingga
+// ocr.txt terlihat seolah dokumennya cuma sepanjang itu. Dipakai
+// ocr_worker.go untuk mengisi ulang debugWriter dengan halaman-halaman lama
+// SEBELUM halaman baru diproses, supaya ocr.txt selalu mencerminkan SELURUH
+// dokumen, bukan cuma sisa yang diproses penjalanan terakhir.
+func (s *Store) ListSavedPages(ctx context.Context, documentID int64) ([]SavedPage, error) {
+	rows, err := s.pool.Query(ctx, `
+		SELECT page_number, COALESCE(edited_text, ocr_text), is_empty, is_truncated,
+		       COALESCE(ink_ratio, 0), COALESCE(cropped_pct, 0), COALESCE(dpi_pakai, 0),
+		       COALESCE(duration_ms, 0), notes
+		FROM document_pages
+		WHERE document_id = $1
+		ORDER BY page_number`, documentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var out []SavedPage
+	for rows.Next() {
+		var p SavedPage
+		var notesJSON []byte
+		if err := rows.Scan(&p.Page, &p.Text, &p.IsEmpty, &p.IsTruncated,
+			&p.InkRatio, &p.CroppedPct, &p.DPI, &p.DurationMS, &notesJSON); err != nil {
+			return nil, err
+		}
+		_ = json.Unmarshal(notesJSON, &p.Notes) // notes cuma kosmetik; abaikan galat urai
+		out = append(out, p)
+	}
+	return out, rows.Err()
+}
+
 // GetPageText mengembalikan teks yang berlaku untuk satu halaman:
 // koreksi manusia > perbaikan model > OCR mentah.
 func (s *Store) GetPageText(ctx context.Context, documentID int64, page int) (string, error) {
@@ -575,6 +629,9 @@ type NodeInsert struct {
 	OriginalNodeType *string
 	Warnings         []byte
 	Citation         *string
+	// IsAppendix (2026-07-23): lihat catatan di parser.Node.IsAppendix
+	// dan kolom nodes.is_appendix di schema.sql.
+	IsAppendix bool
 }
 
 // InsertParseResult menyimpan hasil parse PERTAMA (dan SATU-SATUNYA) untuk
@@ -617,14 +674,14 @@ func (s *Store) InsertParseResult(ctx context.Context, documentID int64, status 
 				bab_number, bagian_label, paragraf_label, pasal_number, ayat_number,
 				huruf_label, angka_label, label, content,
 				start_page, end_page, order_index,
-				original_node_type, warnings, citation
-			) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
+				original_node_type, warnings, citation, is_appendix
+			) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
 			RETURNING id`,
 			documentID, parentID, n.Section, n.NodeType,
 			n.BabNumber, n.BagianLabel, n.ParagrafLabel, n.PasalNumber, n.AyatNumber,
 			n.HurufLabel, n.AngkaLabel, n.Label, n.Content,
 			n.StartPage, n.EndPage, n.OrderIndex,
-			n.OriginalNodeType, n.Warnings, n.Citation,
+			n.OriginalNodeType, n.Warnings, n.Citation, n.IsAppendix,
 		).Scan(&newID); err != nil {
 			return err
 		}

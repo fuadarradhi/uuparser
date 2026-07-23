@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
+	"github.com/fuadarradhi/uuparser/internal/localllm"
 	"github.com/fuadarradhi/uuparser/internal/logx"
 	"github.com/fuadarradhi/uuparser/internal/parser"
 	"github.com/fuadarradhi/uuparser/internal/store"
@@ -84,6 +86,52 @@ func processOneParse(ctx context.Context, deps Deps, job store.ParseJob) {
 		for _, w := range res.DocumentWarnings {
 			notes = append(notes, w.Message)
 		}
+
+		// Tinjauan model (2026-07-23) — "parser bermasalah, ada kecerdasan
+		// untuk memanggil model teks" (permintaan user): dipanggil HANYA
+		// untuk node yang PARSER SENDIRI curigai lewat sinyal
+		// parser.AnchorLeakNodes (lihat diagnose.go/thinking.go) — BUKAN
+		// tiap dokumen, BUKAN tiap halaman. Jawabannya TIDAK PERNAH
+		// mengubah nodeRows/database — murni ditambahkan ke
+		// extraction_notes sebagai bahan tinjauan manusia, konsisten
+		// dengan prinsip "model membaca, kode menyimpulkan" di seluruh
+		// pipeline ini (di sini malah lebih ketat: kode pun tidak
+		// menyimpulkan apa-apa dari jawabannya).
+		if idxs := parser.AnchorLeakNodes(res); len(idxs) > 0 && deps.Text != nil {
+			var tinjauanDebug strings.Builder
+			for _, idx := range idxs {
+				n := res.Nodes[idx]
+				logx.Info("dokumen %d: menjalankan tinjauan model untuk node [%s/%s] hal %d-%d (ANCHOR_LEAK)",
+					job.ID, n.Section, n.NodeType, n.StartPage, n.EndPage)
+				bermasalah, penjelasan, rawTinjau, terr := AskTinjauan(
+					ctx, deps.Text, deps.Prompts.Tinjau, n.Text, localllm.TextParams{})
+				if deps.DebugResult {
+					fmt.Fprintf(&tinjauanDebug, "=== NODE [%s/%s] hal %d-%d ===\n--- TEKS ---\n%s\n\n--- JAWABAN MENTAH MODEL ---\n%s\n",
+						n.Section, n.NodeType, n.StartPage, n.EndPage, n.Text, rawTinjau)
+					if terr != nil {
+						fmt.Fprintf(&tinjauanDebug, "--- GAGAL DIURAI: %v ---\n", terr)
+					}
+					tinjauanDebug.WriteString("\n")
+				}
+				if terr != nil {
+					logx.Warn("dokumen %d: tinjauan model gagal untuk node [%s/%s]: %v",
+						job.ID, n.Section, n.NodeType, terr)
+					continue
+				}
+				// HANYA dicatat kalau model memang setuju ada yang
+				// tercampur — jawaban bermasalah=false tidak perlu
+				// membanjiri extraction_notes dengan "sudah dicek, aman".
+				if bermasalah {
+					notes = append(notes, fmt.Sprintf(
+						"Tinjauan model (node [%s/%s], hal %d-%d): %s",
+						n.Section, n.NodeType, n.StartPage, n.EndPage, penjelasan))
+				}
+			}
+			if deps.DebugResult && tinjauanDebug.Len() > 0 {
+				tulisDebugTinjauan(deps.DebugDir, job.ID, tinjauanDebug.String())
+			}
+		}
+
 		notesJSON, _ = json.Marshal(notes)
 		nodeRows = mapNodesToInserts(res.Nodes)
 		if deps.DebugResult {
@@ -153,6 +201,7 @@ func mapNodesToInserts(nodes []parser.Node) []store.NodeInsert {
 			Label:   ownLevelLabel(n),
 			Content: n.Text, StartPage: n.StartPage, EndPage: n.EndPage,
 			OrderIndex: int64(n.DocOrder),
+			IsAppendix: n.IsAppendix,
 		}
 		if warnBytes, err := json.Marshal(n.Warnings); err == nil {
 			row.Warnings = warnBytes

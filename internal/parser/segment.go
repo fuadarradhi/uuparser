@@ -14,9 +14,25 @@ type segment struct {
 // segmentize membagi baris menjadi urutan segmen sesuai kemunculan anchor.
 // Juga mengembalikan daftar warning level-dokumen (mis. section standar hilang).
 func segmentize(lines []Line, cls classifyResult) ([]segment, []Warning) {
+	// LAMPIRAN (2026-07-23): selalu jadi bagian PALING AKHIR dokumen —
+	// dokumennya sendiri, dengan identitas ulang dan sub-bagian A/B/C/dst
+	// sendiri. Dipotong PALING DULU dari sisa analisis di bawah supaya
+	// tidak ada anchor Menimbang/Mengingat/dst di dalamnya yang salah
+	// tertangkap sebagai bagian dokumen utama, dan supaya reClosing di
+	// parseBatangTubuh (lihat parse_batangtubuh.go) tidak tersedot terus
+	// menelan Lampiran sebagai node penutup.
+	var lampiranLines []Line
+	if idxLampiran := findLineIndex(lines, reLampiran); idxLampiran >= 0 {
+		lampiranLines = sliceLines(lines, idxLampiran, len(lines))
+		lines = sliceLines(lines, 0, idxLampiran)
+	}
+
 	// Tentukan indeks anchor utama.
 	idxMenimbang := findLineIndex(lines, reMenimbang)
 	idxMengingat := findLineIndex(lines, reMengingat)
+	// idxMemperhatikan: section OPSIONAL setelah Mengingat, sebelum
+	// MEMUTUSKAN — lihat catatan reMemperhatikan di patterns.go.
+	idxMemperhatikan := findLineIndex(lines, reMemperhatikan)
 	idxMemutuskan := findLineIndex(lines, reMemutuskan)
 	idxMenetapkan := findLineIndexFrom(lines, reMenetapkan, maxInt(idxMemutuskan, 0))
 	idxPenjelasan := findLineIndex(lines, rePenjelasan)
@@ -43,7 +59,7 @@ func segmentize(lines []Line, cls classifyResult) ([]segment, []Warning) {
 	var warns []Warning
 
 	// --- Judul: dari awal sampai anchor pembuka pertama. ---
-	firstAnchor := minPositive(idxMenimbang, idxMengingat, idxMemutuskan)
+	firstAnchor := minPositive(idxMenimbang, idxMengingat, idxMemperhatikan, idxMemutuskan)
 	if firstAnchor < 0 {
 		firstAnchor = batangStart
 	}
@@ -61,10 +77,17 @@ func segmentize(lines []Line, cls classifyResult) ([]segment, []Warning) {
 
 	// --- Mengingat ---
 	if idxMengingat >= 0 {
-		end := minPositiveAfter(len(lines), idxMengingat, idxMemutuskan, batangStart)
+		end := minPositiveAfter(len(lines), idxMengingat, idxMemperhatikan, idxMemutuskan, batangStart)
 		segs = append(segs, segment{SectionMengingat, sliceLines(lines, idxMengingat, end)})
 	} else if cls.hasPasal {
 		warns = append(warns, Warning{SeverityNeedsReview, "Section 'Mengingat' tidak ditemukan", nil, ""})
+	}
+
+	// --- Memperhatikan (OPSIONAL — banyak dokumen tidak punya section ini
+	// sama sekali, jadi TIDAK ada warning saat absen). ---
+	if idxMemperhatikan >= 0 {
+		end := minPositiveAfter(len(lines), idxMemperhatikan, idxMemutuskan, batangStart)
+		segs = append(segs, segment{SectionMemperhatikan, sliceLines(lines, idxMemperhatikan, end)})
 	}
 
 	// --- Penetapan (MEMUTUSKAN..Menetapkan) ---
@@ -90,6 +113,11 @@ func segmentize(lines []Line, cls classifyResult) ([]segment, []Warning) {
 		penjLines := sliceLines(lines, idxPenjelasan, len(lines))
 		umumSegs := splitPenjelasan(penjLines)
 		segs = append(segs, umumSegs...)
+	}
+
+	// --- Lampiran: SELALU paling akhir (lihat pemotongan di awal fungsi). ---
+	if len(lampiranLines) > 0 {
+		segs = append(segs, segment{SectionLampiran, lampiranLines})
 	}
 
 	return segs, warns

@@ -18,6 +18,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/fuadarradhi/uuparser/internal/config"
 	"github.com/fuadarradhi/uuparser/internal/localllm"
 	"github.com/fuadarradhi/uuparser/internal/logx"
 	"github.com/fuadarradhi/uuparser/internal/prompts"
@@ -49,8 +50,12 @@ type Deps struct {
 	// LowMemory: jalankan kedua model bergantian, bukan berdampingan.
 	LowMemory bool
 
-	// MinTahun: lihat config.Config.MinTahun — 0 berarti tanpa saringan.
-	MinTahun int
+	// Tahun: lihat config.Config.Tahun — Op kosong berarti tanpa saringan.
+	Tahun config.TahunFilter
+
+	// MaxPage/MinPage: lihat config.Config.MaxPage / MinPage.
+	MaxPage int
+	MinPage int
 
 	// DebugResult: lihat config.Config.DebugResult.
 	DebugResult bool

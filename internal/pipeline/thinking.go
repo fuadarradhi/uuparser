@@ -156,6 +156,41 @@ func AskPenetapan(ctx context.Context, tc *localllm.TextClient, prompt, text str
 	}, raw, nil
 }
 
+// ---- Tinjauan: dipanggil HANYA saat parser mencurigai hasilnya sendiri ----
+
+type tinjauReply struct {
+	Bermasalah bool   `json:"bermasalah"`
+	Penjelasan string `json:"penjelasan"`
+}
+
+// AskTinjauan (2026-07-23) adalah mekanisme berbeda dari AskIsRegulation/
+// AskIdentity/AskPenetapan di atas: ketiganya dipanggil untuk MENGISI data
+// yang belum ada (identitas, penetapan). AskTinjauan dipanggil untuk MENILAI
+// ULANG data yang SUDAH ADA tapi parser sendiri mencurigainya — sinyalnya
+// parser.AnchorLeakNodes (lihat diagnose.go), dipicu ketika sebuah node
+// hasil parse memuat kata kunci penanda section lain (LAMPIRAN/MEMUTUSKAN/
+// dst) DI TENGAH teksnya, yang biasanya berarti dua bagian dokumen tercampur
+// karena batasnya gagal terdeteksi — persis kelas bug yang ditemukan
+// 2026-07-23 (Memperhatikan tersedot ke Mengingat, Lampiran tersedot ke
+// penutup) TAPI TIDAK memicu warning struktural apa pun sebelumnya.
+//
+// PRINSIP TETAP SAMA — malah lebih ketat: jawabannya TIDAK PERNAH mengubah
+// node/nilai apa pun di database. Ia murni CATATAN TAMBAHAN yang ditempel
+// ke extraction_notes dokumen untuk dibaca manusia (lihat parser_worker.go)
+// — beda dari AskIdentity/AskPenetapan yang jawabannya (sesudah divalidasi)
+// memang disimpan sebagai data. Di sini bahkan KODE PUN tidak menyimpulkan
+// apa-apa dari jawabannya, apalagi menimpa hasil parse — hanya meneruskan
+// apa kata model, apa adanya, sebagai bahan tinjauan manusia.
+func AskTinjauan(ctx context.Context, tc *localllm.TextClient, prompt, teksNode string,
+	p localllm.TextParams) (bermasalah bool, penjelasan, raw string, err error) {
+	var r tinjauReply
+	raw, err = askJSON(ctx, tc, prompt, teksNode, p, &r)
+	if err != nil {
+		return false, "", raw, err
+	}
+	return r.Bermasalah, bersih(r.Penjelasan, 500), raw, nil
+}
+
 // ---- kunci identitas ----
 
 // canonicalKey menyusun kunci identitas peraturan untuk deteksi duplikat.

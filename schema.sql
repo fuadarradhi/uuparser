@@ -247,6 +247,16 @@ CREATE TABLE IF NOT EXISTS nodes (
     edited_at          timestamptz,
     warnings           jsonb NOT NULL DEFAULT '[]'::jsonb,
     citation           text,
+    -- is_appendix (2026-07-23): true HANYA untuk node section='lampiran'.
+    -- Permintaan user: isi Lampiran berguna saat menelusuri/verifikasi
+    -- dokumen (mis. cek Rencana Alokasi Air yang dirujuk), tapi TIDAK
+    -- relevan saat pencarian benar-benar mencari ATURAN (Pasal/Ayat/Diktum)
+    -- — jadi butuh flag agar query/RAG bisa memilih menyertakan atau
+    -- mengecualikannya, bukan menghapusnya. Bukan flag umum "penting per
+    -- node" yang dinilai satu-satu — sepenuhnya ditentukan oleh section,
+    -- diisi otomatis oleh parser (lihat internal/parser/parse_lampiran.go),
+    -- bukan sesuatu yang pernah diset manual.
+    is_appendix        boolean NOT NULL DEFAULT false,
     created_at         timestamptz NOT NULL DEFAULT now()
 );
 

@@ -37,14 +37,26 @@ var (
 // ---- Kata kunci macro-section (dipakai classify & segment). ----
 
 var (
-	reMenimbang  = regexp.MustCompile(`(?im)^\s*Menimbang\s*:?`)
-	reMengingat  = regexp.MustCompile(`(?im)^\s*Mengingat\s*:?`)
-	reMemutuskan = regexp.MustCompile(`(?im)^\s*MEMUTUSKAN\s*:?`)
-	reMenetapkan = regexp.MustCompile(`(?im)^\s*Menetapkan\s*:`)
-	rePenjelasan = regexp.MustCompile(`(?im)^\s*PENJELASAN\b`)
-	rePasalDemi  = regexp.MustCompile(`(?im)^\s*(?:I{1,3}\.\s*)?PASAL\s+DEMI\s+PASAL\b`)
-	reUmumHead   = regexp.MustCompile(`(?im)^\s*(?:I\.\s*)?UMUM\s*$`)
-	reCukupJelas = regexp.MustCompile(`(?i)^cukup\s+jelas\.?\s*$`)
+	reMenimbang = regexp.MustCompile(`(?im)^\s*Menimbang\s*:?`)
+	reMengingat = regexp.MustCompile(`(?im)^\s*Mengingat\s*:?`)
+	// reMemperhatikan (2026-07-23): "Memperhatikan" adalah section OPSIONAL
+	// yang muncul setelah Mengingat, sebelum MEMUTUSKAN — dipakai bila
+	// penetapan mempertimbangkan rekomendasi/hasil koordinasi badan lain
+	// (mis. TKPSDA). Ditemukan lewat bug nyata: sebelum ini sama sekali
+	// tidak dikenali, sehingga isinya jatuh sebagai lanjutan ke item
+	// Mengingat TERAKHIR alih-alih jadi section-nya sendiri.
+	reMemperhatikan = regexp.MustCompile(`(?im)^\s*Memperhatikan\s*:?`)
+	reMemutuskan    = regexp.MustCompile(`(?im)^\s*MEMUTUSKAN\s*:?`)
+	reMenetapkan    = regexp.MustCompile(`(?im)^\s*Menetapkan\s*:`)
+	rePenjelasan    = regexp.MustCompile(`(?im)^\s*PENJELASAN\b`)
+	rePasalDemi     = regexp.MustCompile(`(?im)^\s*(?:I{1,3}\.\s*)?PASAL\s+DEMI\s+PASAL\b`)
+	reUmumHead      = regexp.MustCompile(`(?im)^\s*(?:I\.\s*)?UMUM\s*$`)
+	reCukupJelas    = regexp.MustCompile(`(?i)^cukup\s+jelas\.?\s*$`)
+	// reLampiran (2026-07-23) menandai awal blok LAMPIRAN — selalu di
+	// AWAL barisnya sendiri (bukan disebut di tengah kalimat lain, mis.
+	// "sebagaimana tercantum dalam Lampiran"), jadi anchor '^' + \b cukup
+	// aman tanpa perlu menyaring penyebutan biasa di tengah teks.
+	reLampiran = regexp.MustCompile(`(?im)^\s*LAMPIRAN\b`)
 )
 
 // reBabAnywhere & rePasalAnywhere dipakai gate klasifikasi (boleh di tengah baris).

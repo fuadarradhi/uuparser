@@ -175,6 +175,25 @@ func (w *debugWriter) catatModel(tahap, promptTerpakai, masukan, jawabanMentah s
 	w.thinking.WriteString("\n")
 }
 
+// tulisDebugTinjauan menulis tinjauan.txt — dipakai HANYA saat mekanisme
+// tinjauan model (2026-07-23, lihat AskTinjauan di thinking.go dan
+// pemanggilannya di parser_worker.go) benar-benar terpicu untuk dokumen
+// ini. TIDAK ADA berkas ini sama sekali berarti tidak ada node yang
+// dicurigai ANCHOR_LEAK sepanjang dokumen — sinyal berguna dengan
+// sendirinya, sama seperti absennya thinking.txt berarti identitas/
+// penetapan terselesaikan murni deterministik.
+func tulisDebugTinjauan(debugDir string, docID int64, isi string) {
+	dir := filepath.Join(debugDir, strconv.FormatInt(docID, 10))
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		logx.Warn("debug: buat folder %s: %v", dir, err)
+		return
+	}
+	full := "=== TINJAUAN MODEL (dipicu ANCHOR_LEAK) ===\n\n" + isi
+	if err := os.WriteFile(filepath.Join(dir, "tinjauan.txt"), []byte(full), 0o644); err != nil {
+		logx.Warn("debug: tulis tinjauan.txt: %v", err)
+	}
+}
+
 // tulisDebugParse menulis parse.txt ke folder debug dokumen ini — dipanggil
 // dari parser_worker.go, terpisah dari debugWriter di atas karena parse
 // terjadi di worker & waktu yang berbeda (bisa lama setelah OCR selesai),

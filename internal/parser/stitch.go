@@ -21,6 +21,21 @@ var (
 	// (mis. "www.jdih.acehprov.go.id") — pola furniture halaman yang sama
 	// sekali bukan bagian isi peraturan, sama seperti nomor halaman.
 	reWatermark = regexp.MustCompile(`(?i)^\s*(https?://|www\.)?[a-z0-9.-]*\.(go\.id|ac\.id|co\.id|or\.id)\S*\s*$`)
+	// reCatchword (2026-07-23) menangkap "kata alih" (catchword) khas
+	// dokumen resmi lama: baris pendek di bawah halaman berisi pratinjau
+	// kata/frasa pembuka halaman berikutnya, diakhiri "…/N" (N = nomor
+	// halaman berikutnya) — mis. "Wilayah.../2", "b. Persiapan .../3",
+	// "Memperhatikan : .../2". Isinya SELALU terulang penuh di awal halaman
+	// berikutnya, jadi baris ini murni artefak tata letak, bukan isi.
+	// Ditemukan lewat bug nyata: dibiarkan lolos, ia nyambung jadi teks
+	// (mis. "Memperhatikan : .../2 Memperhatikan : Surat Edaran ..." malah
+	// mencemari item Mengingat sebelumnya). BUKAN sekadar prefix seperti
+	// dedupPageBoundaries menangani (kata ulangnya sering cuma sebagian
+	// dari isi sesungguhnya), jadi perlu penanganan terpisah di sini.
+	// !looksStructural dipakai sebagai pengaman tambahan (lihat pemakaian
+	// di bawah) — baris struktural asli (Pasal/BAB/dst) tidak pernah
+	// berbentuk begini, tapi dijaga saja.
+	reCatchword = regexp.MustCompile(`(?i)^.{0,40}\.\.\.\s*/\s*\d{1,4}\s*$`)
 )
 
 func stitch(pages []string) []Line {
@@ -84,7 +99,8 @@ func stitch(pages []string) []Line {
 				}
 				continue
 			}
-			if rePageNum.MatchString(t) || rePageLabel.MatchString(t) || reRuleLine.MatchString(t) || reWatermark.MatchString(t) {
+			if rePageNum.MatchString(t) || rePageLabel.MatchString(t) || reRuleLine.MatchString(t) || reWatermark.MatchString(t) ||
+				(reCatchword.MatchString(t) && !looksStructural(t)) {
 				continue
 			}
 			out = append(out, ln)
