@@ -51,6 +51,20 @@ var JenisList = []string{
 	"SURAT EDARAN GUBERNUR",
 	"SURAT EDARAN BUPATI",
 	"SURAT EDARAN WALI KOTA",
+	// SURAT EDARAN (2026-07-24, ditemukan dari penolakan nyata) — jenis
+	// SURAT EDARAN BARE ditambahkan dengan alasan PERSIS sama dengan QANUN
+	// di atas: jabatan penandatangan SE mencakup rentang yang jauh lebih
+	// luas dan tidak terbatas daripada Peraturan/Keputusan/Instruksi (bisa
+	// Sekretaris Daerah, Kepala Dinas, Kepala Badan, siapa pun pejabat
+	// struktural) — mustahil dienumerasi semuanya seperti 4 entri di atas.
+	// Modelnya SENDIRI biasanya SUDAH memisahkan ini dengan benar: jenis
+	// tertangkap sebagai "SURAT EDARAN" polos, sementara jabatan
+	// penandatangan tertangkap TERPISAH di instansi_tertulis (mis.
+	// "GUBERNUR ACEH") — jadi keempat entri berjabatan di atas nyaris
+	// tidak pernah benar-benar cocok di praktiknya; inilah yang membuat SE
+	// terus tertolak "jenis tidak dikenal" walau bentuknya sudah benar
+	// dan lengkap.
+	"SURAT EDARAN",
 }
 
 // WilayahList adalah 25 wilayah yang dikenal sistem: nasional, Pemerintah

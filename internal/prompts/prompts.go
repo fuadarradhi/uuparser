@@ -41,16 +41,6 @@ type Set struct {
 	// yang mencurigakan karena memuat penanda section DI TENGAH teksnya.
 	OrphanReview string
 
-	// DocumentReview (2026-07-24, permintaan user: "AI yang periksa hasil
-	// parser terakhir, setiap selesai 1 dokumen") — SATU panggilan model
-	// per dokumen SETELAH parse+Diagnose selesai, diberi RINGKASAN
-	// terstruktur (identitas + Stats + daftar Issue), BUKAN teks lengkap
-	// dokumen — sengaja dibatasi supaya tetap dalam jangkauan model kecil
-	// (lihat catatan lengkap di thinking.go/AskDocumentReview soal kenapa
-	// ringkasan, bukan teks penuh). Sama sekali bukan tinjauan isi hukum/
-	// substansi — hanya sanity-check apakah ringkasannya sendiri wajar.
-	DocumentReview string
-
 	Hash string // sidik jari gabungan, disimpan bersama metadata dokumen
 }
 
@@ -70,7 +60,6 @@ func Load(dir string) (Set, error) {
 		{"penetapan.md", &s.Penetapan},
 		{"tinjau.md", &s.Tinjau},
 		{"orphan.md", &s.OrphanReview},
-		{"document_review.md", &s.DocumentReview},
 	} {
 		var h string
 		if *it.dst, h, err = readOne(filepath.Join(dir, it.name)); err != nil {

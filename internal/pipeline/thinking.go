@@ -182,14 +182,17 @@ type tinjauReply struct {
 // apa-apa dari jawabannya, apalagi menimpa hasil parse — hanya meneruskan
 // apa kata model, apa adanya, sebagai bahan tinjauan manusia.
 //
-// [2026-07-24] Fungsi yang SAMA ini dipakai untuk TIGA pemicu berbeda
-// sekarang — hanya prompt & teks yang dikirim yang beda, bentuk jawaban
-// {bermasalah, penjelasan} identik di ketiganya: (1) tinjau.md untuk
+// [2026-07-24] Fungsi yang SAMA ini dipakai untuk DUA pemicu berbeda —
+// hanya prompt & teks yang dikirim yang beda, bentuk jawaban
+// {bermasalah, penjelasan} identik di keduanya: (1) tinjau.md untuk
 // parser.AnchorLeakNodes di atas, (2) orphan.md untuk
 // parser.OrphanWarningNodes (teks yatim yang gagal dicocokkan ke struktur
-// apa pun), (3) document_review.md untuk RINGKASAN dokumen sekali per
-// dokumen sesudah Diagnose (lihat parser_worker.go) — bukan meninjau
-// SATU node, tapi sanity-check ringkasan struktur+masalah keseluruhan.
+// apa pun). Sempat ada pemicu ketiga (document_review.md — ringkasan
+// jumlah Bab/Pasal/dst per dokumen) tapi DIHAPUS lagi (2026-07-24,
+// permintaan user): itu murni perbandingan ANGKA, tidak butuh model sama
+// sekali — mubazir. Kalau nanti ada kebutuhan sanity-check angka
+// semacam itu, itu jadi Issue baru di parser.Diagnose (Go biasa), bukan
+// panggilan model.
 func AskTinjauan(ctx context.Context, tc *localllm.TextClient, prompt, teksNode string,
 	p localllm.TextParams) (bermasalah bool, penjelasan, raw string, err error) {
 	var r tinjauReply

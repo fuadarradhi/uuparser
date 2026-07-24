@@ -73,12 +73,10 @@ func processOneParse(ctx context.Context, deps Deps, job store.ParseJob) {
 	var status string
 	var reportJSON, notesJSON []byte
 	var nodeRows []store.NodeInsert
-	// flags (2026-07-24) & aiReviewedAt: lihat catatan store.ReviewFlagInsert
-	// dan kolom parse_snapshots.ai_reviewed_at. Tetap nil/kosong di jalur
-	// Parse() gagal di bawah — tidak ada apa pun untuk ditinjau bila parse
-	// sendiri tidak menghasilkan apa-apa.
+	// flags (2026-07-24): lihat catatan store.ReviewFlagInsert. Tetap nil
+	// di jalur Parse() gagal di bawah — tidak ada apa pun untuk ditinjau
+	// bila parse sendiri tidak menghasilkan apa-apa.
 	var flags []store.ReviewFlagInsert
-	var aiReviewedAt *time.Time
 
 	if err != nil {
 		status = "FAIL"
@@ -236,59 +234,6 @@ func processOneParse(ctx context.Context, deps Deps, job store.ParseJob) {
 			}
 		}
 
-		// Tinjauan model level-DOKUMEN (2026-07-24, permintaan user: "AI
-		// yang periksa hasil parser terakhir, setiap selesai 1 dokumen").
-		// BEDA dari dua blok di atas: bukan dipicu sinyal tertentu (tidak
-		// menunggu ANCHOR_LEAK/teks yatim) — SELALU dijalankan sekali per
-		// dokumen, sebagai pemeriksaan terakhir. TAPI sengaja diberi
-		// RINGKASAN terstruktur (Stats + daftar Issue), BUKAN teks lengkap
-		// dokumen — model kecil yang dipakai di sini tidak cocok disuruh
-		// membaca ulang seluruh dokumen dan menilai isi hukumnya; ringkasan
-		// menjaga tugasnya tetap sanity-check terbatas (lihat
-		// prompts/document_review.md) yang benar-benar dalam jangkauannya.
-		// Prinsip sama: jawabannya TIDAK PERNAH mengubah nodeRows/database.
-		if deps.Text != nil {
-			var ringkasan strings.Builder
-			fmt.Fprintf(&ringkasan, "STATUS PARSE: %s\n\n", status)
-			fmt.Fprintf(&ringkasan, "RINGKASAN STRUKTUR:\n"+
-				"- Bab: %d\n- Bagian: %d\n- Paragraf: %d\n- Pasal: %d\n- Ayat: %d\n- Diktum: %d\n\n",
-				rep.Stats.Bab, rep.Stats.Bagian, rep.Stats.Paragraf, rep.Stats.Pasal, rep.Stats.Ayat, rep.Stats.Diktum)
-			if len(rep.Issues) == 0 {
-				ringkasan.WriteString("MASALAH YANG SUDAH TERDETEKSI OTOMATIS: tidak ada\n")
-			} else {
-				fmt.Fprintf(&ringkasan, "MASALAH YANG SUDAH TERDETEKSI OTOMATIS (%d):\n", len(rep.Issues))
-				for _, is := range rep.Issues {
-					fmt.Fprintf(&ringkasan, "- [%s] %s\n", is.Code, is.Message)
-				}
-			}
-			logx.Info("dokumen %d: menjalankan tinjauan model level-dokumen", job.ID)
-			bermasalah, penjelasan, rawTinjau, terr := AskTinjauan(
-				ctx, deps.Text, deps.Prompts.DocumentReview, ringkasan.String(), localllm.TextParams{})
-			if deps.DebugResult {
-				if tinjauanDebug.Len() > 0 {
-					tinjauanDebug.WriteString("\n")
-				}
-				fmt.Fprintf(&tinjauanDebug, "--- Dipicu tinjauan level-dokumen ---\n\n=== RINGKASAN DIKIRIM ===\n%s\n--- JAWABAN MENTAH MODEL ---\n%s\n",
-					ringkasan.String(), rawTinjau)
-				if terr != nil {
-					fmt.Fprintf(&tinjauanDebug, "--- GAGAL DIURAI: %v ---\n", terr)
-				}
-			}
-			if terr != nil {
-				logx.Warn("dokumen %d: tinjauan model level-dokumen gagal: %v", job.ID, terr)
-			} else {
-				now := time.Now()
-				aiReviewedAt = &now
-				if bermasalah {
-					notes = append(notes, fmt.Sprintf("Tinjauan model — ringkasan dokumen: %s", penjelasan))
-					flags = append(flags, store.ReviewFlagInsert{
-						NodeIdx: -1, Source: "model_document_review", Code: "DOCUMENT_REVIEW",
-						Severity: string(parser.SeverityNeedsReview), Message: penjelasan,
-					})
-				}
-			}
-		}
-
 		if deps.DebugResult && tinjauanDebug.Len() > 0 {
 			tulisDebugTinjauan(deps.DebugDir, job.ID, tinjauanDebug.String())
 		}
@@ -303,7 +248,7 @@ func processOneParse(ctx context.Context, deps Deps, job store.ParseJob) {
 			tulisDebugParseTree(deps.DebugDir, job.ID, formatNodeTreeJSON(status, nodeRows))
 		}
 	}
-	if err := st.InsertParseResult(ctx, job.ID, status, reportJSON, notesJSON, nodeRows, flags, aiReviewedAt); err != nil {
+	if err := st.InsertParseResult(ctx, job.ID, status, reportJSON, notesJSON, nodeRows, flags); err != nil {
 		logx.Fail(fmt.Sprintf("dokumen %d", job.ID), "simpan hasil parse: %v", err)
 		return
 	}

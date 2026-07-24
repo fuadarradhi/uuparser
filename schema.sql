@@ -212,18 +212,8 @@ CREATE TABLE IF NOT EXISTS parse_snapshots (
     status            text NOT NULL,
     report            jsonb NOT NULL DEFAULT '{}'::jsonb,
     extraction_notes  jsonb NOT NULL DEFAULT '[]'::jsonb,
-    -- ai_reviewed_at (2026-07-24, permintaan user: "AI yang periksa hasil
-    -- parser terakhir, setiap selesai 1 dokumen") — dicatat SETIAP kali
-    -- pemeriksaan AI post-parse (AskDocumentReview, lihat thinking.go)
-    -- SELESAI dijalankan untuk dokumen ini, TERLEPAS apakah ia menemukan
-    -- sesuatu atau tidak. Beda tujuan dari review_flags di bawah: kolom ini
-    -- menjawab "sudah diperiksa AI belum?" (untuk UI); review_flags
-    -- menjawab "apa saja yang perlu ditinjau?". NULL berarti belum pernah
-    -- diperiksa (mis. model teks sedang tidak tersedia saat parse ini).
-    ai_reviewed_at    timestamptz,
     parsed_at         timestamptz NOT NULL DEFAULT now()
 );
-ALTER TABLE parse_snapshots ADD COLUMN IF NOT EXISTS ai_reviewed_at timestamptz;
 
 -- =====================================================================
 -- nodes — hasil parse siap-edit (drag-drop/relabel di UI). Diisi SEKALI
@@ -328,17 +318,11 @@ CREATE INDEX IF NOT EXISTS idx_nodes_content_tsv ON nodes USING GIN (content_tsv
 --                              parser.AnchorLeakNodes.
 --   - 'model_orphan_review' — AskTinjauan (orphan.md) MENGKONFIRMASI
 --                              node dari parser.OrphanWarningNodes.
---   - 'model_document_review' — AskDocumentReview (document_review.md)
---                              MENGKONFIRMASI ada yang mencurigakan pada
---                              RINGKASAN dokumen (lihat thinking.go) —
---                              document-level.
 --
 -- SENGAJA HANYA baris yang benar-benar actionable (bukan "sudah dicek,
 -- aman") — sama seperti extraction_notes sebelumnya: kalau setiap
 -- pemeriksaan model yang "aman" juga bikin baris, tabel ini membanjir
--- tanpa nilai tinjau. "Apakah dokumen X sudah diperiksa AI" dijawab
--- kolom parse_snapshots.ai_reviewed_at, BUKAN oleh ada/tidaknya baris
--- di sini.
+-- tanpa nilai tinjau.
 --
 -- resolved/resolved_note: UI web menandai satu baris selesai ditinjau
 -- TANPA mengubah data hasil parse itu sendiri (koreksi data tetap lewat
@@ -371,14 +355,12 @@ SELECT
     d.id                AS document_id,
     d.jenis, d.wilayah, d.nomor, d.tahun, d.tentang,
     d.parse_status,
-    ps.ai_reviewed_at,
     COUNT(rf.id) FILTER (WHERE NOT rf.resolved)                            AS unresolved_count,
     COUNT(rf.id) FILTER (WHERE NOT rf.resolved AND rf.severity = 'needs_review') AS unresolved_needs_review,
     MAX(rf.created_at)                                                      AS last_flag_at
 FROM documents d
-JOIN parse_snapshots ps ON ps.document_id = d.id
 LEFT JOIN review_flags rf ON rf.document_id = d.id
-GROUP BY d.id, ps.ai_reviewed_at;
+GROUP BY d.id;
 
 -- =====================================================================
 -- Trigger label flat (bab_number/bagian_label/paragraf_label/pasal_number/

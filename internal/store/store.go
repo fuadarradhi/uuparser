@@ -670,10 +670,9 @@ type ReviewFlagInsert struct {
 // pemrograman, bukan alur normal, dan sengaja tidak ditangkap diam-diam.
 //
 // flags (2026-07-24): baris review_flags yang menyertai hasil parse ini —
-// lihat catatan ReviewFlagInsert. aiReviewedAt boleh nil (mis. model teks
-// sedang tidak tersedia saat parse ini, lihat pemanggil di parser_worker.go).
+// lihat catatan ReviewFlagInsert.
 func (s *Store) InsertParseResult(ctx context.Context, documentID int64, status string,
-	report, extractionNotes []byte, nodes []NodeInsert, flags []ReviewFlagInsert, aiReviewedAt *time.Time) error {
+	report, extractionNotes []byte, nodes []NodeInsert, flags []ReviewFlagInsert) error {
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return err
@@ -681,9 +680,9 @@ func (s *Store) InsertParseResult(ctx context.Context, documentID int64, status 
 	defer tx.Rollback(ctx) //nolint:errcheck
 
 	if _, err := tx.Exec(ctx, `
-		INSERT INTO parse_snapshots (document_id, status, report, extraction_notes, ai_reviewed_at, parsed_at)
-		VALUES ($1,$2,$3,$4,$5, now())`,
-		documentID, status, report, extractionNotes, aiReviewedAt); err != nil {
+		INSERT INTO parse_snapshots (document_id, status, report, extraction_notes, parsed_at)
+		VALUES ($1,$2,$3,$4, now())`,
+		documentID, status, report, extractionNotes); err != nil {
 		return fmt.Errorf("simpan parse_snapshot (dokumen sudah pernah di-parse?): %w", err)
 	}
 
