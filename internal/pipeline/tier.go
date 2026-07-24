@@ -50,9 +50,10 @@ type tieredResult struct {
 // ex.Document() biasa untuk SISA halaman dokumen.
 //
 // Per halaman, urutan percobaan:
-//  1. pdftotext (paling murah, tanpa render sama sekali).
-//  2. Gagal/terlalu pendek -> render halaman (CPU saja) untuk memeriksa
-//     apakah memang kosong.
+//  1. pdftotext, lalu MuPDF sebagai cadangan (2026-07-24) — keduanya tanpa
+//     render sama sekali, paling murah.
+//  2. Gagal/terlalu pendek di KEDUA mesin -> render halaman (CPU saja)
+//     untuk memeriksa apakah memang kosong.
 //  3. Tidak kosong -> tier "penjelasan": Tesseract. Tier "lampiran":
 //     GLM-OCR penuh (lewat Extractor.OCRSinglePage) — LAMPIRAN sering
 //     berisi tabel/peta/struktur organisasi yang tetap butuh model visi,
@@ -112,7 +113,7 @@ func runTieredMode(ctx context.Context, deps Deps, sink *docSink, job store.OCRJ
 // (pemanggilnya, runTieredMode, yang memanggil sink.OnPage sendiri).
 func ocrTieredPage(ctx context.Context, deps Deps, sink *docSink, pdfPath string, page, total int, tier string, dpiPaksa int) (tieredResult, error) {
 	if textcheck.Available() {
-		sink.OnProgress(page, total, "PDF2Text · mencoba lapisan teks PDF")
+		sink.OnProgress(page, total, "PDF2Text · mencoba lapisan teks PDF (pdftotext)")
 		if t, perr := textcheck.ExtractRange(ctx, pdfPath, page, page); perr == nil &&
 			len(strings.TrimSpace(t)) >= tierPDFTextMinChars {
 			// TIDAK mengisi DPI/W/H/DurationMS — memang tidak ada render
@@ -124,7 +125,21 @@ func ocrTieredPage(ctx context.Context, deps Deps, sink *docSink, pdfPath string
 		}
 	}
 
-	// pdftotext gagal/tak tersedia/terlalu pendek — render dulu utk
+	// pdftotext gagal/tak tersedia/terlalu pendek — coba MuPDF sebagai
+	// mesin KEDUA (2026-07-24, permintaan user: "kesal pdftotext
+	// kebanyakan gagal") sebelum jatuh ke Tesseract/GLM-OCR yang jauh
+	// lebih mahal. TANPA dependensi/biner tambahan — MuPDF sudah ke-link
+	// lewat go-fitz yang sama dipakai untuk merender halaman di bawah.
+	sink.OnProgress(page, total, "PDF2Text · mencoba lapisan teks PDF (mupdf)")
+	if t, merr := textcheck.ExtractRangeMuPDF(pdfPath, page, page); merr == nil &&
+		len(strings.TrimSpace(t)) >= tierPDFTextMinChars {
+		return tieredResult{
+			Text:  t,
+			Notes: []string{fmt.Sprintf("tier %s: diambil dari lapisan teks PDF (mupdf)", tier)},
+		}, nil
+	}
+
+	// Kedua mesin lapisan-teks gagal/terlalu pendek — render dulu utk
 	// memastikan halaman ini memang berisi (murah, CPU saja, tanpa model)
 	// sebelum memanggil Tesseract/GLM-OCR.
 	//

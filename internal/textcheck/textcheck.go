@@ -1,11 +1,22 @@
 // Package textcheck membandingkan hasil OCR (model visi) dengan lapisan
-// teks yang sudah tertanam di PDF (diambil lewat `pdftotext`, poppler-utils)
-// untuk halaman yang SAMA, supaya pipeline bisa memutuskan: dokumen ini
-// aman memakai `pdftotext` untuk sisa halamannya (jauh lebih murah, tanpa
+// teks yang sudah tertanam di PDF — diambil lewat DUA mesin independen:
+// `pdftotext` (poppler-utils, biner eksternal) dan MuPDF (lewat
+// internal/raster, sudah ke-link, TANPA biner/dependensi tambahan) — untuk
+// halaman yang SAMA, supaya pipeline bisa memutuskan: dokumen ini aman
+// memakai lapisan teks PDF untuk sisa halamannya (jauh lebih murah, tanpa
 // model visi sama sekali), atau tetap perlu di-OCR penuh.
 //
+// [Ditambahkan 2026-07-24, permintaan user] pdftotext SENDIRIAN kadang
+// gagal terlalu sering (font/ToUnicode CMap rusak/tak-standar — lihat
+// catatan di raster.Doc.Text), jadinya nyaris semua dokumen jatuh ke OCR
+// penuh. MuPDF adalah mesin PDF yang TERPISAH SEPENUHNYA dari poppler
+// (decoder-nya beda — mirip beda Chromium/PDFium atau Firefox/PDF.js dari
+// poppler), jadi kadang berhasil tepat di kasus yang bikin pdftotext gagal.
+// Kedua mesin dicoba (poppler dulu, MuPDF sebagai cadangan) sebelum
+// menyerah ke OCR — lihat ExtractRangeMuPDF/ExtractPagesMuPDF di bawah.
+//
 // Paket ini SENGAJA tidak tahu apa pun soal Postgres, extractor, atau aturan
-// bisnis dokumen — hanya dua hal: menjalankan `pdftotext`, dan membandingkan
+// bisnis dokumen — hanya: menjalankan pdftotext/MuPDF, dan membandingkan
 // dua string. Keputusan "pakai yang mana" ada di internal/pipeline
 // (lihat resolveTextSource di ocr_worker terkait).
 package textcheck
@@ -19,6 +30,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/fuadarradhi/uuparser/internal/raster"
 )
 
 // ErrUnavailable dikembalikan bila biner `pdftotext` tidak ada di PATH.
@@ -102,6 +115,61 @@ func ExtractPages(ctx context.Context, pdfPath string, from, nAsli int) ([]strin
 	}
 	for len(pages) < want {
 		pages = append(pages, "")
+	}
+	return pages, nil
+}
+
+// ExtractRangeMuPDF mengekstrak teks halaman a..b lewat mesin MuPDF (via
+// internal/raster, sudah ke-link — TANPA biner/dependensi eksternal apa
+// pun, beda dari ExtractRange yang butuh pdftotext terpasang). Dipakai
+// sebagai CADANGAN saat pdftotext gagal/tak-tersedia — lihat catatan paket
+// di atas. Membuka & merender ulang dokumennya sendiri (raster.Open) setiap
+// panggilan; untuk banyak halaman sekaligus pakai ExtractPagesMuPDF supaya
+// dokumennya cuma dibuka SEKALI.
+func ExtractRangeMuPDF(pdfPath string, a, b int) (string, error) {
+	doc, err := raster.Open(pdfPath)
+	if err != nil {
+		return "", fmt.Errorf("buka pdf (mupdf): %w", err)
+	}
+	defer doc.Close()
+
+	var out strings.Builder
+	for p := a; p <= b; p++ {
+		t, terr := doc.Text(p)
+		if terr != nil {
+			return "", terr
+		}
+		out.WriteString(t)
+	}
+	return out.String(), nil
+}
+
+// ExtractPagesMuPDF mengekstrak halaman `from`..nAsli lewat MuPDF, SATU
+// pembukaan dokumen dipakai ulang untuk semua halaman (beda dari
+// ExtractRangeMuPDF yang buka-tutup per panggilan) — padanan ExtractPages
+// (poppler) untuk pemakaian "isi SISA dokumen sekaligus" di
+// pipeline.runTextLayerMode/runTieredMode. Selalu mengembalikan TEPAT
+// (nAsli-from+1) elemen; kegagalan mengekstrak SATU halaman membuat
+// elemennya kosong (bukan menggagalkan seluruh dokumen) — konsisten dengan
+// prinsip "satu halaman rusak tidak boleh menghentikan yang lain".
+func ExtractPagesMuPDF(pdfPath string, from, nAsli int) ([]string, error) {
+	if from > nAsli {
+		return nil, nil
+	}
+	doc, err := raster.Open(pdfPath)
+	if err != nil {
+		return nil, fmt.Errorf("buka pdf (mupdf): %w", err)
+	}
+	defer doc.Close()
+
+	pages := make([]string, 0, nAsli-from+1)
+	for p := from; p <= nAsli; p++ {
+		t, terr := doc.Text(p)
+		if terr != nil {
+			pages = append(pages, "")
+			continue
+		}
+		pages = append(pages, t)
 	}
 	return pages, nil
 }

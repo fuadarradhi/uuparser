@@ -494,7 +494,7 @@ func documentPageCount(ctx context.Context, deps Deps, job store.OCRJob) (int, e
 func processDocument(ctx context.Context, deps Deps, job store.OCRJob) {
 	sink := &docSink{deps: deps, docID: job.ID, prompts: deps.Prompts}
 	if deps.DebugResult {
-		sink.debug = newDebugWriter(deps.DebugDir, job.ID)
+		sink.debug = newDebugWriter(deps.DebugDir, job.ID, job.PDFPath)
 		// Isi ulang dengan halaman yang SUDAH tersimpan dari penjalanan
 		// sebelumnya SEBELUM halaman baru diproses — tanpa ini, ocr.txt
 		// cuma menunjukkan sisa halaman yang diproses run ini, seolah

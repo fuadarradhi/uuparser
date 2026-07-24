@@ -120,6 +120,38 @@ type Opts struct {
 	AutoCrop bool
 }
 
+// Text mengembalikan lapisan teks tertanam PDF untuk SATU halaman (1-based)
+// lewat mesin ekstraksi teks MuPDF sendiri — BUKAN OCR, dan BUKAN poppler/
+// pdftotext. Berguna sebagai ALTERNATIF ekstraksi teks: MuPDF adalah mesin
+// PDF yang SEPENUHNYA terpisah dari poppler (beda decoder ToUnicode CMap/
+// fallback encoding — mirip beda Chromium/PDFium atau Firefox/PDF.js dari
+// poppler), jadi kadang berhasil tepat di PDF yang bikin pdftotext gagal
+// (dan sebaliknya). TIDAK butuh dependensi/biner eksternal apa pun — MuPDF
+// sudah ke-link lewat go-fitz yang sama dipakai Render (lihat
+// internal/textcheck.ExtractRangeMuPDF/ExtractPagesMuPDF, dipakai pipeline).
+//
+// [Ditambahkan 2026-07-24, permintaan user] "kesal pdftotext kebanyakan
+// gagal, jadinya semua ke OCR" — awalnya diminta lewat Chromium (headless
+// browser), tapi MuPDF yang SUDAH ke-link jauh lebih ringan: tanpa
+// automasi browser, tanpa proses terpisah, tanpa dependensi baru sama
+// sekali.
+func (d *Doc) Text(page int) (string, error) {
+	if page < 1 || page > d.NumPages() {
+		return "", fmt.Errorf("halaman %d di luar jangkauan (1..%d)", page, d.NumPages())
+	}
+	var text string
+	var err error
+	// suppressCStderr: sama seperti Render — PDF rusak memicu peringatan
+	// MuPDF langsung ke stderr level-OS saat diurai untuk ekstraksi teks.
+	suppressCStderr(func() {
+		text, err = d.doc.Text(page - 1) // go-fitz memakai indeks 0-based
+	})
+	if err != nil {
+		return "", fmt.Errorf("ekstrak teks mupdf hal %d: %w", page, err)
+	}
+	return text, nil
+}
+
 // PagePNG merender satu halaman tanpa pengolahan tambahan.
 func (d *Doc) PagePNG(page, dpi int) ([]byte, error) {
 	p, err := d.Render(page, Opts{DPI: dpi})

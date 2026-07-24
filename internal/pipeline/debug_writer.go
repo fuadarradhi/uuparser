@@ -3,6 +3,7 @@ package pipeline
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -15,8 +16,8 @@ import (
 )
 
 // debug_writer.go menulis keluaran mode-debug (env DEBUG_RESULT=true) untuk
-// SATU dokumen ke <DebugDir>/<id>/: ocr.txt + thinking.txt (jika ada
-// panggilan model) + parse.txt + parse_tree.json.
+// SATU dokumen ke <DebugDir>/<id>/: sumber.pdf (salinan PDF asli) + ocr.txt
+// + thinking.txt (jika ada panggilan model) + parse.txt + parse_tree.json.
 //
 // TUJUANNYA CUMA SATU (permintaan user, 2026-07-22): mempermudah menyalin
 // hasil OCR/parse untuk dikirim ke Claude untuk dipelajari. Bukan fitur untuk
@@ -48,16 +49,62 @@ type debugWriter struct {
 	n         int    // jumlah halaman yang sudah masuk (untuk header)
 }
 
-// newDebugWriter menyiapkan folder <debugDir>/<docID>/ untuk SATU dokumen.
+// newDebugWriter menyiapkan folder <debugDir>/<docID>/ untuk SATU dokumen,
+// dan menyalin PDF sumbernya (sumber.pdf) ke situ SEKALI — permintaan user
+// (2026-07-24): mempermudah membandingkan hasil OCR/parse dengan berkas
+// aslinya tanpa harus bolak-balik ke folder data/. Berbeda dari render.pdf
+// yang dihapus 2026-07-22 (itu PDF hasil RENDER ULANG dari gambar OCR, lewat
+// dependensi go-pdf/fpdf yang sudah dilepas) — sumber.pdf di sini SALINAN
+// APA ADANYA dari berkas yang benar-benar diunduh, sekadar io.Copy, TANPA
+// dependensi baru sama sekali.
+//
+// Gagal menyalin (mis. berkas sumber sudah dipindah/dihapus) HANYA di-log,
+// TIDAK menggagalkan apa pun — konsisten dengan prinsip debug_writer.go:
+// kegagalan alat bantu ini tidak boleh mengganggu pipeline utama.
+//
 // Mengembalikan nil (bukan struct kosong) bila gagal membuat foldernya,
 // supaya nil-safety di seluruh method (lihat di bawah) cukup satu pola.
-func newDebugWriter(debugDir string, docID int64) *debugWriter {
+func newDebugWriter(debugDir string, docID int64, sourcePDFPath string) *debugWriter {
 	dir := filepath.Join(debugDir, strconv.FormatInt(docID, 10))
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		logx.Warn("debug: buat folder %s: %v", dir, err)
 		return nil
 	}
+	copyDebugSourcePDF(dir, sourcePDFPath)
 	return &debugWriter{dir: dir}
+}
+
+// copyDebugSourcePDF menyalin sourcePDFPath ke <dir>/sumber.pdf. Dilewati
+// (bukan disalin ulang) bila sumber.pdf sudah ada — dokumen yang
+// dilanjutkan (resume) memanggil newDebugWriter berkali-kali selama
+// prosesnya, dan PDF sumber tidak pernah berubah, jadi menyalin ulang
+// setiap kali cuma pemborosan I/O tanpa manfaat.
+func copyDebugSourcePDF(dir, sourcePDFPath string) {
+	if sourcePDFPath == "" {
+		return
+	}
+	dest := filepath.Join(dir, "sumber.pdf")
+	if _, err := os.Stat(dest); err == nil {
+		return // sudah ada dari penjalanan sebelumnya
+	}
+
+	src, err := os.Open(sourcePDFPath)
+	if err != nil {
+		logx.Warn("debug: buka PDF sumber %s: %v", sourcePDFPath, err)
+		return
+	}
+	defer src.Close()
+
+	out, err := os.Create(dest)
+	if err != nil {
+		logx.Warn("debug: buat %s: %v", dest, err)
+		return
+	}
+	defer out.Close()
+
+	if _, err := io.Copy(out, src); err != nil {
+		logx.Warn("debug: salin PDF sumber ke %s: %v", dest, err)
+	}
 }
 
 // tambahHalaman menambah SATU halaman ke dump teks OCR. Aman dipanggil pada
