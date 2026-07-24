@@ -82,10 +82,10 @@ func registerNewURLs(ctx context.Context, deps Deps) {
 			// tetap dipakai sort_tahun-nya untuk urutan seperti biasa.
 			//
 			// Ketika filter aktif, dokumen TANPA sort_tahun (nil) IKUT
-			// disaring (tidak didaftarkan) — permintaan user: kalau TAHUN
+			// disaring (tidak didaftarkan) — permintaan user: kalau YEAR
 			// diisi, harus benar-benar ada tahun yang memenuhi operatornya,
 			// bukan lolos karena tidak diketahui. Hanya saat filter tidak
-			// aktif (TAHUN kosong) dokumen tanpa tahun boleh masuk. Lihat
+			// aktif (YEAR kosong) dokumen tanpa tahun boleh masuk. Lihat
 			// config.Config.Tahun / config.TahunFilter.
 			if deps.Tahun.Aktif() {
 				if d.SortTahun == nil || !deps.Tahun.Cocok(*d.SortTahun) {
@@ -108,7 +108,7 @@ func registerNewURLs(ctx context.Context, deps Deps) {
 			logx.Info("%s: %d tautan baru", row.Code, baru)
 		}
 		if lewati > 0 {
-			logx.Info("%s: %d tautan dilewati (tahun tidak cocok TAHUN=%s, atau tahun tidak diketahui)",
+			logx.Info("%s: %d tautan dilewati (tahun tidak cocok YEAR=%s, atau tahun tidak diketahui)",
 				row.Code, lewati, deps.Tahun.String())
 		}
 	}

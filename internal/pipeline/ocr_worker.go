@@ -123,6 +123,16 @@ type docSink struct {
 	// harus membedakannya dari sink.stopped).
 	tierSwitch bool
 
+	// classifyTried (2026-07-24, koreksi user): jumlah halaman BERISI yang
+	// sudah dicoba untuk klasifikasi legal-atau-bukan dan GAGAL (gerbang
+	// model bilang bukan produk hukum, tanpa penanda konsiderans kuat).
+	// Dipakai classify() sebagai jendela: selama masih ada halaman lain DAN
+	// jendela (config.MinPage) belum habis, penolakan DITUNDA — coba
+	// halaman berikutnya dulu — alih-alih langsung menolak dari 1 halaman
+	// saja. Dokumen yang memang cuma sependek jendelanya (atau cuma 1
+	// halaman) otomatis tidak menunggu halaman yang tidak ada.
+	classifyTried int
+
 	// debug menulis keluaran mode-debug (DEBUG_RESULT=true) — nil bila mode
 	// itu tidak aktif. Aman dipanggil methodnya meski nil (lihat debug_writer.go).
 	debug *debugWriter
@@ -163,10 +173,22 @@ func (d *docSink) OnPage(ctx context.Context, r extractor.PageResult) (bool, err
 	// diperbaiki) memang tertinggal satu dari angka kedua (sudah di-OCR).
 	// DPI ikut ditampilkan (permintaan user, 2026-07-22) supaya gampang
 	// dipantau langsung dari konsol, bukan cuma dari log/info.log.
+	//
+	// r.DPI > 0 HANYA benar utk halaman yang BENAR-BENAR dirender (GLM-OCR,
+	// atau Tesseract di tier.go — keduanya butuh gambar). Halaman PDF2Text
+	// (tier.go/textsource.go) TIDAK PERNAH dirender sama sekali — tanpa
+	// percabangan ini baris di sini akan menimpa tag "PDF2Text · ..." yang
+	// sudah benar dengan "DPI 0 · 0x0 px · 0s" yang menyesatkan (bug nyata,
+	// dilaporkan user 2026-07-24: baris kedua tampilan konsol menimpa baris
+	// pertama yang sudah benar).
 	d.ocred = r.Page
 	d.total = r.Total
-	logx.Progress(d.ocred, r.Total, "hal %d · DPI %d · %dx%d px%s · %s",
-		r.Page, r.DPI, r.W, r.H, cropNote(r.CroppedPct), durText(r.DurationMS))
+	if r.DPI > 0 {
+		logx.Progress(d.ocred, r.Total, "hal %d · DPI %d · %dx%d px%s · %s",
+			r.Page, r.DPI, r.W, r.H, cropNote(r.CroppedPct), durText(r.DurationMS))
+	} else {
+		logx.Progress(d.ocred, r.Total, "hal %d · selesai", r.Page)
+	}
 
 	if r.IsEmpty {
 		// Halaman kosong tidak bisa diklasifikasi. Klasifikasi TIDAK
@@ -192,7 +214,7 @@ func (d *docSink) OnPage(ctx context.Context, r extractor.PageResult) (bool, err
 			d.classified = true
 			return false, nil
 		}
-		return d.classify(ctx, r.Text)
+		return d.classify(ctx, r.Text, r.Page)
 	}
 
 	// Deteksi tier hemat (2026-07-24, permintaan user): begitu SATU halaman
@@ -238,7 +260,7 @@ func (d *docSink) OnPage(ctx context.Context, r extractor.PageResult) (bool, err
 // judul resmi yang polanya cocok dan jenis/wilayahnya dikenal sudah cukup
 // jadi bukti dokumen ini peraturan. Model hanya jadi jalan belakang untuk
 // dokumen yang formatnya menyimpang.
-func (d *docSink) classify(ctx context.Context, halaman string) (bool, error) {
+func (d *docSink) classify(ctx context.Context, halaman string, page int) (bool, error) {
 	if det := CobaIdentitasDeterministik(halaman); det.Lolos {
 		meta := store.DocMeta{
 			IsPeraturan:      true,
@@ -286,6 +308,30 @@ func (d *docSink) classify(ctx context.Context, halaman string) (bool, error) {
 		if parser.HasKonsideransAnchor(halaman) {
 			logx.Info("gerbang model menilai bukan produk hukum (%s), tapi halaman memuat penanda konsiderans (Menimbang/Mengingat/Memutuskan/Menetapkan) — diterima, lanjut ke identitas", alasan)
 		} else {
+			// MIN_PAGE (konsep dikoreksi 2026-07-24): BUKAN syarat jumlah
+			// halaman minimum dokumen (itu salah, sudah dihapus) — ini
+			// jendela BERAPA HALAMAN yang boleh dicoba sebelum benar-benar
+			// menyerah menolak dokumen sebagai "bukan peraturan". Halaman
+			// pertama yang gagal (mis. cuma sampul/judul tanpa konsiderans)
+			// BUKAN berarti dokumennya bukan peraturan — Menimbang/
+			// Mengingat bisa saja ada di halaman 2. Selama masih ada
+			// halaman lain DAN jendela belum habis, coba dulu halaman
+			// berikutnya. Dokumen yang memang cuma sependek jendelanya
+			// (termasuk yang cuma 1 halaman) otomatis TIDAK menunggu
+			// halaman yang tidak ada — window <= d.total selalu, jadi
+			// r.Page < d.total langsung false dan keputusan diambil dari
+			// apa yang tersedia, persis permintaan user.
+			d.classifyTried++
+			window := d.deps.MinPage
+			if window <= 0 {
+				window = 1 // MIN_PAGE=0/nonaktif: perilaku minimal, putuskan dari halaman pertama yang dicoba, tanpa menunggu halaman lain
+			}
+			if d.classifyTried < window && page < d.total {
+				logx.Info("gerbang model menilai bukan produk hukum di hal %d (%s) — masih dalam jendela MIN_PAGE=%d, coba halaman berikutnya sebelum menyerah",
+					page, alasan, window)
+				return false, nil
+			}
+
 			if alasan == "" {
 				alasan = "model menilai dokumen ini bukan produk hukum"
 			}
@@ -471,33 +517,28 @@ func processDocument(ctx context.Context, deps Deps, job store.OCRJob) {
 	// unduh — lihat downloader_worker.go/MarkDownloaded), bukan dihitung
 	// ulang dengan membuka PDF lagi di sini. Jatuh ke extractor.PageCount
 	// HANYA sebagai jaga-jaga (dokumen dari sebelum fitur ini ada, atau
-	// penghitungan saat unduh gagal). Angka ASLI ini dipakai untuk
-	// pemeriksaan MinPage di bawah DAN diteruskan ke resolveTextSource —
-	// TIDAK ADA lagi pemotongan MaxPage di sini: dokumen yang lolos
-	// ClaimForOCR (sudah disaring di sana berdasar MAX_PAGE) selalu diproses
-	// UTUH sampai halaman terakhirnya.
+	// penghitungan saat unduh gagal). Angka ASLI ini diteruskan ke
+	// resolveTextSource — TIDAK ADA lagi pemotongan MaxPage di sini:
+	// dokumen yang lolos ClaimForOCR (sudah disaring di sana berdasar
+	// MAX_PAGE) selalu diproses UTUH sampai halaman terakhirnya.
 	nAsli, perr := documentPageCount(ctx, deps, job)
 	if perr == nil {
 		sink.total = nAsli
 	}
 
-	// MinPage (2026-07-23): dokumen yang secara ASLI kurang dari MinPage
-	// halaman ditolak sebagai "bukan peraturan" TANPA di-OCR sama sekali —
-	// permintaan user berdasarkan temuan nyata: banyak berkas sependek itu
-	// ternyata cuma sampul/pengumuman, bukan naskah peraturan utuh. perr!=nil
-	// (PDF tak terbaca) sengaja DIBIARKAN LEWAT ke jalur OCR normal supaya
-	// galat aslinya (rusak/terkunci, dst) tetap tercatat sebagai biasa,
-	// bukan disamarkan jadi "bukan peraturan".
-	if perr == nil && deps.MinPage > 0 && nAsli < deps.MinPage {
-		alasan := fmt.Sprintf("dokumen hanya %d halaman (< MIN_PAGE=%d) — kemungkinan sampul/pengumuman, bukan naskah peraturan utuh",
-			nAsli, deps.MinPage)
-		if err := deps.Store.RejectNotRegulation(ctx, job.ID, alasan); err != nil {
-			logx.Warn("ocr: tandai ditolak (MinPage): %v", err)
-		} else {
-			logx.Skip("dokumen dihentikan — %s", alasan)
-		}
-		return
-	}
+	// MinPage DIHAPUS (2026-07-24, koreksi user): sebelumnya dokumen yang
+	// secara ASLI kurang dari MIN_PAGE halaman ditolak langsung sebagai
+	// "bukan peraturan" TANPA di-OCR sama sekali. User mengoreksi: itu
+	// SALAH — dokumen yang memang cuma 1 halaman (mis. Keputusan pendek)
+	// tetap harus diproses APA ADANYA, bukan ditolak cuma karena pendek.
+	// Klasifikasi legal-atau-bukan tetap jalan seperti biasa lewat classify
+	// di OnPage (berdasarkan ISI halaman, bukan JUMLAH halaman) — itu sudah
+	// cukup untuk menyaring sampul/pengumuman yang sungguh bukan naskah
+	// peraturan, tanpa salah tolak dokumen pendek yang sah.
+	//
+	// Dokumen yang SEBELUMNYA terlanjur ditolak oleh pengecekan lama ini
+	// bisa dikembalikan lewat SQL (reject_reason='bukan_peraturan' DAN
+	// last_error mengandung 'MIN_PAGE') — lihat catatan di .env.example.
 
 	// Rapikan sisa pekerjaan dari penjalanan sebelumnya SEBELUM meng-OCR
 	// halaman baru: memulihkan hitungan kemajuan, menyelesaikan perbaikan
@@ -647,11 +688,11 @@ func (d *docSink) resume(ctx context.Context) (stop bool, err error) {
 	// Klasifikasi dari halaman BERISI pertama yang sudah tersimpan — tanpa
 	// OCR ulang. Bila belum ada satu pun halaman berisi, klasifikasi berjalan
 	// seperti biasa saat halaman pertama di-OCR nanti.
-	_, text, ok, err := d.deps.Store.FirstNonEmptyPage(ctx, d.docID)
+	page, text, ok, err := d.deps.Store.FirstNonEmptyPage(ctx, d.docID)
 	if err != nil || !ok {
 		return false, err
 	}
-	return d.classify(ctx, text)
+	return d.classify(ctx, text, page)
 }
 
 // textProgress membuat pelapor kemajuan untuk pekerjaan model teks, sehingga

@@ -18,7 +18,7 @@ import (
 	"strings"
 )
 
-// TahunFilter adalah hasil urai env TAHUN — operator perbandingan + nilai
+// TahunFilter adalah hasil urai env YEAR — operator perbandingan + nilai
 // tahun. Op kosong berarti tanpa saringan sama sekali (lihat Aktif()).
 type TahunFilter struct {
 	Op    string // "", "=", ">=", "<=", ">", "<"
@@ -47,7 +47,7 @@ func (f TahunFilter) Cocok(tahun int) bool {
 	}
 }
 
-// String untuk log/pesan (mis. "TAHUN>=2023").
+// String untuk log/pesan (mis. "YEAR>=2023").
 func (f TahunFilter) String() string {
 	if !f.Aktif() {
 		return "(tanpa saringan)"
@@ -55,7 +55,7 @@ func (f TahunFilter) String() string {
 	return f.Op + strconv.Itoa(f.Value)
 }
 
-// parseTahunFilter mengurai isi env TAHUN. Operator dikenali sebagai PREFIKS
+// parseTahunFilter mengurai isi env YEAR. Operator dikenali sebagai PREFIKS
 // (urutan pemeriksaan sengaja ">="/"<=" dulu sebelum ">"/"<" tunggal, supaya
 // tidak salah potong). Tanpa operator sama sekali -> ">=" (kompatibel dengan
 // perilaku lama MIN_TAHUN, yang selalu berarti "minimal tahun ini"). String
@@ -162,7 +162,7 @@ type Config struct {
 	// Tahun menyaring dokumen SAAT DIDAFTARKAN dari sumber, berdasarkan
 	// sort_tahun (metadata JDIH, HANYA untuk urutan — lihat
 	// downloader.RemoteDoc). Menggantikan MIN_TAHUN (2026-07-23): dulu hanya
-	// bisa ">=", sekarang mendukung operator eksplisit lewat env TAHUN, mis.
+	// bisa ">=", sekarang mendukung operator eksplisit lewat env YEAR, mis.
 	// "=2023" (persis tahun itu saja), ">=2023" (minimal), ">2020", "<=2019",
 	// "<2019". Tanpa operator (mis. "2023" polos) diperlakukan sebagai ">="
 	// untuk kompatibilitas dengan perilaku lama. String kosong (bawaan) =
@@ -170,13 +170,13 @@ type Config struct {
 	//
 	// Ini KEBALIKAN dari filosofi "tombol yang jawabannya sudah pasti tidak
 	// perlu jadi .env": jawabannya justru BELUM pasti secara sengaja — dipakai
-	// untuk memperkecil cakupan uji coba parser (mis. TAHUN=>=2020 dulu,
+	// untuk memperkecil cakupan uji coba parser (mis. YEAR=>=2020 dulu,
 	// diperbesar bertahap) sambil mengamati tahun berapa parser sudah bagus.
 	//
 	// Saat filter aktif (Tahun.Aktif()): dokumen TANPA sort_tahun (metadata
 	// sumber tak menyediakannya) IKUT disaring — tidak didaftarkan. Permintaan
-	// user: kalau TAHUN diisi, harus benar-benar ada tahun yang memenuhi,
-	// bukan lolos karena tidak diketahui. Hanya saat TAHUN kosong (tanpa
+	// user: kalau YEAR diisi, harus benar-benar ada tahun yang memenuhi,
+	// bukan lolos karena tidak diketahui. Hanya saat YEAR kosong (tanpa
 	// saringan sama sekali) dokumen tanpa tahun boleh masuk.
 	Tahun TahunFilter
 
@@ -199,13 +199,21 @@ type Config struct {
 	// saringan sama sekali (matikan setelah masa debug selesai). Bawaan: 5.
 	MaxPage int
 
-	// MinPage (2026-07-23): dokumen dengan jumlah halaman ASLI (sebelum
-	// dipotong MaxPage) kurang dari ini langsung ditolak sebagai "bukan
-	// peraturan" TANPA di-OCR sama sekali — permintaan user berdasarkan hasil
-	// uji nyata: banyak berkas 1 halaman ternyata cuma sampul/pengumuman,
-	// bukan naskah peraturan utuh (Lampiran II UU 12/2011 mensyaratkan
-	// Judul+Menimbang+Mengingat+Memutuskan+batang tubuh+penutup, yang hampir
-	// tak mungkin muat 1 halaman). 0 berarti TANPA batas minimum. Bawaan: 2.
+	// MinPage (konsep dikoreksi 2026-07-24 — SEBELUMNYA dokumen di bawah
+	// jumlah halaman ini ditolak LANGSUNG sebagai "bukan peraturan" TANPA
+	// di-OCR sama sekali; SALAH, sudah dihapus). Sekarang: jendela BERAPA
+	// HALAMAN yang boleh dicoba classify() (lihat ocr_worker.go) sebelum
+	// BENAR-BENAR menyerah menolak dokumen. Halaman pertama yang gagal
+	// (mis. cuma sampul/judul tanpa Menimbang/Mengingat) TIDAK langsung
+	// berarti dokumennya bukan peraturan — bisa saja konsideransnya ada di
+	// halaman 2. Selama window belum habis DAN masih ada halaman lain,
+	// classify mencoba dulu halaman berikutnya sebelum menolak.
+	//
+	// Dokumen yang jumlah halaman ASLINYA lebih pendek dari MinPage (
+	// TERMASUK yang cuma 1 halaman) TETAP diproses & diklasifikasi APA
+	// ADANYA dari halaman yang tersedia — window otomatis tidak menunggu
+	// halaman yang tidak ada. 0 berarti keputusan diambil dari HALAMAN
+	// PERTAMA yang dicoba saja (tanpa menunggu halaman lain). Bawaan: 2.
 	MinPage int
 
 	// TextCheck (2026-07-24): sebelum OCR penuh, coba dulu halaman 1 (lalu 2
@@ -307,12 +315,12 @@ func Load(path string) (Config, error) {
 		PromptDir:     get("PROMPT_DIR", filepath.Join(cwd, "prompts")),
 		ChatTemplate:  get("CHAT_TEMPLATE", ""),
 		LowMemory:     boolean(get("LOW_MEMORY", "false")),
-		DPIJelas:      num(get("DPI_JELAS", "100"), 100),
-		DPISedang:     num(get("DPI_SEDANG", "150"), 150),
+		DPIJelas:      num(get("DPI_SHARP", "100"), 100),
+		DPISedang:     num(get("DPI_MEDIUM", "150"), 150),
 		DPIBlur:       num(get("DPI_BLUR", "200"), 200),
-		AmbangJelas:   floatNum(get("BLUR_AMBANG_JELAS", "5e8"), 5e8),
-		AmbangSedang:  floatNum(get("BLUR_AMBANG_SEDANG", "5e7"), 5e7),
-		Tahun:         parseTahunFilter(get("TAHUN", "")),
+		AmbangJelas:   floatNum(get("BLUR_THRESHOLD_SHARP", "5e8"), 5e8),
+		AmbangSedang:  floatNum(get("BLUR_THRESHOLD_MEDIUM", "5e7"), 5e7),
+		Tahun:         parseTahunFilter(get("YEAR", "")),
 		MaxPage:       pageLimitNum(get("MAX_PAGE", "5"), 5),
 		MinPage:       pageLimitNum(get("MIN_PAGE", "2"), 2),
 		TextCheck:     boolean(get("TEXT_CHECK", "true")),

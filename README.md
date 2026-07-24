@@ -270,8 +270,8 @@ greedy sehingga parameter lain tidak berpengaruh.
 
 | Kunci | Bawaan | Keterangan |
 |---|---|---|
-| `DPI_JELAS` / `DPI_SEDANG` / `DPI_BLUR` | `100` / `150` / `200` | DPI dipilih OTOMATIS per halaman lewat skor ketajaman (varians Laplacian) — bukan satu angka tetap lagi (2026-07-22). Lihat `BLUR_AMBANG_JELAS`/`BLUR_AMBANG_SEDANG` di `.env.example` untuk cara kalibrasinya. |
-| `BLUR_AMBANG_JELAS` / `BLUR_AMBANG_SEDANG` | `5e8` / `5e7` | Ambang skor ketajaman yang membagi DPI_JELAS/DPI_SEDANG/DPI_BLUR. HARUS dikalibrasi terhadap korpus Anda — lihat `log/info.log` (`blur_score=...`). |
+| `DPI_SHARP` / `DPI_MEDIUM` / `DPI_BLUR` | `100` / `150` / `200` | DPI dipilih OTOMATIS per halaman lewat skor ketajaman (varians Laplacian) — bukan satu angka tetap lagi (2026-07-22). Lihat `BLUR_THRESHOLD_SHARP`/`BLUR_THRESHOLD_MEDIUM` di `.env.example` untuk cara kalibrasinya. |
+| `BLUR_THRESHOLD_SHARP` / `BLUR_THRESHOLD_MEDIUM` | `5e8` / `5e7` | Ambang skor ketajaman yang membagi DPI_SHARP/DPI_MEDIUM/DPI_BLUR. HARUS dikalibrasi terhadap korpus Anda — lihat `log/info.log` (`blur_score=...`). |
 | `AUTO_CROP` | `true` | Potong margin kosong halaman — cara utama mempercepat OCR tanpa mengorbankan ketelitian. Lihat penjelasan di bawah. |
 | `PROBE_PAGES` | `5` | Halaman awal yang di-OCR untuk menguji apakah berkas ini benar peraturan. Bila tak ada tandanya, sisa halaman tidak di-OCR sama sekali. |
 | `BLANK_INK` | `0.0004` | Ambang proporsi piksel gelap; di bawah ini halaman dianggap kosong dan tidak dikirim ke model. |

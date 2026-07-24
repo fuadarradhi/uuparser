@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/fuadarradhi/uuparser/internal/extractor"
 	"github.com/fuadarradhi/uuparser/internal/logx"
@@ -27,6 +28,21 @@ const blankInkRatioTier = 0.0004
 // dianggap sekunder (permintaan user) — cukup "ada teksnya", bukan
 // "teksnya terverifikasi akurat".
 const tierPDFTextMinChars = 3
+
+// tieredResult adalah hasil SATU halaman tier hemat — versi ringkas
+// extractor.PageResult, dipakai internal file ini supaya DPI/dimensi/durasi
+// dari jalur MANA PUN yang benar-benar jalan (Tesseract atau GLM-OCR
+// fallback) tetap terbawa ke docSink.OnPage, bukan hilang jadi nol.
+// PDF2Text TIDAK mengisi DPI/W/H/DurationMS (memang tidak ada render sama
+// sekali) — docSink.OnPage sudah menangani DPI==0 sebagai "tanpa render"
+// (lihat catatan di sana), bukan bug.
+type tieredResult struct {
+	Text       string
+	DPI        int
+	W, H       int
+	DurationMS int
+	Notes      []string
+}
 
 // runTieredMode melanjutkan dokumen SETELAH docSink.OnPage mendeteksi masuk
 // ke bagian PENJELASAN atau LAMPIRAN (lihat docSink.tier/tierSwitch di
@@ -65,14 +81,16 @@ func runTieredMode(ctx context.Context, deps Deps, sink *docSink, job store.OCRJ
 
 		tier := sink.tier
 
-		text, notes, terr := ocrTieredPage(ctx, deps, sink, job.PDFPath, page, nAsli, tier, dpiPaksa)
+		res, terr := ocrTieredPage(ctx, deps, sink, job.PDFPath, page, nAsli, tier, dpiPaksa)
 		if terr != nil {
 			return fmt.Errorf("halaman %d (tier %s): %w", page, tier, terr)
 		}
 
-		isEmpty := strings.TrimSpace(text) == ""
+		isEmpty := strings.TrimSpace(res.Text) == ""
 		if _, err := sink.OnPage(ctx, extractor.PageResult{
-			Page: page, Total: nAsli, Text: text, IsEmpty: isEmpty, Notes: notes,
+			Page: page, Total: nAsli, Text: res.Text, IsEmpty: isEmpty,
+			DPI: res.DPI, W: res.W, H: res.H, DurationMS: res.DurationMS,
+			Notes: res.Notes,
 		}); err != nil {
 			return fmt.Errorf("halaman %d: %w", page, err)
 		}
@@ -92,12 +110,17 @@ func runTieredMode(ctx context.Context, deps Deps, sink *docSink, job store.OCRJ
 // kemajuan (OnProgress) selama panggilan GLM-OCR fallback berlangsung —
 // OnPage/HasPage milik sink TIDAK disentuh dari sisi Extractor di sini
 // (pemanggilnya, runTieredMode, yang memanggil sink.OnPage sendiri).
-func ocrTieredPage(ctx context.Context, deps Deps, sink *docSink, pdfPath string, page, total int, tier string, dpiPaksa int) (text string, notes []string, err error) {
+func ocrTieredPage(ctx context.Context, deps Deps, sink *docSink, pdfPath string, page, total int, tier string, dpiPaksa int) (tieredResult, error) {
 	if textcheck.Available() {
 		sink.OnProgress(page, total, "PDF2Text · mencoba lapisan teks PDF")
 		if t, perr := textcheck.ExtractRange(ctx, pdfPath, page, page); perr == nil &&
 			len(strings.TrimSpace(t)) >= tierPDFTextMinChars {
-			return t, []string{fmt.Sprintf("tier %s: diambil dari lapisan teks PDF (pdftotext)", tier)}, nil
+			// TIDAK mengisi DPI/W/H/DurationMS — memang tidak ada render
+			// sama sekali di jalur ini (lihat catatan tieredResult).
+			return tieredResult{
+				Text:  t,
+				Notes: []string{fmt.Sprintf("tier %s: diambil dari lapisan teks PDF (pdftotext)", tier)},
+			}, nil
 		}
 	}
 
@@ -113,7 +136,7 @@ func ocrTieredPage(ctx context.Context, deps Deps, sink *docSink, pdfPath string
 	// internal extractor demi ini saja.
 	doc, derr := raster.Open(pdfPath)
 	if derr != nil {
-		return "", nil, fmt.Errorf("rasterisasi: %w", derr)
+		return tieredResult{}, fmt.Errorf("rasterisasi: %w", derr)
 	}
 	defer doc.Close()
 
@@ -127,22 +150,29 @@ func ocrTieredPage(ctx context.Context, deps Deps, sink *docSink, pdfPath string
 	}
 	pg, rerr := doc.Render(page, raster.Opts{DPI: dpi, AutoCrop: true})
 	if rerr != nil {
-		return "", nil, fmt.Errorf("render hal %d: %w", page, rerr)
+		return tieredResult{}, fmt.Errorf("render hal %d: %w", page, rerr)
 	}
 	if pg.InkRatio < blankInkRatioTier {
-		return "", []string{"halaman kosong (tanpa teks) — dilewati"}, nil
+		return tieredResult{Notes: []string{"halaman kosong (tanpa teks) — dilewati"}}, nil
 	}
 
-	glmFallback := func(alasan string) (string, []string, error) {
+	glmFallback := func(alasan string) (tieredResult, error) {
 		ex := extractor.New(extractor.Config{
 			DPIPaksa: dpi, AutoCrop: true,
 			OCRClient: deps.Vision, OCRMaxTokens: ocrMaxTokens,
 		}, sink)
 		res, oerr := ex.OCRSinglePage(ctx, pdfPath, page, total)
 		if oerr != nil {
-			return "", nil, fmt.Errorf("GLM-OCR: %w", oerr)
+			return tieredResult{}, fmt.Errorf("GLM-OCR: %w", oerr)
 		}
-		return res.Text, append([]string{alasan}, res.Notes...), nil
+		// res.DPI/W/H/DurationMS IKUT DIBAWA (bug sebelumnya: hilang jadi
+		// nol karena cuma res.Text/res.Notes yang diteruskan) — tanpa ini
+		// baris kemajuan docSink.OnPage salah menampilkan "DPI 0 · 0x0 px"
+		// padahal GLM-OCR SUNGGUH merender halaman ini.
+		return tieredResult{
+			Text: res.Text, DPI: res.DPI, W: res.W, H: res.H, DurationMS: res.DurationMS,
+			Notes: append([]string{alasan}, res.Notes...),
+		}, nil
 	}
 
 	switch tier {
@@ -157,10 +187,17 @@ func ocrTieredPage(ctx context.Context, deps Deps, sink *docSink, pdfPath string
 			return glmFallback("tier penjelasan: pdftotext gagal & tesseract tak terpasang, dipakai GLM-OCR (jaring pengaman)")
 		}
 		sink.OnProgress(page, total, fmt.Sprintf("Tesseract · DPI %d · %dx%d px", dpi, pg.W, pg.H))
+		started := time.Now()
 		t, terr := textcheck.RunTesseract(ctx, pg.PNG, deps.TesseractLang)
 		if terr != nil {
-			return "", nil, fmt.Errorf("tesseract: %w", terr)
+			return tieredResult{}, fmt.Errorf("tesseract: %w", terr)
 		}
-		return t, []string{"tier penjelasan: pdftotext gagal, dipakai Tesseract"}, nil
+		// DPI/W/H/DurationMS diisi (bug sebelumnya: PageResult Tesseract
+		// juga tampil "DPI 0 · 0x0 px" padahal jelas ADA render — lihat
+		// catatan tieredResult) supaya baris kemajuan docSink.OnPage benar.
+		return tieredResult{
+			Text: t, DPI: dpi, W: pg.W, H: pg.H, DurationMS: int(time.Since(started).Milliseconds()),
+			Notes: []string{"tier penjelasan: pdftotext gagal, dipakai Tesseract"},
+		}, nil
 	}
 }
