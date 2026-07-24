@@ -63,6 +63,14 @@ func Parse(pages []string) (Result, error) {
 		all[i].DocOrder = float64(i+1) * docStep
 	}
 
+	// IsDictum/IsTitle (2026-07-24): satu pass terpusat di sini, BUKAN diset
+	// di tiap sub-parser — sama seperti alasan IsAppendix dulu, supaya tidak
+	// ada titik emit yang lupa menyetelnya. Lihat classifyContentFlags &
+	// catatan IsDictum/IsTitle di types.go.
+	for i := range all {
+		all[i].IsDictum, all[i].IsTitle = classifyContentFlags(all[i].Section, all[i].NodeType)
+	}
+
 	if len(all) == 0 {
 		docWarns = append(docWarns, Warning{
 			Severity: SeverityNeedsReview,
@@ -71,6 +79,31 @@ func Parse(pages []string) (Result, error) {
 	}
 
 	return Result{Nodes: all, DocumentWarnings: docWarns}, nil
+}
+
+// classifyContentFlags menentukan IsDictum/IsTitle sebuah node murni dari
+// (Section, NodeType) — lihat catatan lengkap di types.go pada field
+// IsDictum/IsTitle Node. Dikumpulkan di satu fungsi (bukan diset tersebar di
+// tiap sub-parser) supaya aturannya mudah diaudit/diubah di satu tempat.
+func classifyContentFlags(section Section, nt NodeType) (isDictum, isTitle bool) {
+	switch nt {
+	case NodePasal, NodeAyat, NodeDiktum:
+		// Pasal/Ayat yang SAMA juga muncul di section penjelasan_pasal
+		// (komentar, bukan aturan mengikat) — hanya yang di batang_tubuh
+		// yang benar-benar dictum.
+		return section == SectionBatangTubuh, false
+	case NodeJudul, NodePembukaan, NodePenetapan, NodeBab, NodeBagian, NodeParagraf, NodeSectionHeader:
+		return false, true
+	case NodeParagrafIsi:
+		// NodeParagrafIsi dipakai di penutup (boilerplate tempat-tanggal-ttd
+		// — label/formalitas, bukan isi) DAN di penjelasan_umum (komentar
+		// substantif, bukan label) — harus dibedakan lewat section.
+		return false, section == SectionPenutup
+	default:
+		// NodeItem (poin Menimbang/Mengingat/Memperhatikan): data preamble
+		// yang nyata, bukan judul, tapi juga bukan dictum yang mengikat.
+		return false, false
+	}
 }
 
 // reJudulFieldLine menandai baris yang SELALU jadi field/node tersendiri di

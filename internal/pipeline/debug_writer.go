@@ -188,7 +188,11 @@ func tulisDebugTinjauan(debugDir string, docID int64, isi string) {
 		logx.Warn("debug: buat folder %s: %v", dir, err)
 		return
 	}
-	full := "=== TINJAUAN MODEL (dipicu ANCHOR_LEAK) ===\n\n" + isi
+	// [2026-07-24] Judul digeneralkan — berkas ini sekarang menampung DUA
+	// jenis tinjauan (ANCHOR_LEAK dan teks yatim), masing-masing entri
+	// NODE di dalamnya sudah menandai sumbernya sendiri lewat baris "==="
+	// yang ditulis pemanggil (lihat parser_worker.go).
+	full := "=== TINJAUAN MODEL ===\n\n" + isi
 	if err := os.WriteFile(filepath.Join(dir, "tinjauan.txt"), []byte(full), 0o644); err != nil {
 		logx.Warn("debug: tulis tinjauan.txt: %v", err)
 	}

@@ -111,7 +111,59 @@ func stitch(pages []string) []Line {
 	for len(out) > 0 && strings.TrimSpace(out[len(out)-1].Text) == "" {
 		out = out[:len(out)-1]
 	}
-	return dedupPageBoundaries(out)
+	return dedupStructuralPageBoundary(dedupPageBoundaries(out))
+}
+
+// dedupStructuralPageBoundary menangani gejala BERBEDA dari
+// dedupPageBoundaries/reCatchword di atas — [Ditemukan nyata 2026-07-24,
+// debug/88]: halaman lama kadang mencetak "kata alih" (catchword) berupa
+// PENANDA STRUKTURAL PENUH (bukan sekadar potongan kalimat biasa) di baris
+// terakhir sebelum ganti halaman, mis. "KEDUA : .../2" — yang kemudian
+// diulang UTUH di awal halaman berikutnya ("KEDUA : Rencana Alokasi Air
+// Tahunan ..."). Baik reCatchword maupun dedupPageBoundaries SENGAJA
+// memakai !looksStructural sebagai pengaman (supaya tidak salah membuang
+// Pasal/Diktum ASLI yang kebetulan berulang) — pengaman itu justru
+// membuat kasus INI (catchword yang KEBETULAN berbentuk struktural) lolos
+// utuh: openDiktum/openPasal (lihat parse_batangtubuh.go) terpicu dua kali
+// dengan label SAMA — yang PERTAMA cuma berisi sisa pratinjau (".../2")
+// sebagai teks node, sementara isi ASLI diktum itu nyasar jadi orphan
+// tanpa node induk di halaman berikutnya.
+//
+// Fix: bandingkan baris TAK-KOSONG TERAKHIR sebelum tiap transisi halaman
+// dengan baris TAK-KOSONG PERTAMA di halaman berikutnya (baris kosong
+// pemisah paragraf di antaranya dilewati) — bila kind+label struktural
+// keduanya SAMA PERSIS, baris pertama (versi terpotong/pratinjau) dibuang;
+// baris kedua (versi lengkap) yang dipakai. Aman: kind+label struktural
+// yang identik pada TEPAT batas halaman hampir mustahil kebetulan untuk
+// dua Pasal/Diktum SUNGGUHAN yang berbeda — dokumen asli tidak pernah
+// menulis "Pasal 5" dua kali berturut-turut untuk pasal yang sama.
+func dedupStructuralPageBoundary(lines []Line) []Line {
+	drop := make(map[int]bool)
+	lastNonBlank := -1
+	for i := 0; i < len(lines); i++ {
+		if strings.TrimSpace(lines[i].Text) == "" {
+			continue
+		}
+		if lastNonBlank >= 0 && lines[lastNonBlank].Page != lines[i].Page {
+			a := detectStructural(strings.TrimSpace(lines[lastNonBlank].Text))
+			b := detectStructural(strings.TrimSpace(lines[i].Text))
+			if a.kind != mkNone && a.kind == b.kind && a.label != "" && a.label == b.label {
+				drop[lastNonBlank] = true
+			}
+		}
+		lastNonBlank = i
+	}
+	if len(drop) == 0 {
+		return lines
+	}
+	out := make([]Line, 0, len(lines)-len(drop))
+	for i, ln := range lines {
+		if drop[i] {
+			continue
+		}
+		out = append(out, ln)
+	}
+	return out
 }
 
 // dedupPageBoundaries menangani satu gejala scan lama: baris terakhir suatu

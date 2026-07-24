@@ -13,13 +13,16 @@ import (
 // kata kunci konsiderans.
 
 type classifyResult struct {
-	isLegal       bool
-	hasPasal      bool
-	hasBab        bool
-	hasMenimbang  bool
-	hasMengingat  bool
-	hasMemutuskan bool
-	pasalCount    int
+	isLegal          bool
+	hasPasal         bool
+	hasBab           bool
+	hasMenimbang     bool
+	hasMengingat     bool
+	hasMemperhatikan bool
+	hasMemutuskan    bool
+	hasMenetapkan    bool
+	hasDiktum        bool
+	pasalCount       int
 }
 
 func classify(lines []Line) classifyResult {
@@ -31,23 +34,84 @@ func classify(lines []Line) classifyResult {
 	r.hasBab = reBabAnywhere.MatchString(joined)
 	r.hasMenimbang = reMenimbang.MatchString(joined)
 	r.hasMengingat = reMengingat.MatchString(joined)
+	r.hasMemperhatikan = reMemperhatikan.MatchString(joined)
 	r.hasMemutuskan = reMemutuskan.MatchString(joined)
+	r.hasMenetapkan = reMenetapkan.MatchString(joined)
+	r.hasDiktum = hasDiktumAnchor(lines)
 
 	// Aturan kelayakan:
-	//  - Ada >=1 "Pasal N": kuat -> legal.
+	//  - Ada >=1 "Pasal N" (termasuk angka Romawi "Pasal I/II" — lihat
+	//    rePasalAnywhere di patterns.go): kuat -> legal.
+	//  - Atau: ada diktum bernomor kata (KESATU/KEDUA/dst, tervalidasi
+	//    ordinalWord) — dokumen Instruksi/Keputusan kerap TIDAK punya
+	//    Menimbang/Mengingat/Memutuskan SAMA SEKALI, langsung dari kalimat
+	//    pembuka ke diktum (ditemukan nyata di debug/34: Instruksi Gubernur
+	//    "Dalam rangka menindaklanjuti ..." lalu langsung "KESATU :").
 	//  - Atau: ada BAB romawi DAN salah satu kata kunci konsiderans.
-	//  - Atau: ada Menimbang DAN Mengingat DAN Memutuskan (struktur pembuka lengkap).
+	//  - Atau: ADA SALAH SATU dari Menimbang/Mengingat/Memperhatikan/
+	//    Memutuskan/Menetapkan.
+	//
+	// [Diperbaiki 2026-07-24, permintaan user] Aturan terakhir SEBELUMNYA
+	// mensyaratkan Menimbang DAN Mengingat DAN Memutuskan SEKALIGUS —
+	// menolak dokumen sah yang formatnya menyimpang dari pola itu persis,
+	// mis. Surat Edaran yang HANYA punya Menimbang/Mengingat tanpa
+	// "MEMUTUSKAN" formal, atau (ditemukan nyata di debug/32) Surat Edaran
+	// yang HANYA punya "Memperhatikan" tanpa Menimbang/Mengingat sama
+	// sekali. User eksplisit: dokumen dengan salah SATU SAJA dari kata
+	// kunci konsiderans ini sudah cukup menunjukkan "formatnya seperti
+	// produk hukum" dan harus diterima — jangan ada yang tertolak untuk
+	// format begitu.
 	switch {
 	case r.hasPasal:
 		r.isLegal = true
-	case r.hasBab && (r.hasMenimbang || r.hasMengingat || r.hasMemutuskan):
+	case r.hasDiktum:
 		r.isLegal = true
-	case r.hasMenimbang && r.hasMengingat && r.hasMemutuskan:
+	case r.hasBab && (r.hasMenimbang || r.hasMengingat || r.hasMemperhatikan || r.hasMemutuskan || r.hasMenetapkan):
+		r.isLegal = true
+	case r.hasMenimbang || r.hasMengingat || r.hasMemperhatikan || r.hasMemutuskan || r.hasMenetapkan:
 		r.isLegal = true
 	default:
 		r.isLegal = false
 	}
 	return r
+}
+
+// hasDiktumAnchor memindai SETIAP baris lewat detectStructural yang SAMA
+// dipakai parseBatangTubuh (bukan regex terpisah) — memastikan definisi
+// "ini diktum yang sah" konsisten dengan yang benar-benar dipakai saat
+// parsing batang tubuh (tervalidasi ordinalWord, bukan sekadar "KATA :"
+// apa saja).
+func hasDiktumAnchor(lines []Line) bool {
+	for _, l := range lines {
+		if detectStructural(strings.TrimSpace(l.Text)).kind == mkDiktum {
+			return true
+		}
+	}
+	return false
+}
+
+// HasKonsideransAnchor melaporkan apakah teks memuat salah satu penanda
+// format produk hukum yang kuat — Menimbang/Mengingat/Memperhatikan/
+// Memutuskan/Menetapkan, ATAU diktum bernomor kata (KESATU/KEDUA/dst,
+// dicek per baris via hasDiktumAnchor — perlu Line berpisah baris, bukan
+// string mentah, karena itu fungsi ini menstitch dulu). Sinyal deterministik
+// "formatnya seperti produk hukum" yang dipakai pipeline (lihat
+// internal/pipeline/ocr_worker.go) untuk MENGALAHKAN penolakan model teks
+// (gerbang produk hukum, atau jenis/wilayah di luar whitelist) —
+// permintaan user eksplisit: dokumen dengan ciri ini tidak boleh tertolak,
+// apa pun kata model atau apakah jenis/wilayahnya baku. Konsisten dengan
+// prinsip "model membaca, kode menyimpulkan" yang dipakai di seluruh
+// proyek ini.
+func HasKonsideransAnchor(text string) bool {
+	switch {
+	case reMenimbang.MatchString(text),
+		reMengingat.MatchString(text),
+		reMemperhatikan.MatchString(text),
+		reMemutuskan.MatchString(text),
+		reMenetapkan.MatchString(text):
+		return true
+	}
+	return hasDiktumAnchor(stitch([]string{text}))
 }
 
 // LooksLegal melaporkan apakah teks (gabungan beberapa halaman OCR) sudah
@@ -77,9 +141,11 @@ func LooksLegalProbe(pages []string) bool {
 		reBabAnywhere.MatchString(text),
 		reMenimbang.MatchString(text),
 		reMengingat.MatchString(text),
+		reMemperhatikan.MatchString(text),
 		reMemutuskan.MatchString(text),
+		reMenetapkan.MatchString(text),
 		reJudulPeraturan.MatchString(text):
 		return true
 	}
-	return false
+	return hasDiktumAnchor(stitch(pages))
 }

@@ -42,11 +42,43 @@ func segmentize(lines []Line, cls classifyResult) ([]segment, []Warning) {
 	batangStart := -1
 	switch {
 	case idxMenetapkan >= 0:
-		batangStart = idxMenetapkan + 1
+		batangStart = afterWrappedTitle(lines, idxMenetapkan)
 	case idxMemutuskan >= 0:
-		batangStart = idxMemutuskan + 1
+		batangStart = afterWrappedTitle(lines, idxMemutuskan)
 	default:
 		batangStart = firstStructuralIndex(lines)
+		if batangStart < 0 {
+			// [Diperbaiki 2026-07-24, permintaan user] Dokumen tanpa Bab/
+			// Pasal/Diktum DAN tanpa MEMUTUSKAN/Menetapkan formal (mis.
+			// Surat Edaran naratif biasa) SEBELUMNYA membiarkan batangStart
+			// tetap -1 di sini. Akibatnya minPositiveAfter (dipakai di
+			// bawah untuk menentukan akhir segmen Menimbang/Mengingat/
+			// Memperhatikan) jatuh ke fallback-nya (len(lines)) — section
+			// pembuka TERAKHIR yang ada menyedot SISA DOKUMEN SAMPAI AKHIR
+			// (termasuk paragraf penutup & tanda tangan) ke dalam
+			// segmennya sendiri. Bug NYATA yang ditemukan lewat pengujian:
+			// penutup Surat Edaran tergabung jadi SATU KALIMAT dengan
+			// kutipan Mengingat terakhir — bukan sekadar hilang, tapi
+			// mengotori data yang justru harus akurat.
+			//
+			// Sekarang: cari baris kosong pertama SETELAH section pembuka
+			// terakhir yang ada, jadikan itu batas awal batang_tubuh —
+			// memisahkan sisa teks (penutup/ttd) dari konsiderans, alih-
+			// alih tersedot ke dalamnya. parseBatangTubuh (lihat file
+			// terpisah) tetap menanganinya apa adanya sebagai teks datar
+			// (minimal jadi DOC_WARNING dengan teks orphan yang TERLIHAT,
+			// bukan lenyap/tercampur diam-diam ke section lain).
+			lastOpening := idxMenimbang
+			if idxMengingat > lastOpening {
+				lastOpening = idxMengingat
+			}
+			if idxMemperhatikan > lastOpening {
+				lastOpening = idxMemperhatikan
+			}
+			if lastOpening >= 0 {
+				batangStart = firstBlankLineAfter(lines, lastOpening)
+			}
+		}
 	}
 
 	// Akhir batang tubuh: sebelum PENJELASAN bila ada, jika tidak sampai akhir.
@@ -181,15 +213,74 @@ func findLineIndexFrom(lines []Line, re interface{ MatchString(string) bool }, f
 	return -1
 }
 
-// firstStructuralIndex mencari baris struktural pertama (BAB atau Pasal).
+// firstStructuralIndex mencari baris struktural pertama (BAB, Pasal, atau
+// Diktum). [Diperbaiki 2026-07-24, ditemukan nyata di debug/34] SEBELUMNYA
+// hanya mengenali BAB/Pasal — dokumen Instruksi/Keputusan yang langsung
+// membuka diktum (KESATU/KEDUA/dst) TANPA Menimbang/Mengingat/Memutuskan
+// SAMA SEKALI (format sah, lihat classify.go/hasDiktumAnchor) tidak punya
+// titik awal batang_tubuh sama sekali — segmentize() tidak pernah membuat
+// segmen batang_tubuh, dan SELURUH isi diktum (justru substansi
+// keputusannya) hilang total (0 node).
 func firstStructuralIndex(lines []Line) int {
 	for i, ln := range lines {
 		m := detectStructural(ln.Text)
-		if m.kind == mkBab || m.kind == mkPasal {
+		if m.kind == mkBab || m.kind == mkPasal || m.kind == mkDiktum {
 			return i
 		}
 	}
 	return -1
+}
+
+// afterWrappedTitle mengembalikan indeks baris SETELAH baris anchor
+// (Menetapkan/MEMUTUSKAN) di `anchorIdx`, dengan aman menangani judul
+// peraturan yang MELEBAR ke beberapa baris cetak.
+//
+// [Diperbaiki 2026-07-24, ditemukan nyata di debug/39 & debug/47] Sebelumnya
+// SELALU `anchorIdx + 1` — asumsi diam-diam bahwa "Menetapkan : <judul>"
+// selalu satu baris cetak. Untuk peraturan berjudul panjang, kalimat itu
+// MELEBAR ke 2-3 baris cetak tanpa baris kosong di antaranya (baru ada
+// baris kosong SETELAH kalimat selesai) — mis. "Menetapkan : PERATURAN
+// GUBERNUR TENTANG PERUBAHAN PENETAPAN\nRENCANA KERJA SATUAN KERJA
+// PERANGKAT ACEH TAHUN\n2025." (debug/39, 3 baris cetak). `anchorIdx + 1`
+// jatuh PERSIS di tengah kalimat yang melebar itu ("RENCANA KERJA..."),
+// bukan di "Pasal 1" yang sebenarnya — akibatnya SectionPenetapan
+// kehilangan sisa judulnya sendiri, DAN batang_tubuh dimulai dari
+// potongan judul itu (bukan Pasal 1), yang lalu nyasar jadi orphan
+// tertempel di Pasal 1 sebagai warning "before" (data tetap ada, tapi
+// salah tempat dan memicu NODE_WARNINGS tanpa perlu).
+//
+// Fix: HANYA lanjut mencari baris kosong berikutnya (firstBlankLineAfter)
+// bila baris tepat setelah anchor BUKAN baris kosong maupun baris
+// struktural (Bab/Pasal/Ayat/Diktum) — yakni benar-benar potongan
+// kalimat biasa yang melebar. Bila baris berikutnya SUDAH kosong atau
+// SUDAH struktural (kasus umum, judul muat satu baris), perilaku PERSIS
+// sama seperti sebelumnya (`anchorIdx + 1`) — tidak ada regresi untuk
+// dokumen yang sudah benar.
+func afterWrappedTitle(lines []Line, anchorIdx int) int {
+	next := anchorIdx + 1
+	if next >= len(lines) {
+		return next
+	}
+	t := strings.TrimSpace(lines[next].Text)
+	if t == "" || detectStructural(t).kind != mkNone {
+		return next
+	}
+	return firstBlankLineAfter(lines, anchorIdx)
+}
+
+// firstBlankLineAfter mencari indeks baris kosong PERTAMA setelah `after`
+// (batas paragraf asli, sudah disimpan stitch.go) — dipakai sebagai batas
+// darurat awal batang_tubuh saat dokumen tidak punya Bab/Pasal/Diktum maupun
+// MEMUTUSKAN/Menetapkan formal (lihat catatan di segmentize). Mengembalikan
+// len(lines) bila tak ada baris kosong lagi (sisa dokumen jadi kosong,
+// bukan error).
+func firstBlankLineAfter(lines []Line, after int) int {
+	for i := after + 1; i < len(lines); i++ {
+		if strings.TrimSpace(lines[i].Text) == "" {
+			return i
+		}
+	}
+	return len(lines)
 }
 
 func sliceLines(lines []Line, a, b int) []Line {

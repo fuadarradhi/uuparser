@@ -33,6 +33,24 @@ type Set struct {
 	// sebagai nilai terstruktur.
 	Tinjau string
 
+	// OrphanReview (2026-07-24) — sama semangatnya dengan Tinjau (murni
+	// tinjauan, tidak pernah disimpan sebagai data terstruktur), tapi
+	// untuk kelas sinyal yang BERBEDA: parser.OrphanWarningNodes (bukan
+	// AnchorLeakNodes) — node yang punya teks YATIM tertempel (potongan
+	// yang gagal dicocokkan ke struktur apa pun sama sekali), bukan node
+	// yang mencurigakan karena memuat penanda section DI TENGAH teksnya.
+	OrphanReview string
+
+	// DocumentReview (2026-07-24, permintaan user: "AI yang periksa hasil
+	// parser terakhir, setiap selesai 1 dokumen") — SATU panggilan model
+	// per dokumen SETELAH parse+Diagnose selesai, diberi RINGKASAN
+	// terstruktur (identitas + Stats + daftar Issue), BUKAN teks lengkap
+	// dokumen — sengaja dibatasi supaya tetap dalam jangkauan model kecil
+	// (lihat catatan lengkap di thinking.go/AskDocumentReview soal kenapa
+	// ringkasan, bukan teks penuh). Sama sekali bukan tinjauan isi hukum/
+	// substansi — hanya sanity-check apakah ringkasannya sendiri wajar.
+	DocumentReview string
+
 	Hash string // sidik jari gabungan, disimpan bersama metadata dokumen
 }
 
@@ -51,6 +69,8 @@ func Load(dir string) (Set, error) {
 		{"identity.md", &s.Identity},
 		{"penetapan.md", &s.Penetapan},
 		{"tinjau.md", &s.Tinjau},
+		{"orphan.md", &s.OrphanReview},
+		{"document_review.md", &s.DocumentReview},
 	} {
 		var h string
 		if *it.dst, h, err = readOne(filepath.Join(dir, it.name)); err != nil {

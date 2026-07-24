@@ -1,9 +1,0 @@
-=== TINJAUAN MODEL (dipicu ANCHOR_LEAK) ===
-
-=== NODE [lampiran/paragraf_isi] hal 4-5 ===
---- TEKS ---
-BERITA DAERAH ACEH TAHUN 2025 NOMOR 19 LAMPIRAN I TENTANG PERUBAHAN ATAS PERATURAN GUBERNUR ACEH NOMOR 03 TAHUN 2025 TENTANG PERJALANAN DINAS,------
-
---- JAWABAN MENTAH MODEL ---
-{"bermasalah": true, "penjelasan": "Teks ini mencampur judul berita/referensi dengan rujukan lampiran; batas yang tepat ada sebelum kata 'LAMPIRAN I'."}
-

@@ -182,8 +182,45 @@ func numPrefix(label string) (int, bool) {
 	return v, true
 }
 
+// reJudulPerubahan menandai dokumen jenis "Perubahan (Kedua/Ketiga/dst)
+// Atas ..." pada JUDUL/PENETAPAN dokumen ITU SENDIRI (bukan sekadar
+// disebut di daftar Mengingat, yang jauh lebih umum dan tidak berarti
+// dokumen ini sendiri adalah amendemen) — dipakai checkPasalSequence untuk
+// tahu kapan PASAL_GAP harus dilewati sama sekali.
+var reJudulPerubahan = regexp.MustCompile(`(?i)PERUBAHAN\s+(?:KEDUA\s+|KETIGA\s+|KEEMPAT\s+)?ATAS\b`)
+
+// isAmendmentDocument melaporkan apakah dokumen ini sendiri berjenis
+// "Perubahan (Kedua/dst) Atas ..." — [Ditambahkan 2026-07-24, ditemukan
+// nyata di debug/19, debug/27, debug/38]. Batang tubuh dokumen jenis ini
+// SELALU berbentuk: satu Pasal wadah (roman "Pasal I" ATAU arab "Pasal 1"
+// — keduanya ditemukan nyata, jadi tak bisa dibedakan hanya dari gaya
+// penomoran) berisi narasi "ketentuan Pasal N diubah/disisipkan menjadi
+// ...", lalu MENGUTIP ULANG pasal-pasal ASLI yang diubah (mis. Pasal 5,
+// 5A, 5B, 10, 19 — nomor asli dokumen yang di-amandemen, BUKAN nomor urut
+// dokumen amendemen ini). Nomor-nomor kutipan itu SECARA DESAIN tidak
+// pernah berurutan (hanya pasal yang benar-benar diubah yang dikutip
+// ulang) — PASAL_GAP untuk kasus ini adalah salah-tangkap murni, bukan
+// tanda OCR/parse gagal. Dideteksi lewat frasa baku "Perubahan (Kedua/dst)
+// Atas" pada JUDUL/PENETAPAN dokumen ini sendiri — BUKAN dengan mencari
+// kata itu di seluruh teks (termasuk daftar Mengingat, yang lazim mengutip
+// UU/Qanun LAIN yang judulnya kebetulan juga "Perubahan Atas ...", tanpa
+// berarti dokumen INI sendiri adalah amendemen — lihat debug/15, yang
+// menyebut "Perubahan Atas" di Mengingat tapi PASAL_GAP-nya di sana adalah
+// gap OCR yang NYATA, bukan salah-tangkap, dan HARUS tetap dilaporkan).
+func isAmendmentDocument(res Result) bool {
+	for _, n := range res.Nodes {
+		if (n.Section == SectionJudul || n.Section == SectionPenetapan) && reJudulPerubahan.MatchString(n.Text) {
+			return true
+		}
+	}
+	return false
+}
+
 // checkPasalSequence mendeteksi celah pada penomoran pasal batang tubuh.
 func checkPasalSequence(res Result) []Issue {
+	if isAmendmentDocument(res) {
+		return nil
+	}
 	var seq []int
 	seen := map[int]bool{}
 	for _, n := range res.Nodes {
@@ -309,6 +346,30 @@ func checkAnchorLeak(res Result) []Issue {
 				n.Section, n.NodeType, n.Text[loc[0]:loc[1]])})
 	}
 	return issues
+}
+
+// OrphanWarningNodes (2026-07-24) mengembalikan INDEKS (ke res.Nodes)
+// semua node yang punya setidaknya satu Warning dengan OrphanText terisi
+// — yakni node yang punya teks YATIM tertempel karena builder.attachOrphan
+// gagal mencocokkan sepotong teks ke struktur apa pun sama sekali. Sinyal
+// BERBEDA dari AnchorLeakNodes (yang mendeteksi penanda section DI TENGAH
+// teks node) — di sini masalahnya sebaliknya: pengurai TAHU teks ini tidak
+// cocok di mana pun, tapi tidak tahu APAKAH itu artefak halaman yang aman
+// diabaikan atau isi sungguhan yang butuh rumah sendiri. Diekspor supaya
+// pemanggil (internal/pipeline) bisa mengambil node yang sama persis untuk
+// dikirim ke model peninjau (lihat prompts/orphan.md), sama seperti
+// AnchorLeakNodes dipakai untuk tinjau.md.
+func OrphanWarningNodes(res Result) []int {
+	var idxs []int
+	for i, n := range res.Nodes {
+		for _, w := range n.Warnings {
+			if w.OrphanText != nil {
+				idxs = append(idxs, i)
+				break
+			}
+		}
+	}
+	return idxs
 }
 
 // checkEmptyPasal: pasal batang tubuh tanpa teks, tanpa ayat, tanpa huruf anak.

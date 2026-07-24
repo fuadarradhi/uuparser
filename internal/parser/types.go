@@ -64,6 +64,17 @@ const (
 	// (atau Pasal bila belum ada Ayat) oleh builder.foldHuruf/foldAngka, supaya
 	// tidak memutus konteks kalimat pembuka ayat. NodeItem (poin Menimbang/
 	// Mengingat) TIDAK terpengaruh — itu daftar datar yang berbeda konteks.
+
+	// NodeSectionHeader (2026-07-24, permintaan user): baris penanda section
+	// konsiderans itu sendiri — "Menimbang :", "Mengingat :", "Memperhatikan :"
+	// — yang SEBELUMNYA dibuang sepenuhnya (lihat parseFlat lama): kata
+	// kuncinya dipotong sebelum ":" dan tidak pernah disimpan sebagai node
+	// sama sekali kalau tidak ada sisa teks setelah ":" di baris yang sama.
+	// Sekarang SELALU disimpan sebagai node tersendiri (lihat
+	// builder.emitSectionHeader, dipanggil dari parseFlat) supaya tidak ada
+	// data yang hilang — RAG yang ingin mengecualikannya tinggal memakai
+	// IsTitle, bukan bergantung pada datanya dibuang di sumbernya.
+	NodeSectionHeader NodeType = "section_header"
 )
 
 // Severity tingkat keparahan sebuah warning.
@@ -120,6 +131,38 @@ type Node struct {
 	// mengecualikannya tanpa perlu menghapus datanya. Default false untuk
 	// SEMUA node lain — jangan diset manual di tempat lain.
 	IsAppendix bool `json:"is_appendix,omitempty"`
+
+	// IsDictum & IsTitle (2026-07-24, permintaan user) — DIHITUNG OTOMATIS
+	// dari (Section, NodeType) oleh classifyContentFlags (lihat parser.go),
+	// TIDAK PERNAH diset manual di sub-parser manapun — pola yang sama
+	// seperti IsAppendix, supaya tidak mungkin lupa di satu titik emit.
+	//
+	// Latar belakang: sebelumnya kata kunci section seperti "MENIMBANG",
+	// "MENGINGAT", "MEMUTUSKAN" secara efektif TERBUANG dari data — baik
+	// karena dipotong sebelum disimpan (Menimbang/Mengingat, lihat
+	// NodeSectionHeader) maupun karena tidak ada cara memilahnya dari isi
+	// sungguhan saat query. Prinsipnya sekarang: SEMUA baris tetap tersimpan
+	// apa adanya (tidak ada yang dibuang), dan flag inilah yang membedakan
+	// mana yang "isi aturan yang mengikat" vs "label/penanda struktural" saat
+	// query/RAG memilih mana yang relevan.
+	//
+	//   IsDictum = true HANYA untuk isi normatif batang tubuh yang benar-benar
+	//   mengikat: Pasal/Ayat/Diktum (section batang_tubuh saja — Pasal/Ayat
+	//   yang sama pada section penjelasan_pasal BUKAN dictum, itu komentar).
+	//   Inilah yang RAG butuhkan saat mencari ISI ATURAN.
+	//
+	//   IsTitle = true untuk baris label/penanda yang bukan isi aturan itu
+	//   sendiri: judul, pembukaan, MEMUTUSKAN/Menetapkan (penetapan),
+	//   Bab/Bagian/Paragraf, header konsiderans (Menimbang/Mengingat/
+	//   Memperhatikan), dan blok penutup (tempat-tanggal-ttd). Datanya tetap
+	//   tersimpan penuh; flag ini hanya menandai "bukan isi aturan", supaya
+	//   RAG bisa mengecualikannya tanpa kehilangan data mentahnya.
+	//
+	// Keduanya bisa false bersamaan (mis. NodeItem poin Menimbang/Mengingat,
+	// atau paragraf Penjelasan Umum): data preamble/komentar yang nyata,
+	// bukan judul, tapi juga bukan dictum yang mengikat.
+	IsDictum bool `json:"is_dictum"`
+	IsTitle  bool `json:"is_title"`
 }
 
 // Result adalah keluaran Parse.

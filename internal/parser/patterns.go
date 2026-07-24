@@ -11,8 +11,20 @@ var (
 	reBab      = regexp.MustCompile(`^BAB\s+([IVXLCDM]+|[0-9]+)\b\s*(.*)$`)
 	reBagian   = regexp.MustCompile(`^(?i:bagian)\s+(.+?)\s*$`)
 	reParagraf = regexp.MustCompile(`^(?i:paragraf)\s+([0-9]+)\b\s*(.*)$`)
-	// Pasal: "Pasal 27" atau sisipan "Pasal 27A"/"Pasal 27 A".
-	rePasal = regexp.MustCompile(`^(?i:pasal)\s+([0-9]+\s*[A-Za-z]?)\s*$`)
+	// Pasal: "Pasal 27" atau sisipan "Pasal 27A"/"Pasal 27 A", ATAU angka
+	// Romawi ("Pasal I", "Pasal II") — [Ditambahkan 2026-07-24, ditemukan
+	// dari pengujian nyata debug/29] konvensi baku Lampiran II UU 12/2011
+	// untuk BATANG TUBUH Peraturan "Perubahan Atas ..." (amendemen): pasal-
+	// pasalnya SELALU diberi nomor angka Romawi (Pasal I, Pasal II, dst),
+	// BUKAN angka arab seperti peraturan biasa. Sebelum ini rePasal HANYA
+	// mengenali angka arab — dokumen jenis Perubahan (kategori yang sangat
+	// umum) selalu gagal total: NO_PASAL, status FAIL, dan isi Pasal I/II
+	// (justru SUBSTANSI perubahannya) jatuh sebagai teks tak terstruktur.
+	// Pola [IVXLCDM]+ sama persis dengan yang sudah dipakai reBab di atas
+	// untuk BAB — bukan validasi angka Romawi yang ketat, cukup untuk
+	// jangkauan realistis nomor pasal amendemen (jarang lebih dari
+	// belasan).
+	rePasal = regexp.MustCompile(`^(?i:pasal)\s+([0-9]+\s*[A-Za-z]?|[IVXLCDM]+)\s*$`)
 	// Ayat: "(1)", "(1a)", termasuk hasil OCR yang longgar sudah dinormalisasi dulu.
 	reAyat = regexp.MustCompile(`^\(\s*([0-9]+\s*[a-zA-Z]?)\s*\)\s*(.*)$`)
 	// Huruf: "a.", "ab." (setelah z lanjut aa, ab, ...). Maksimal 2 huruf.
@@ -31,7 +43,21 @@ var (
 	// tidak perlu dua tempat dirawat. Beda nama dengan reDiktum di header.go
 	// (punya cakupan sengaja sempit KESATU/KEDUA/KETIGA — cukup untuk gate
 	// deteksi StructureType di halaman 1) supaya tidak bentrok deklarasi.
-	reDiktumHead = regexp.MustCompile(`^([A-Za-z]+(?:\s+[A-Za-z]+)?)\s*:\s*(.*)$`)
+	//
+	// [Diperbaiki 2026-07-24, ditemukan nyata di debug/88] Titik dua
+	// SEKARANG OPSIONAL ("(?:...)?" membungkus ": (.*)"): OCR sesekali
+	// memisah "KESATU :" jadi baris "KESATU" telanjang tanpa titik dua
+	// sama sekali (tampaknya dari tata letak tabel Keputusan yang berbeda
+	// dari format prosa biasa), lalu isinya menyusul sebagai baris/
+	// paragraf TERPISAH. Sebelum ini baris "KESATU" telanjang gagal total
+	// cocok reDiktumHead (mewajibkan ":"), jatuh sebagai teks biasa TANPA
+	// node aktif untuk ditempeli — isi diktum sesungguhnya nyasar jadi
+	// orphan yang menempel ke diktum BERIKUTNYA, bukan diktum-nya sendiri.
+	// AMAN melonggarkan ini: validasi ordinalWord(m[1]) di detectStructural
+	// tetap wajib — hanya kata bilangan tingkat baku (kesatu/kedua/dst)
+	// yang lolos, jadi baris satu-dua-kata biasa yang BUKAN kata bilangan
+	// tingkat tetap tidak akan pernah cocok di sini.
+	reDiktumHead = regexp.MustCompile(`^([A-Za-z]+(?:\s+[A-Za-z]+)?)\s*(?::\s*(.*))?$`)
 )
 
 // ---- Kata kunci macro-section (dipakai classify & segment). ----
@@ -56,13 +82,38 @@ var (
 	// AWAL barisnya sendiri (bukan disebut di tengah kalimat lain, mis.
 	// "sebagaimana tercantum dalam Lampiran"), jadi anchor '^' + \b cukup
 	// aman tanpa perlu menyaring penyebutan biasa di tengah teks.
-	reLampiran = regexp.MustCompile(`(?im)^\s*LAMPIRAN\b`)
+	//
+	// [Diperbaiki 2026-07-24, ditemukan dari pengujian nyata debug/29]
+	// SEBELUMNYA case-INSENSITIVE ("(?im)") — bug nyata: Peraturan jenis
+	// "Perubahan Atas ..." (batang tubuh berupa Pasal I/Pasal II angka
+	// Romawi) SANGAT LAZIM membuka Pasal I dengan kalimat prosa yang
+	// kebetulan diawali kata "Lampiran" apa adanya (huruf awal kapital
+	// biasa, BUKAN section header), mis. "Lampiran I dalam Peraturan
+	// Gubernur Aceh ... diubah sehingga menjadi sebagaimana tercantum
+	// dalam Lampiran I yang merupakan bagian tidak terpisahkan ...".
+	// Karena match case-insensitive hanya perlu kata di awal baris, regex
+	// ini SALAH menganggap kalimat itu sebagai AWAL blok Lampiran, memotong
+	// SISA SELURUH dokumen (isi Pasal I sendiri, Pasal II, penutup, tanda
+	// tangan, DAN lampiran sungguhan) jadi satu blok "lampiran" raksasa —
+	// Pasal I kehilangan teksnya sama sekali (EMPTY_PASAL).
+	//
+	// Disurvei di debug/: SETIAP section header Lampiran yang sungguhan
+	// (debug/26,29,30,39,4,67,86,88,89) selalu tercetak HURUF BESAR SEMUA
+	// ("LAMPIRAN", "LAMPIRAN I"), sementara SATU-SATUNYA kemunculan huruf
+	// judul-biasa ("Lampiran ...") yang ditemukan (debug/29,39,42) SELALU
+	// prosa isi Pasal, bukan header — pola pembeda yang sama seperti
+	// reAnchorLeak (huruf besar semua = penanda section asli). Case-
+	// sensitive sekarang ("(?m)", bukan "(?im)").
+	reLampiran = regexp.MustCompile(`(?m)^\s*LAMPIRAN\b`)
 )
 
 // reBabAnywhere & rePasalAnywhere dipakai gate klasifikasi (boleh di tengah baris).
 var (
-	reBabAnywhere   = regexp.MustCompile(`(?im)^\s*BAB\s+[IVXLCDM]+\b`)
-	rePasalAnywhere = regexp.MustCompile(`(?im)^\s*Pasal\s+[0-9]+`)
+	reBabAnywhere = regexp.MustCompile(`(?im)^\s*BAB\s+[IVXLCDM]+\b`)
+	// rePasalAnywhere (2026-07-24): tambah alternatif angka Romawi — lihat
+	// catatan lengkap di rePasal soal Pasal I/II/dst pada Peraturan
+	// Perubahan Atas ....
+	rePasalAnywhere = regexp.MustCompile(`(?im)^\s*Pasal\s+(?:[0-9]+|[IVXLCDM]+)\b`)
 )
 
 // matchKind hasil deteksi satu baris.

@@ -200,7 +200,22 @@ func inkRatio(img image.Image) float64 {
 }
 
 // Close melepaskan sumber daya dokumen.
-func (d *Doc) Close() error { return d.doc.Close() }
+//
+// [Diperbaiki 2026-07-24, permintaan user] SEBELUMNYA tidak dibungkus
+// suppressCStderr sama sekali — hanya Open dan Render yang dibungkus. MuPDF
+// TIDAK selalu mencetak peringatan segera saat terjadi: sebagian ditahan dan
+// baru di-flush (dengan ringkasan "... (repeated N times)") saat context-nya
+// benar-benar dilepas, yaitu di sinilah, bukan di Open/Render. Kebocoran ini
+// persis yang membuat baris kemajuan konsol (logx.Progress, \r di tempat)
+// tiba-tiba "terpaku" jadi baris permanen di tengah proses — teks mentah
+// MuPDF nyelonong ke stderr asli tanpa melalui logx sama sekali.
+func (d *Doc) Close() error {
+	var err error
+	suppressCStderr(func() {
+		err = d.doc.Close()
+	})
+	return err
+}
 
 // blurScore mengukur ketajaman lewat VARIANS LAPLACIAN — metode umum & murah
 // untuk deteksi blur (dipakai luas, mis. di OpenCV). Prinsipnya: gambar tajam

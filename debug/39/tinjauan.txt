@@ -1,9 +1,0 @@
-=== TINJAUAN MODEL (dipicu ANCHOR_LEAK) ===
-
-=== NODE [lampiran/paragraf_isi] hal 3-4 ===
---- TEKS ---
-BERITA DAERAH ACEH TAHUN 2025 NOMOR 24 LAMPIRAN TENTANG PERUBAHAN PENETAPAN RENCANA KERJA SATUAN KERJA PERANGKAT ACEH
-
---- JAWABAN MENTAH MODEL ---
-{"bermasalah": true, "penjelasan": "Teks ini mencampur judul berita/peraturan dengan rujukan lampiran; batas yang tepat ada sebelum kata 'LAMPIRAN TENTANG'"}
-

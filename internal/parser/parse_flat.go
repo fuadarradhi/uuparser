@@ -33,8 +33,17 @@ func parseFlat(section Section, lines []Line) *builder {
 		b.curLinePage = raw.Page
 
 		// Baris header ("Menimbang :", "Mengingat :", "Memperhatikan :"):
-		// buang kata kunci, tangkap sisa.
+		// [Diperbaiki 2026-07-24, permintaan user] SEBELUMNYA kata kunci ini
+		// dibuang sepenuhnya sebelum disimpan — kalau tidak ada sisa teks
+		// setelah ":" pada baris yang sama (kasus paling umum: "Menimbang :"
+		// berdiri sendiri, poin a./b./c. baru menyusul di baris berikutnya),
+		// baris ini tidak pernah jadi node SAMA SEKALI. Sekarang baris
+		// header SELALU disimpan dulu apa adanya lewat emitSectionHeader
+		// (ditandai IsTitle, lihat classifyContentFlags), baru sisa teks
+		// setelah ":" (bila ada) diproses seperti biasa sebagai poin
+		// tersendiri.
 		if reMenimbang.MatchString(line) || reMengingat.MatchString(line) || reMemperhatikan.MatchString(line) {
+			b.emitSectionHeader(line)
 			if i := strings.Index(line, ":"); i >= 0 {
 				rest := strings.TrimSpace(line[i+1:])
 				if rest != "" {

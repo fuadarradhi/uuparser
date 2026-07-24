@@ -632,6 +632,28 @@ type NodeInsert struct {
 	// IsAppendix (2026-07-23): lihat catatan di parser.Node.IsAppendix
 	// dan kolom nodes.is_appendix di schema.sql.
 	IsAppendix bool
+	// IsDictum/IsTitle (2026-07-24): lihat catatan di parser.Node.IsDictum/
+	// IsTitle dan kolom nodes.is_dictum/is_title di schema.sql.
+	IsDictum bool
+	IsTitle  bool
+}
+
+// ReviewFlagInsert (2026-07-24) — satu baris untuk tabel review_flags,
+// dikirim bersama nodes dalam SATU panggilan InsertParseResult supaya
+// keduanya masuk dalam satu transaksi (atomik dengan penyimpanan node,
+// konsisten dengan prinsip "parse sekali, transaksi sekali").
+//
+// NodeIdx mengacu ke INDEKS pada slice `nodes` yang dikirim BERSAMAAN ke
+// InsertParseResult (BUKAN id database — id baru belum ada saat pemanggil
+// menyusun slice ini). -1 berarti flag di level dokumen, tidak terikat
+// node manapun (mis. dari parser.Issue, yang memang tidak membawa
+// referensi node).
+type ReviewFlagInsert struct {
+	NodeIdx  int // -1 = level dokumen (tidak terikat node)
+	Source   string
+	Code     string
+	Severity string
+	Message  string
 }
 
 // InsertParseResult menyimpan hasil parse PERTAMA (dan SATU-SATUNYA) untuk
@@ -646,8 +668,12 @@ type NodeInsert struct {
 // dokumen yang SUDAH punya parse_snapshot sekarang GAGAL KERAS lewat
 // constraint PRIMARY KEY (document_id) di parse_snapshots — kesalahan
 // pemrograman, bukan alur normal, dan sengaja tidak ditangkap diam-diam.
+//
+// flags (2026-07-24): baris review_flags yang menyertai hasil parse ini —
+// lihat catatan ReviewFlagInsert. aiReviewedAt boleh nil (mis. model teks
+// sedang tidak tersedia saat parse ini, lihat pemanggil di parser_worker.go).
 func (s *Store) InsertParseResult(ctx context.Context, documentID int64, status string,
-	report, extractionNotes []byte, nodes []NodeInsert) error {
+	report, extractionNotes []byte, nodes []NodeInsert, flags []ReviewFlagInsert, aiReviewedAt *time.Time) error {
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return err
@@ -655,9 +681,9 @@ func (s *Store) InsertParseResult(ctx context.Context, documentID int64, status 
 	defer tx.Rollback(ctx) //nolint:errcheck
 
 	if _, err := tx.Exec(ctx, `
-		INSERT INTO parse_snapshots (document_id, status, report, extraction_notes, parsed_at)
-		VALUES ($1,$2,$3,$4, now())`,
-		documentID, status, report, extractionNotes); err != nil {
+		INSERT INTO parse_snapshots (document_id, status, report, extraction_notes, ai_reviewed_at, parsed_at)
+		VALUES ($1,$2,$3,$4,$5, now())`,
+		documentID, status, report, extractionNotes, aiReviewedAt); err != nil {
 		return fmt.Errorf("simpan parse_snapshot (dokumen sudah pernah di-parse?): %w", err)
 	}
 
@@ -674,23 +700,38 @@ func (s *Store) InsertParseResult(ctx context.Context, documentID int64, status 
 				bab_number, bagian_label, paragraf_label, pasal_number, ayat_number,
 				huruf_label, angka_label, label, content,
 				start_page, end_page, order_index,
-				original_node_type, warnings, citation, is_appendix
-			) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
+				original_node_type, warnings, citation, is_appendix,
+				is_dictum, is_title
+			) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)
 			RETURNING id`,
 			documentID, parentID, n.Section, n.NodeType,
 			n.BabNumber, n.BagianLabel, n.ParagrafLabel, n.PasalNumber, n.AyatNumber,
 			n.HurufLabel, n.AngkaLabel, n.Label, n.Content,
 			n.StartPage, n.EndPage, n.OrderIndex,
 			n.OriginalNodeType, n.Warnings, n.Citation, n.IsAppendix,
+			n.IsDictum, n.IsTitle,
 		).Scan(&newID); err != nil {
 			return err
 		}
 		ids[i] = newID
 	}
 
+	for _, f := range flags {
+		var nodeID *int64
+		if f.NodeIdx >= 0 && f.NodeIdx < len(ids) {
+			nodeID = &ids[f.NodeIdx]
+		}
+		if _, err := tx.Exec(ctx, `
+			INSERT INTO review_flags (document_id, node_id, source, code, severity, message)
+			VALUES ($1,$2,$3,$4,$5,$6)`,
+			documentID, nodeID, f.Source, f.Code, f.Severity, f.Message); err != nil {
+			return err
+		}
+	}
+
 	if _, err := tx.Exec(ctx, `
-		UPDATE documents SET status = 'parsed', parsed_at = now(), updated_at = now()
-		WHERE id = $1`, documentID); err != nil {
+		UPDATE documents SET status = 'parsed', parse_status = $2, parsed_at = now(), updated_at = now()
+		WHERE id = $1`, documentID, status); err != nil {
 		return err
 	}
 	return tx.Commit(ctx)
@@ -703,6 +744,65 @@ func (s *Store) InsertRelation(ctx context.Context, documentID int64, relType, k
 		                        tentang, confidence, kutipan)
 		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
 		documentID, relType, key, jenis, instansi, nomor, tahun, tentang, confidence, kutipan)
+	return err
+}
+
+// ---- Tinjauan (review_flags) — untuk UI web ----
+
+// ReviewFlag adalah satu baris review_flags untuk dibaca (lawan dari
+// ReviewFlagInsert, yang untuk ditulis). NodeID nil berarti flag level
+// dokumen. Field apa adanya (bukan JSON marshal terpisah) supaya API
+// web bisa langsung json.Marshal slice-nya.
+type ReviewFlag struct {
+	ID           int64      `json:"id"`
+	DocumentID   int64      `json:"document_id"`
+	NodeID       *int64     `json:"node_id,omitempty"`
+	Source       string     `json:"source"`
+	Code         string     `json:"code"`
+	Severity     string     `json:"severity"`
+	Message      string     `json:"message"`
+	Resolved     bool       `json:"resolved"`
+	ResolvedAt   *time.Time `json:"resolved_at,omitempty"`
+	ResolvedNote string     `json:"resolved_note,omitempty"`
+	CreatedAt    time.Time  `json:"created_at"`
+}
+
+// ListReviewFlags mengembalikan seluruh review_flags untuk satu dokumen,
+// terbaru dulu — dipakai halaman detail dokumen di UI web. onlyUnresolved
+// membatasi ke yang belum ditandai selesai (dipakai daftar antrian).
+func (s *Store) ListReviewFlags(ctx context.Context, documentID int64, onlyUnresolved bool) ([]ReviewFlag, error) {
+	q := `SELECT id, document_id, node_id, source, code, severity, message,
+	             resolved, resolved_at, coalesce(resolved_note,''), created_at
+	      FROM review_flags WHERE document_id = $1`
+	if onlyUnresolved {
+		q += ` AND NOT resolved`
+	}
+	q += ` ORDER BY created_at DESC`
+	rows, err := s.pool.Query(ctx, q, documentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []ReviewFlag
+	for rows.Next() {
+		var f ReviewFlag
+		if err := rows.Scan(&f.ID, &f.DocumentID, &f.NodeID, &f.Source, &f.Code, &f.Severity,
+			&f.Message, &f.Resolved, &f.ResolvedAt, &f.ResolvedNote, &f.CreatedAt); err != nil {
+			return nil, err
+		}
+		out = append(out, f)
+	}
+	return out, rows.Err()
+}
+
+// ResolveReviewFlag menandai satu baris review_flags selesai ditinjau —
+// dipanggil dari UI web saat manusia menekan "sudah dicek". TIDAK PERNAH
+// mengubah data hasil parse (nodes/parse_snapshots) itu sendiri — koreksi
+// data tetap lewat edit langsung ke tabel nodes, seperti sudah disepakati.
+func (s *Store) ResolveReviewFlag(ctx context.Context, id int64, note string) error {
+	_, err := s.pool.Exec(ctx, `
+		UPDATE review_flags SET resolved = true, resolved_at = now(), resolved_note = $2
+		WHERE id = $1`, id, note)
 	return err
 }
 

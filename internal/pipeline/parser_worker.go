@@ -73,6 +73,12 @@ func processOneParse(ctx context.Context, deps Deps, job store.ParseJob) {
 	var status string
 	var reportJSON, notesJSON []byte
 	var nodeRows []store.NodeInsert
+	// flags (2026-07-24) & aiReviewedAt: lihat catatan store.ReviewFlagInsert
+	// dan kolom parse_snapshots.ai_reviewed_at. Tetap nil/kosong di jalur
+	// Parse() gagal di bawah — tidak ada apa pun untuk ditinjau bila parse
+	// sendiri tidak menghasilkan apa-apa.
+	var flags []store.ReviewFlagInsert
+	var aiReviewedAt *time.Time
 
 	if err != nil {
 		status = "FAIL"
@@ -87,6 +93,37 @@ func processOneParse(ctx context.Context, deps Deps, job store.ParseJob) {
 			notes = append(notes, w.Message)
 		}
 
+		// review_flags dari Diagnose (2026-07-24) — SETIAP Issue jadi satu
+		// baris level-dokumen (parser.Issue tidak membawa referensi node).
+		// Ini mekanisme UI yang diminta user: satu tabel sederhana untuk
+		// "apa saja yang perlu ditinjau", tanpa UI perlu mem-parse JSON
+		// report sendiri.
+		for _, is := range rep.Issues {
+			flags = append(flags, store.ReviewFlagInsert{
+				NodeIdx: -1, Source: "diagnose", Code: is.Code,
+				Severity: string(is.Severity), Message: is.Message,
+			})
+		}
+		// review_flags dari Node.Warnings — node-level (NodeIdx = indeks di
+		// res.Nodes, dipetakan ke id asli oleh InsertParseResult).
+		for i, n := range res.Nodes {
+			for _, w := range n.Warnings {
+				flags = append(flags, store.ReviewFlagInsert{
+					NodeIdx: i, Source: "parser_warning", Code: "NODE_WARNING",
+					Severity: string(w.Severity), Message: w.Message,
+				})
+			}
+		}
+
+		// tinjauanDebug menampung debug TEKS gabungan dari KEDUA jenis
+		// tinjauan model di bawah (ANCHOR_LEAK & teks yatim) — SATU
+		// builder bersama, ditulis SEKALI ke tinjauan.txt di akhir.
+		// [Diperbaiki 2026-07-24] Sebelumnya masing-masing blok menulis
+		// berkas sendiri-sendiri lewat tulisDebugTinjauan (yang MENIMPA,
+		// bukan menambah) — begitu blok teks-yatim ditambahkan, ia diam-
+		// diam menimpa hasil blok ANCHOR_LEAK yang jalan lebih dulu.
+		var tinjauanDebug strings.Builder
+
 		// Tinjauan model (2026-07-23) — "parser bermasalah, ada kecerdasan
 		// untuk memanggil model teks" (permintaan user): dipanggil HANYA
 		// untuk node yang PARSER SENDIRI curigai lewat sinyal
@@ -98,7 +135,9 @@ func processOneParse(ctx context.Context, deps Deps, job store.ParseJob) {
 		// pipeline ini (di sini malah lebih ketat: kode pun tidak
 		// menyimpulkan apa-apa dari jawabannya).
 		if idxs := parser.AnchorLeakNodes(res); len(idxs) > 0 && deps.Text != nil {
-			var tinjauanDebug strings.Builder
+			if deps.DebugResult {
+				tinjauanDebug.WriteString("--- Dipicu ANCHOR_LEAK ---\n\n")
+			}
 			for _, idx := range idxs {
 				n := res.Nodes[idx]
 				logx.Info("dokumen %d: menjalankan tinjauan model untuk node [%s/%s] hal %d-%d (ANCHOR_LEAK)",
@@ -125,11 +164,133 @@ func processOneParse(ctx context.Context, deps Deps, job store.ParseJob) {
 					notes = append(notes, fmt.Sprintf(
 						"Tinjauan model (node [%s/%s], hal %d-%d): %s",
 						n.Section, n.NodeType, n.StartPage, n.EndPage, penjelasan))
+					flags = append(flags, store.ReviewFlagInsert{
+						NodeIdx: idx, Source: "model_anchor_leak", Code: "ANCHOR_LEAK",
+						Severity: string(parser.SeverityNeedsReview), Message: penjelasan,
+					})
 				}
 			}
-			if deps.DebugResult && tinjauanDebug.Len() > 0 {
-				tulisDebugTinjauan(deps.DebugDir, job.ID, tinjauanDebug.String())
+		}
+
+		// Tinjauan model untuk teks YATIM (2026-07-24) — sinyal BERBEDA
+		// dari ANCHOR_LEAK di atas: bukan "penanda section di tengah
+		// teks", tapi "sepotong teks gagal dicocokkan ke struktur apa
+		// pun sama sekali" (parser.OrphanWarningNodes, lihat diagnose.go).
+		// Pengurai TAHU ada yang tidak cocok (makanya sudah jadi
+		// NODE_WARNINGS) tapi tidak tahu apakah itu artefak halaman yang
+		// aman diabaikan atau isi sungguhan yang butuh rumah sendiri —
+		// persis kelas keputusan regex yang disepakati minta bantuan
+		// thinking.gguf. Memakai fungsi AskTinjauan yang SAMA (bentuk
+		// jawaban {bermasalah, penjelasan} identik), hanya prompt-nya
+		// beda (prompts/orphan.md) dan teks yang dikirim menggabungkan
+		// TEKS NODE + setiap TEKS YATIM yang menempel, supaya model
+		// menilai keduanya sekaligus, bukan potongan yatim sendirian
+		// tanpa konteks. Prinsip sama persis: jawabannya TIDAK PERNAH
+		// mengubah nodeRows/database, murni catatan tambahan.
+		if idxs := parser.OrphanWarningNodes(res); len(idxs) > 0 && deps.Text != nil {
+			if deps.DebugResult {
+				if tinjauanDebug.Len() > 0 {
+					tinjauanDebug.WriteString("\n")
+				}
+				tinjauanDebug.WriteString("--- Dipicu teks yatim ---\n\n")
 			}
+			for _, idx := range idxs {
+				n := res.Nodes[idx]
+				var gabungan strings.Builder
+				fmt.Fprintf(&gabungan, "TEKS NODE:\n%s\n", n.Text)
+				for _, w := range n.Warnings {
+					if w.OrphanText != nil {
+						fmt.Fprintf(&gabungan, "\nTEKS YATIM (posisi: %s):\n%s\n", w.Position, *w.OrphanText)
+					}
+				}
+				logx.Info("dokumen %d: menjalankan tinjauan model untuk node [%s/%s] hal %d-%d (teks yatim)",
+					job.ID, n.Section, n.NodeType, n.StartPage, n.EndPage)
+				bermasalah, penjelasan, rawTinjau, terr := AskTinjauan(
+					ctx, deps.Text, deps.Prompts.OrphanReview, gabungan.String(), localllm.TextParams{})
+				if deps.DebugResult {
+					fmt.Fprintf(&tinjauanDebug, "=== NODE [%s/%s] hal %d-%d ===\n--- TEKS DIKIRIM ---\n%s\n--- JAWABAN MENTAH MODEL ---\n%s\n",
+						n.Section, n.NodeType, n.StartPage, n.EndPage, gabungan.String(), rawTinjau)
+					if terr != nil {
+						fmt.Fprintf(&tinjauanDebug, "--- GAGAL DIURAI: %v ---\n", terr)
+					}
+					tinjauanDebug.WriteString("\n")
+				}
+				if terr != nil {
+					logx.Warn("dokumen %d: tinjauan model (teks yatim) gagal untuk node [%s/%s]: %v",
+						job.ID, n.Section, n.NodeType, terr)
+					continue
+				}
+				// HANYA dicatat kalau model menilai teks yatim ini
+				// benar-benar isi sungguhan yang butuh rumah — bukan
+				// artefak yang aman diabaikan (bermasalah=false tidak
+				// perlu membanjiri extraction_notes).
+				if bermasalah {
+					notes = append(notes, fmt.Sprintf(
+						"Tinjauan model — teks yatim (node [%s/%s], hal %d-%d): %s",
+						n.Section, n.NodeType, n.StartPage, n.EndPage, penjelasan))
+					flags = append(flags, store.ReviewFlagInsert{
+						NodeIdx: idx, Source: "model_orphan_review", Code: "ORPHAN_REVIEW",
+						Severity: string(parser.SeverityNeedsReview), Message: penjelasan,
+					})
+				}
+			}
+		}
+
+		// Tinjauan model level-DOKUMEN (2026-07-24, permintaan user: "AI
+		// yang periksa hasil parser terakhir, setiap selesai 1 dokumen").
+		// BEDA dari dua blok di atas: bukan dipicu sinyal tertentu (tidak
+		// menunggu ANCHOR_LEAK/teks yatim) — SELALU dijalankan sekali per
+		// dokumen, sebagai pemeriksaan terakhir. TAPI sengaja diberi
+		// RINGKASAN terstruktur (Stats + daftar Issue), BUKAN teks lengkap
+		// dokumen — model kecil yang dipakai di sini tidak cocok disuruh
+		// membaca ulang seluruh dokumen dan menilai isi hukumnya; ringkasan
+		// menjaga tugasnya tetap sanity-check terbatas (lihat
+		// prompts/document_review.md) yang benar-benar dalam jangkauannya.
+		// Prinsip sama: jawabannya TIDAK PERNAH mengubah nodeRows/database.
+		if deps.Text != nil {
+			var ringkasan strings.Builder
+			fmt.Fprintf(&ringkasan, "STATUS PARSE: %s\n\n", status)
+			fmt.Fprintf(&ringkasan, "RINGKASAN STRUKTUR:\n"+
+				"- Bab: %d\n- Bagian: %d\n- Paragraf: %d\n- Pasal: %d\n- Ayat: %d\n- Diktum: %d\n\n",
+				rep.Stats.Bab, rep.Stats.Bagian, rep.Stats.Paragraf, rep.Stats.Pasal, rep.Stats.Ayat, rep.Stats.Diktum)
+			if len(rep.Issues) == 0 {
+				ringkasan.WriteString("MASALAH YANG SUDAH TERDETEKSI OTOMATIS: tidak ada\n")
+			} else {
+				fmt.Fprintf(&ringkasan, "MASALAH YANG SUDAH TERDETEKSI OTOMATIS (%d):\n", len(rep.Issues))
+				for _, is := range rep.Issues {
+					fmt.Fprintf(&ringkasan, "- [%s] %s\n", is.Code, is.Message)
+				}
+			}
+			logx.Info("dokumen %d: menjalankan tinjauan model level-dokumen", job.ID)
+			bermasalah, penjelasan, rawTinjau, terr := AskTinjauan(
+				ctx, deps.Text, deps.Prompts.DocumentReview, ringkasan.String(), localllm.TextParams{})
+			if deps.DebugResult {
+				if tinjauanDebug.Len() > 0 {
+					tinjauanDebug.WriteString("\n")
+				}
+				fmt.Fprintf(&tinjauanDebug, "--- Dipicu tinjauan level-dokumen ---\n\n=== RINGKASAN DIKIRIM ===\n%s\n--- JAWABAN MENTAH MODEL ---\n%s\n",
+					ringkasan.String(), rawTinjau)
+				if terr != nil {
+					fmt.Fprintf(&tinjauanDebug, "--- GAGAL DIURAI: %v ---\n", terr)
+				}
+			}
+			if terr != nil {
+				logx.Warn("dokumen %d: tinjauan model level-dokumen gagal: %v", job.ID, terr)
+			} else {
+				now := time.Now()
+				aiReviewedAt = &now
+				if bermasalah {
+					notes = append(notes, fmt.Sprintf("Tinjauan model — ringkasan dokumen: %s", penjelasan))
+					flags = append(flags, store.ReviewFlagInsert{
+						NodeIdx: -1, Source: "model_document_review", Code: "DOCUMENT_REVIEW",
+						Severity: string(parser.SeverityNeedsReview), Message: penjelasan,
+					})
+				}
+			}
+		}
+
+		if deps.DebugResult && tinjauanDebug.Len() > 0 {
+			tulisDebugTinjauan(deps.DebugDir, job.ID, tinjauanDebug.String())
 		}
 
 		notesJSON, _ = json.Marshal(notes)
@@ -142,12 +303,11 @@ func processOneParse(ctx context.Context, deps Deps, job store.ParseJob) {
 			tulisDebugParseTree(deps.DebugDir, job.ID, formatNodeTreeJSON(status, nodeRows))
 		}
 	}
-
-	if err := st.InsertParseResult(ctx, job.ID, status, reportJSON, notesJSON, nodeRows); err != nil {
+	if err := st.InsertParseResult(ctx, job.ID, status, reportJSON, notesJSON, nodeRows, flags, aiReviewedAt); err != nil {
 		logx.Fail(fmt.Sprintf("dokumen %d", job.ID), "simpan hasil parse: %v", err)
 		return
 	}
-	logx.OK("parse selesai · dokumen %d · status=%s · %d node", job.ID, status, len(nodeRows))
+	logx.OK("parse selesai · dokumen %d · status=%s · %d node · %d flag tinjauan", job.ID, status, len(nodeRows), len(flags))
 }
 
 // mapNodesToInserts memetakan parser.Node (flat, per-baris, konteks label
@@ -202,6 +362,8 @@ func mapNodesToInserts(nodes []parser.Node) []store.NodeInsert {
 			Content: n.Text, StartPage: n.StartPage, EndPage: n.EndPage,
 			OrderIndex: int64(n.DocOrder),
 			IsAppendix: n.IsAppendix,
+			IsDictum:   n.IsDictum,
+			IsTitle:    n.IsTitle,
 		}
 		if warnBytes, err := json.Marshal(n.Warnings); err == nil {
 			row.Warnings = warnBytes

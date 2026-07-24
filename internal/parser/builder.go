@@ -243,6 +243,31 @@ func (b *builder) foldAngka(label, text string) {
 	b.appendLabeledLine("("+label+")", text)
 }
 
+// emitSectionHeader menambahkan node untuk baris penanda section konsiderans
+// itu sendiri ("Menimbang :", "Mengingat :", "Memperhatikan :") — dipanggil
+// dari parseFlat SEBELUM memproses sisa teks setelah ":" pada baris yang
+// sama (bila ada), supaya kata kuncinya tidak lagi hilang dari data (lihat
+// NodeSectionHeader di types.go). Memakai kanal order oiHuruf yang sama
+// dengan emitItem karena keduanya berbagi urutan datar dalam section ini.
+func (b *builder) emitSectionHeader(text string) {
+	b.oiHuruf += orderStep
+	n := Node{
+		Section:    b.section,
+		NodeType:   NodeSectionHeader,
+		OrderIndex: b.oiHuruf,
+		DocOrder:   b.nextDoc(),
+		Text:       text,
+		StartPage:  b.curLinePage,
+		EndPage:    b.curLinePage,
+	}
+	b.nodes = append(b.nodes, n)
+	b.activeIdx = len(b.nodes) - 1
+	if len(b.pendingOrphan) > 0 {
+		b.attachOrphan(b.activeIdx, "before", b.pendingOrphan)
+		b.pendingOrphan = nil
+	}
+}
+
 // flushOrphan dipanggil di akhir segmen: bila masih ada orphan tertunda tanpa
 // node berikutnya, tempel ke node terakhir sebagai "after"; jika tak ada node
 // sama sekali, kembalikan true agar caller mengangkatnya ke level dokumen.

@@ -127,11 +127,24 @@ CREATE TABLE IF NOT EXISTS documents (
     classified_at     timestamptz,
     ocr_completed_at  timestamptz,
     parsed_at         timestamptz,
+    -- parse_status (2026-07-24, permintaan user: "pastikan status fail atau
+    -- success ada di db untuk UI"): salinan REDUNDAN dari
+    -- parse_snapshots.status ('SUCCESS'|'WARNING'|'FAIL'), ditulis di
+    -- transaksi yang sama oleh InsertParseResult. Datanya SUDAH ada lewat
+    -- join ke parse_snapshots (document_id = PK-nya di sana), tapi kolom ini
+    -- menghindari join tiap kali UI hanya ingin daftar dokumen + status
+    -- ringkasnya. Sumber kebenaran tetap parse_snapshots.status.
+    parse_status      text,
     created_at        timestamptz NOT NULL DEFAULT now(),
     updated_at        timestamptz NOT NULL DEFAULT now()
 );
 
+-- Untuk database yang sudah dibuat SEBELUM kolom parse_status ditambahkan
+-- (2026-07-24) — pola sama seperti kolom lain di atas, aman dijalankan ulang.
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS parse_status text;
+
 CREATE INDEX IF NOT EXISTS idx_documents_status ON documents (status);
+CREATE INDEX IF NOT EXISTS idx_documents_parse_status ON documents (parse_status);
 CREATE INDEX IF NOT EXISTS idx_documents_sha ON documents (pdf_sha256);
 CREATE INDEX IF NOT EXISTS idx_documents_canonical ON documents (canonical_key);
 
@@ -199,8 +212,18 @@ CREATE TABLE IF NOT EXISTS parse_snapshots (
     status            text NOT NULL,
     report            jsonb NOT NULL DEFAULT '{}'::jsonb,
     extraction_notes  jsonb NOT NULL DEFAULT '[]'::jsonb,
+    -- ai_reviewed_at (2026-07-24, permintaan user: "AI yang periksa hasil
+    -- parser terakhir, setiap selesai 1 dokumen") — dicatat SETIAP kali
+    -- pemeriksaan AI post-parse (AskDocumentReview, lihat thinking.go)
+    -- SELESAI dijalankan untuk dokumen ini, TERLEPAS apakah ia menemukan
+    -- sesuatu atau tidak. Beda tujuan dari review_flags di bawah: kolom ini
+    -- menjawab "sudah diperiksa AI belum?" (untuk UI); review_flags
+    -- menjawab "apa saja yang perlu ditinjau?". NULL berarti belum pernah
+    -- diperiksa (mis. model teks sedang tidak tersedia saat parse ini).
+    ai_reviewed_at    timestamptz,
     parsed_at         timestamptz NOT NULL DEFAULT now()
 );
+ALTER TABLE parse_snapshots ADD COLUMN IF NOT EXISTS ai_reviewed_at timestamptz;
 
 -- =====================================================================
 -- nodes — hasil parse siap-edit (drag-drop/relabel di UI). Diisi SEKALI
@@ -257,8 +280,20 @@ CREATE TABLE IF NOT EXISTS nodes (
     -- diisi otomatis oleh parser (lihat internal/parser/parse_lampiran.go),
     -- bukan sesuatu yang pernah diset manual.
     is_appendix        boolean NOT NULL DEFAULT false,
+    -- is_dictum / is_title (2026-07-24, permintaan user): lihat catatan
+    -- lengkap pada Node.IsDictum/IsTitle di internal/parser/types.go dan
+    -- classifyContentFlags di internal/parser/parser.go. Dihitung otomatis
+    -- oleh parser, bukan diset manual — sama seperti is_appendix.
+    is_dictum          boolean NOT NULL DEFAULT false,
+    is_title           boolean NOT NULL DEFAULT false,
     created_at         timestamptz NOT NULL DEFAULT now()
 );
+
+-- Untuk database yang sudah dibuat SEBELUM kolom is_dictum/is_title
+-- ditambahkan (2026-07-24) — pola sama seperti diktum_number/content_tsv di
+-- bawah, aman dijalankan ulang lewat IF NOT EXISTS.
+ALTER TABLE nodes ADD COLUMN IF NOT EXISTS is_dictum boolean NOT NULL DEFAULT false;
+ALTER TABLE nodes ADD COLUMN IF NOT EXISTS is_title  boolean NOT NULL DEFAULT false;
 
 -- Untuk database yang sudah dibuat SEBELUM kolom diktum_number ditambahkan
 -- (2026-07-22) — pola sama seperti content_tsv di bawah, aman dijalankan
@@ -270,10 +305,80 @@ CREATE INDEX IF NOT EXISTS idx_nodes_doc_pasal_ayat ON nodes (document_id, pasal
 CREATE INDEX IF NOT EXISTS idx_nodes_doc_diktum ON nodes (document_id, diktum_number);
 CREATE INDEX IF NOT EXISTS idx_nodes_parent ON nodes (parent_id);
 CREATE INDEX IF NOT EXISTS idx_nodes_doc_page ON nodes (document_id, start_page);
+CREATE INDEX IF NOT EXISTS idx_nodes_dictum_title ON nodes (document_id, is_dictum, is_title);
 
 ALTER TABLE nodes ADD COLUMN IF NOT EXISTS content_tsv tsvector
     GENERATED ALWAYS AS (to_tsvector('indonesian', coalesce(content, ''))) STORED;
 CREATE INDEX IF NOT EXISTS idx_nodes_content_tsv ON nodes USING GIN (content_tsv);
+
+-- =====================================================================
+-- review_flags (2026-07-24, permintaan user: "mekanisme yang memudahkan
+-- saya cek kesalahan parsing, yang bisa saya tampilkan di web UI nanti").
+--
+-- SATU baris = SATU hal yang layak ditinjau manusia, dari SATU sumber:
+--   - 'diagnose'            — Issue dari parser.Diagnose (PASAL_GAP,
+--                              NO_PASAL, ANCHOR_LEAK, EMPTY_PASAL, dst).
+--                              Selalu document-level (node_id NULL) —
+--                              parser.Issue tidak membawa referensi node.
+--   - 'parser_warning'      — Node.Warnings (mis. "Teks tidak dikenali
+--                              struktur; perlu tinjauan") — SELALU
+--                              node-level.
+--   - 'model_anchor_leak'   — AskTinjauan (tinjau.md) MENGKONFIRMASI
+--                              (bermasalah=true) node dari
+--                              parser.AnchorLeakNodes.
+--   - 'model_orphan_review' — AskTinjauan (orphan.md) MENGKONFIRMASI
+--                              node dari parser.OrphanWarningNodes.
+--   - 'model_document_review' — AskDocumentReview (document_review.md)
+--                              MENGKONFIRMASI ada yang mencurigakan pada
+--                              RINGKASAN dokumen (lihat thinking.go) —
+--                              document-level.
+--
+-- SENGAJA HANYA baris yang benar-benar actionable (bukan "sudah dicek,
+-- aman") — sama seperti extraction_notes sebelumnya: kalau setiap
+-- pemeriksaan model yang "aman" juga bikin baris, tabel ini membanjir
+-- tanpa nilai tinjau. "Apakah dokumen X sudah diperiksa AI" dijawab
+-- kolom parse_snapshots.ai_reviewed_at, BUKAN oleh ada/tidaknya baris
+-- di sini.
+--
+-- resolved/resolved_note: UI web menandai satu baris selesai ditinjau
+-- TANPA mengubah data hasil parse itu sendiri (koreksi data tetap lewat
+-- edit langsung di tabel nodes, seperti sudah disepakati — lihat catatan
+-- di InsertParseResult).
+CREATE TABLE IF NOT EXISTS review_flags (
+    id            bigserial PRIMARY KEY,
+    document_id   bigint NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    node_id       bigint REFERENCES nodes(id) ON DELETE SET NULL,
+    source        text NOT NULL,   -- lihat daftar di atas
+    code          text NOT NULL,   -- 'PASAL_GAP' | 'NODE_WARNING' | 'ANCHOR_LEAK' | dst
+    severity      text NOT NULL,   -- samakan dengan parser.Severity: 'info' | 'needs_review'
+    message       text NOT NULL,
+    resolved      boolean NOT NULL DEFAULT false,
+    resolved_at   timestamptz,
+    resolved_note text,
+    created_at    timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_review_flags_document ON review_flags (document_id);
+CREATE INDEX IF NOT EXISTS idx_review_flags_unresolved ON review_flags (document_id) WHERE NOT resolved;
+CREATE INDEX IF NOT EXISTS idx_review_flags_node ON review_flags (node_id);
+
+-- v_review_queue: SATU query yang langsung dipakai halaman daftar UI web
+-- ("dokumen mana yang butuh ditinjau") — jumlah flag belum-selesai per
+-- dokumen plus identitas ringkasnya, tanpa UI perlu menyusun JOIN/GROUP BY
+-- sendiri. Detail per-flag (untuk halaman satu dokumen) tetap query
+-- langsung ke review_flags WHERE document_id = ...
+CREATE OR REPLACE VIEW v_review_queue AS
+SELECT
+    d.id                AS document_id,
+    d.jenis, d.wilayah, d.nomor, d.tahun, d.tentang,
+    d.parse_status,
+    ps.ai_reviewed_at,
+    COUNT(rf.id) FILTER (WHERE NOT rf.resolved)                            AS unresolved_count,
+    COUNT(rf.id) FILTER (WHERE NOT rf.resolved AND rf.severity = 'needs_review') AS unresolved_needs_review,
+    MAX(rf.created_at)                                                      AS last_flag_at
+FROM documents d
+JOIN parse_snapshots ps ON ps.document_id = d.id
+LEFT JOIN review_flags rf ON rf.document_id = d.id
+GROUP BY d.id, ps.ai_reviewed_at;
 
 -- =====================================================================
 -- Trigger label flat (bab_number/bagian_label/paragraf_label/pasal_number/

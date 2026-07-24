@@ -9,6 +9,7 @@ import (
 	"github.com/fuadarradhi/uuparser/internal/extractor"
 	"github.com/fuadarradhi/uuparser/internal/localllm"
 	"github.com/fuadarradhi/uuparser/internal/logx"
+	"github.com/fuadarradhi/uuparser/internal/parser"
 	"github.com/fuadarradhi/uuparser/internal/prompts"
 	"github.com/fuadarradhi/uuparser/internal/store"
 )
@@ -79,6 +80,20 @@ func drainOCR(ctx context.Context, deps Deps) (workedAny bool) {
 		}
 		workedAny = true
 		processDocument(ctx, deps, job)
+		// [Ditambahkan 2026-07-24, permintaan user] SEBELUMNYA tidak ada
+		// panggilan ini di sini sama sekali — logx.Progress (baris \r yang
+		// menimpa dirinya sendiri) terus menimpa lintas BATAS ANTAR DOKUMEN,
+		// bukan cuma antar halaman dalam satu dokumen. Akibatnya seluruh
+		// siklus hanya menyisakan SATU baris kemajuan yang terus berubah di
+		// konsol — dokumen yang selesai tanpa peringatan apa pun tidak
+		// meninggalkan jejak permanen sama sekali (baris permanen yang
+		// sempat terlihat sebelumnya ternyata cuma kebocoran stderr MuPDF
+		// yang memaksa newline, sudah diperbaiki terpisah di raster.Close).
+		// FinishProgress mengubah baris \r yang sedang aktif jadi baris
+		// permanen (newline sungguhan) sebelum dokumen berikutnya mulai
+		// menimpa lagi — menjamin SETIAP dokumen selalu meninggalkan
+		// setidaknya satu baris di riwayat terminal, sesuai permintaan user.
+		logx.FinishProgress()
 	}
 }
 
@@ -217,15 +232,28 @@ func (d *docSink) classify(ctx context.Context, halaman string) (bool, error) {
 		if d.deps.LowMemory {
 			d.deps.Text.Release()
 		}
-		if alasan == "" {
-			alasan = "model menilai dokumen ini bukan produk hukum"
+		// [Ditambahkan 2026-07-24, permintaan user] Model kecil bisa keliru
+		// menilai dokumen yang formatnya menyimpang (mis. Surat Edaran tanpa
+		// "MEMUTUSKAN" formal) sebagai "bukan produk hukum". Bila halaman
+		// SUDAH memuat salah satu penanda konsiderans kuat (Menimbang/
+		// Mengingat/Memutuskan/Menetapkan), sinyal deterministik itu MENANG
+		// atas kata model — konsisten dengan prinsip "model membaca, kode
+		// menyimpulkan" — dan dokumen dilanjutkan ke tahap identitas alih-
+		// alih ditolak. Permintaan eksplisit user: jangan ada dokumen
+		// berformat begitu yang tertolak.
+		if parser.HasKonsideransAnchor(halaman) {
+			logx.Info("gerbang model menilai bukan produk hukum (%s), tapi halaman memuat penanda konsiderans (Menimbang/Mengingat/Memutuskan/Menetapkan) — diterima, lanjut ke identitas", alasan)
+		} else {
+			if alasan == "" {
+				alasan = "model menilai dokumen ini bukan produk hukum"
+			}
+			d.debug.catatIdentitas("DITOLAK — bukan produk hukum: "+alasan, store.DocMeta{})
+			if err := d.deps.Store.RejectNotRegulation(ctx, d.docID, alasan); err != nil {
+				return true, err
+			}
+			d.stopped = "bukan peraturan: " + alasan
+			return true, nil
 		}
-		d.debug.catatIdentitas("DITOLAK — bukan produk hukum: "+alasan, store.DocMeta{})
-		if err := d.deps.Store.RejectNotRegulation(ctx, d.docID, alasan); err != nil {
-			return true, err
-		}
-		d.stopped = "bukan peraturan: " + alasan
-		return true, nil
 	}
 
 	// Tahap 2 — identitas. Model hanya menyalin apa yang tertulis; pemetaan
@@ -247,6 +275,21 @@ func (d *docSink) classify(ctx context.Context, halaman string) (bool, error) {
 	if !IsJenisValid(meta.Jenis) || !IsWilayahValid(meta.Wilayah) {
 		if d.deps.LowMemory {
 			d.deps.Text.Release()
+		}
+		// [Ditambahkan 2026-07-24, permintaan user] Sama seperti gerbang di
+		// atas: whitelist jenis/wilayah ada supaya kolom itu tetap konsisten
+		// untuk query, tapi TIDAK boleh sampai membuang dokumen yang jelas-
+		// jelas berformat produk hukum hanya karena jabatan penandatangannya
+		// tidak ada di daftar (mis. "SURAT EDARAN SEKRETARIS DAERAH ..." —
+		// whitelist hanya mendaftar MENTERI/GUBERNUR/BUPATI/WALI KOTA).
+		// Jenis/wilayah TETAP disimpan apa adanya (tidak dipaksa cocok
+		// whitelist) — hanya gerbang tolak-nya yang dilewati; pembersihan
+		// taksonomi jenis/wilayah yang lebih luas tetap tugas lain, bukan
+		// alasan membuang datanya sekarang.
+		if parser.HasKonsideransAnchor(halaman) {
+			logx.Info("jenis/wilayah di luar whitelist (jenis=%q wilayah=%q) tapi halaman memuat penanda konsiderans kuat — diterima apa adanya, perlu tinjauan taksonomi jenis/wilayah nanti",
+				meta.Jenis, meta.Wilayah)
+			return d.finishClassify(ctx, meta, "model teks (jenis/wilayah di luar whitelist, diterima karena penanda konsiderans kuat)")
 		}
 		alasanTolak := fmt.Sprintf("jenis atau wilayah tidak dikenal: jenis=%q wilayah=%q",
 			meta.Jenis, meta.Wilayah)
