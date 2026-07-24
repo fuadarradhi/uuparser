@@ -3,6 +3,7 @@ package pipeline
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -69,7 +70,7 @@ func processOneParse(ctx context.Context, deps Deps, job store.ParseJob) {
 		pages = append(pages, text)
 	}
 
-	res, err := parser.Parse(pages)
+	res, err := parser.ParseAllowNonRegulation(pages, job.Jenis)
 	var status string
 	var reportJSON, notesJSON []byte
 	var nodeRows []store.NodeInsert
@@ -82,6 +83,29 @@ func processOneParse(ctx context.Context, deps Deps, job store.ParseJob) {
 		status = "FAIL"
 		reportJSON, _ = json.Marshal(map[string]string{"error": err.Error()})
 		notesJSON = []byte("[]")
+		// [Diperbaiki 2026-07-24] SEBELUMNYA tidak ada apa pun ditulis ke
+		// debug saat Parse() gagal — dokumen yang ditolak gerbang
+		// deterministik parser (mis. Surat Edaran tanpa Pasal/BAB/
+		// Menimbang/Mengingat/Memutuskan/Menetapkan sama sekali) jadi
+		// TIDAK PUNYA parse.txt sama sekali, seolah tahap parse belum
+		// pernah jalan — padahal sudah, cuma gagal. Sekarang alasannya
+		// tetap ditulis supaya terlihat, bukan hilang.
+		if deps.DebugResult {
+			var b strings.Builder
+			fmt.Fprintf(&b, "=== PARSE GAGAL — dokumen %d ===\n\nError: %v\n", job.ID, err)
+			if errors.Is(err, parser.ErrNotLegalDocument) {
+				b.WriteString("\nGerbang deterministik parser (internal/parser/classify.go) TIDAK " +
+					"menemukan penanda struktur hukum formal (Pasal / Diktum bernomor kata / " +
+					"BAB+konsiderans / Menimbang-Mengingat-Memperhatikan-Memutuskan-Menetapkan) " +
+					"di SELURUH halaman dokumen ini.\n\n" +
+					"Ini gerbang TERPISAH dari klasifikasi tahap OCR (yang menerima dokumen ini " +
+					"berdasarkan penilaian model, bukan pola deterministik) — dokumen bisa saja " +
+					"lolos tahap OCR (ocr.txt ada) tapi tetap gagal di sini kalau tidak memuat " +
+					"satu pun penanda di atas. Sering terjadi pada Surat Edaran/Instruksi yang " +
+					"formatnya cuma poin bernomor biasa, tanpa konsiderans formal sama sekali.\n")
+			}
+			tulisDebugParse(deps.DebugDir, job.ID, b.String())
+		}
 	} else {
 		rep := parser.Diagnose(res)
 		status = string(rep.Status)

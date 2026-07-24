@@ -70,7 +70,7 @@ func drainOCR(ctx context.Context, deps Deps) (workedAny bool) {
 		if ctx.Err() != nil {
 			return workedAny
 		}
-		job, err := deps.Store.ClaimForOCR(ctx, deps.MaxPage)
+		job, err := deps.Store.ClaimForOCR(ctx, deps.PageCountRange.Min, deps.PageCountRange.Max, deps.PageCountOrder)
 		if err == store.ErrNoWork {
 			return workedAny
 		}
@@ -308,7 +308,8 @@ func (d *docSink) classify(ctx context.Context, halaman string, page int) (bool,
 		if parser.HasKonsideransAnchor(halaman) {
 			logx.Info("gerbang model menilai bukan produk hukum (%s), tapi halaman memuat penanda konsiderans (Menimbang/Mengingat/Memutuskan/Menetapkan) — diterima, lanjut ke identitas", alasan)
 		} else {
-			// MIN_PAGE (konsep dikoreksi 2026-07-24): BUKAN syarat jumlah
+			// CLASSIFY_PAGE_WINDOW (field Go: deps.MinPage; env diganti
+			// nama 2026-07-24 dari MIN_PAGE): BUKAN syarat jumlah
 			// halaman minimum dokumen (itu salah, sudah dihapus) — ini
 			// jendela BERAPA HALAMAN yang boleh dicoba sebelum benar-benar
 			// menyerah menolak dokumen sebagai "bukan peraturan". Halaman
@@ -324,10 +325,10 @@ func (d *docSink) classify(ctx context.Context, halaman string, page int) (bool,
 			d.classifyTried++
 			window := d.deps.MinPage
 			if window <= 0 {
-				window = 1 // MIN_PAGE=0/nonaktif: perilaku minimal, putuskan dari halaman pertama yang dicoba, tanpa menunggu halaman lain
+				window = 1 // CLASSIFY_PAGE_WINDOW=0/nonaktif: perilaku minimal, putuskan dari halaman pertama yang dicoba, tanpa menunggu halaman lain
 			}
 			if d.classifyTried < window && page < d.total {
-				logx.Info("gerbang model menilai bukan produk hukum di hal %d (%s) — masih dalam jendela MIN_PAGE=%d, coba halaman berikutnya sebelum menyerah",
+				logx.Info("gerbang model menilai bukan produk hukum di hal %d (%s) — masih dalam jendela CLASSIFY_PAGE_WINDOW=%d, coba halaman berikutnya sebelum menyerah",
 					page, alasan, window)
 				return false, nil
 			}
@@ -518,9 +519,9 @@ func processDocument(ctx context.Context, deps Deps, job store.OCRJob) {
 	// ulang dengan membuka PDF lagi di sini. Jatuh ke extractor.PageCount
 	// HANYA sebagai jaga-jaga (dokumen dari sebelum fitur ini ada, atau
 	// penghitungan saat unduh gagal). Angka ASLI ini diteruskan ke
-	// resolveTextSource — TIDAK ADA lagi pemotongan MaxPage di sini:
+	// resolveTextSource — TIDAK ADA lagi pemotongan per-halaman di sini:
 	// dokumen yang lolos ClaimForOCR (sudah disaring di sana berdasar
-	// MAX_PAGE) selalu diproses UTUH sampai halaman terakhirnya.
+	// PAGE_COUNT_RANGE) selalu diproses UTUH sampai halaman terakhirnya.
 	nAsli, perr := documentPageCount(ctx, deps, job)
 	if perr == nil {
 		sink.total = nAsli
@@ -556,7 +557,7 @@ func processDocument(ctx context.Context, deps Deps, job store.OCRJob) {
 
 	// textcheck (2026-07-24): coba dulu halaman 1 (lalu 2) — bila lapisan
 	// teks PDF (`pdftotext`) terbukti sama-akurat dengan OCR, sisa dokumen
-	// dituntaskan lewat pdftotext (jauh lebih murah, TANPA batas MaxPage)
+	// dituntaskan lewat pdftotext (jauh lebih murah, TANPA batas PageCountRange)
 	// dan fungsi ini SUDAH SELESAI menangani dokumennya. Lihat textsource.go.
 	handled, useOCR, terr := resolveTextSource(ctx, deps, sink, job, sink.total)
 	if terr != nil {
@@ -590,9 +591,10 @@ func processDocument(ctx context.Context, deps Deps, job store.OCRJob) {
 		OCRClient: deps.Vision, OCRMaxTokens: ocrMaxTokens,
 		// MaxPage sengaja TIDAK diisi (nol = tanpa batas): pemotongan
 		// per-dokumen sudah digantikan skema baru — dokumen yang
-		// KESELURUHAN halamannya melebihi MAX_PAGE tidak pernah sampai ke
-		// titik ini sama sekali (disaring di ClaimForOCR). Begitu sebuah
-		// dokumen diambil, ia SELALU diproses utuh sampai halaman terakhir.
+		// KESELURUHAN halamannya di luar PAGE_COUNT_RANGE tidak pernah
+		// sampai ke titik ini sama sekali (disaring di ClaimForOCR).
+		// Begitu sebuah dokumen diambil, ia SELALU diproses utuh sampai
+		// halaman terakhir.
 	}, sink)
 
 	total, stopped, err := ex.Document(ctx, job.PDFPath)

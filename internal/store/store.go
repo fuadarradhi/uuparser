@@ -234,9 +234,33 @@ type OCRJob struct {
 // utama (setelah dokumen 'processing' yang harus didahulukan, dan prioritas
 // sumber) — dokumen PENDEK dikerjakan lebih dulu, permintaan eksplisit user
 // supaya iterasi uji parser tidak tersandera satu peraturan tebal.
-func (s *Store) ClaimForOCR(ctx context.Context, maxPage int) (OCRJob, error) {
+// ClaimForOCR mengambil dokumen yang sudah terunduh dan belum diproses.
+//
+// minPage/maxPage (2026-07-24, dari config.PageCountRange/env
+// PAGE_COUNT_RANGE — sebelumnya cuma maxPage/PAGE_COUNT_MAX): dokumen yang
+// total_pages-nya DI LUAR rentang [minPage, maxPage] TIDAK PERNAH diambil
+// sama sekali — bukan dipotong di tengah. <=0 pada salah satu sisi berarti
+// sisi itu tidak dibatasi. total_pages IS NULL (penghitungan saat unduh
+// gagal) TETAP diambil seperti biasa terlepas dari kedua batas ini — supaya
+// dokumen begitu tidak tersangkut permanen hanya karena jumlah halamannya
+// tidak diketahui.
+//
+// order ("asc" | "desc", lihat config.PageCountOrder/normalizeSortOrder —
+// pemanggil bertanggung jawab memvalidasi/menormalisasi SEBELUM sampai
+// sini): arah urutan total_pages. "asc" (bawaan) = dokumen PENDEK duluan.
+// "desc" = dokumen PANJANG duluan (permintaan user, 2026-07-24, supaya bisa
+// sengaja uji dokumen paling tebal lebih dulu). Nilai APA PUN selain persis
+// "desc" (termasuk kosong/typo) diperlakukan sebagai "asc" — dibangun lewat
+// fmt.Sprintf ke klausa ORDER BY karena arah sort tidak bisa di-bind lewat
+// placeholder biasa; AMAN karena nilainya HANYA PERNAH salah satu dari dua
+// literal tetap ini, tidak pernah data dari luar.
+func (s *Store) ClaimForOCR(ctx context.Context, minPage, maxPage int, order string) (OCRJob, error) {
+	dir := "ASC"
+	if order == "desc" {
+		dir = "DESC"
+	}
 	var j OCRJob
-	err := s.pool.QueryRow(ctx, `
+	query := fmt.Sprintf(`
 		UPDATE documents SET status = 'processing', updated_at = now()
 		WHERE id = (
 			-- 'processing' ikut diambil: itu dokumen yang terhenti di tengah
@@ -249,19 +273,22 @@ func (s *Store) ClaimForOCR(ctx context.Context, maxPage int) (OCRJob, error) {
 			SELECT d.id FROM documents d
 			LEFT JOIN sources s ON s.id = d.first_source_id
 			WHERE d.status IN ('downloaded', 'processing')
-			      AND ($1 <= 0 OR d.total_pages IS NULL OR d.total_pages <= $1)
+			      AND (d.total_pages IS NULL
+			           OR (($1 <= 0 OR d.total_pages <= $1)
+			               AND ($2 <= 0 OR d.total_pages >= $2)))
 			ORDER BY (d.status = 'processing') DESC,
 			         COALESCE(s.priority, 1000),
-			         d.total_pages ASC NULLS LAST,
+			         d.total_pages %s NULLS LAST,
 			         d.sort_tahun DESC NULLS LAST,
 			         d.sort_nomor DESC NULLS LAST,
 			         d.created_at
 			LIMIT 1 FOR UPDATE OF d SKIP LOCKED
 		)
-		RETURNING id, pdf_path`, maxPage,
-	).Scan(&j.ID, &j.PDFPath)
+		RETURNING id, pdf_path`, dir)
+	err := s.pool.QueryRow(ctx, query, maxPage, minPage).Scan(&j.ID, &j.PDFPath)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return OCRJob{}, ErrNoWork
+
 	}
 	return j, err
 }
@@ -628,10 +655,16 @@ func (s *Store) MarkOCRDone(ctx context.Context, id int64, totalPages int) error
 type ParseJob struct {
 	ID       int64
 	NumPages int
+	// Jenis (2026-07-24): dibawa dari documents.jenis (hasil classify tahap
+	// OCR) supaya parser_worker bisa memutuskan bypass gerbang deterministik
+	// parser untuk jenis TERTENTU yang memang tidak selalu punya Pasal/BAB
+	// (mis. "SURAT EDARAN") — lihat parser.Parse / ParseAllowNonRegulation.
+	Jenis string
 }
 
 func (s *Store) ClaimForParse(ctx context.Context) (ParseJob, error) {
 	var j ParseJob
+	var jenis *string
 	err := s.pool.QueryRow(ctx, `
 		UPDATE documents SET status = 'parsing', updated_at = now()
 		WHERE id = (
@@ -644,11 +677,14 @@ func (s *Store) ClaimForParse(ctx context.Context) (ParseJob, error) {
 			         d.ocr_completed_at
 			LIMIT 1 FOR UPDATE OF d SKIP LOCKED
 		)
-		RETURNING id,
+		RETURNING id, jenis,
 			(SELECT COUNT(*) FROM document_pages WHERE document_id = documents.id)`,
-	).Scan(&j.ID, &j.NumPages)
+	).Scan(&j.ID, &jenis, &j.NumPages)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return ParseJob{}, ErrNoWork
+	}
+	if jenis != nil {
+		j.Jenis = *jenis
 	}
 	return j, err
 }

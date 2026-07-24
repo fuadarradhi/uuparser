@@ -81,6 +81,16 @@ func segmentize(lines []Line, cls classifyResult) ([]segment, []Warning) {
 		}
 	}
 
+	// fullyNarrative (2026-07-24, permintaan user): TIDAK ADA anchor apa
+	// pun ditemukan — bukan cuma tanpa Pasal, tapi juga tanpa Menimbang/
+	// Mengingat/Memperhatikan/Memutuskan/Menetapkan/BAB/Diktum sama
+	// sekali. Ditemukan nyata pada Surat Edaran yang langsung membuka
+	// paragraf naratif ("Dalam rangka ...") lalu poin bernomor, tanpa kata
+	// kunci konsiderans apa pun. Peraturan/Qanun/Keputusan asli TIDAK
+	// PERNAH masuk kondisi ini (selalu punya salah satu anchor di atas).
+	fullyNarrative := batangStart < 0 && idxMenimbang < 0 && idxMengingat < 0 &&
+		idxMemperhatikan < 0 && idxMemutuskan < 0 && idxMenetapkan < 0
+
 	// Akhir batang tubuh: sebelum PENJELASAN bila ada, jika tidak sampai akhir.
 	batangEnd := len(lines)
 	if idxPenjelasan >= 0 {
@@ -134,9 +144,21 @@ func segmentize(lines []Line, cls classifyResult) ([]segment, []Warning) {
 	}
 
 	// --- Batang tubuh ---
-	if batangStart >= 0 && batangStart < batangEnd {
+	switch {
+	case batangStart >= 0 && batangStart < batangEnd:
 		segs = append(segs, segment{SectionBatangTubuh, sliceLines(lines, batangStart, batangEnd)})
-	} else {
+	case fullyNarrative:
+		// [Ditambahkan 2026-07-24, permintaan user] TIDAK ada anchor apa
+		// pun (lihat catatan fullyNarrative di atas) — jadikan SELURUH isi
+		// (0..batangEnd) satu section narasi, diurai parseNarasi (poin
+		// bernomor/berhuruf jadi NodeItem, sisanya paragraf biasa) alih-
+		// alih parseBatangTubuh yang menuntut Pasal/Ayat. Tanpa ini,
+		// dokumen begitu berakhir 0 node sama sekali walau sudah lolos
+		// gerbang lewat ParseAllowNonRegulation.
+		if batangEnd > 0 {
+			segs = append(segs, segment{SectionNarasi, sliceLines(lines, 0, batangEnd)})
+		}
+	default:
 		warns = append(warns, Warning{SeverityNeedsReview, "Batang tubuh (Pasal-pasal) tidak terdeteksi", nil, ""})
 	}
 

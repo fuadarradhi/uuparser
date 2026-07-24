@@ -154,7 +154,7 @@ func run() int {
 		DPIJelas: cfg.DPIJelas, DPISedang: cfg.DPISedang, DPIBlur: cfg.DPIBlur,
 		AmbangJelas: cfg.AmbangJelas, AmbangSedang: cfg.AmbangSedang,
 		LowMemory: cfg.LowMemory, Tahun: cfg.Tahun,
-		MaxPage: cfg.MaxPage, MinPage: cfg.MinPage,
+		PageCountRange: cfg.PageCountRange, MinPage: cfg.MinPage, PageCountOrder: cfg.PageCountOrder,
 		TextCheck: cfg.TextCheck,
 		CheapTier: cfg.CheapTier, TesseractLang: cfg.TesseractLang,
 		DebugResult: cfg.DebugResult, DebugDir: cfg.DebugDir,

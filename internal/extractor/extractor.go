@@ -102,9 +102,9 @@ type Config struct {
 	// MaxPage membatasi jumlah halaman yang diproses PADA SATU PEMANGGILAN
 	// Document() ini saja — 0 berarti tanpa batas (sampai halaman terakhir
 	// dokumen). Primitif tingkat-rendah, BUKAN lagi terhubung ke pengaturan
-	// .env MAX_PAGE (konsep itu berubah 2026-07-24: sekarang jadi saringan
-	// ANTRIAN di store.ClaimForOCR, bukan pemotongan per-dokumen — lihat
-	// config.Config.MaxPage). Field ini sekarang HANYA dipakai
+	// .env PAGE_COUNT_RANGE (konsep itu berubah 2026-07-24: sekarang jadi
+	// saringan ANTRIAN di store.ClaimForOCR, bukan pemotongan per-dokumen —
+	// lihat config.Config.PageCountRange). Field ini sekarang HANYA dipakai
 	// pipeline.resolveTextSource untuk probe 1-2 halaman pertama saat
 	// memutuskan OCR-vs-pdftotext; jalur OCR normal selalu memanggil
 	// Document() dengan MaxPage=0 (utuh).
@@ -187,47 +187,60 @@ func (e *Extractor) Document(ctx context.Context, pdfPath string) (totalPages in
 	}
 	defer doc.Close()
 
-	n := doc.NumPages()
-	if n == 0 {
+	// nAsli: jumlah halaman ASLI dokumen — dipakai untuk SEMUA yang tampil
+	// ke konsol/tersimpan (OnProgress, PageResult.Total, nilai balik),
+	// SUPAYA TIDAK PERNAH menampilkan angka yang dipotong MaxPage. `n` di
+	// bawah cuma membatasi LOOP pemanggilan ini, bukan angka yang dilihat
+	// siapa pun.
+	nAsli := doc.NumPages()
+	if nAsli == 0 {
 		return 0, false, fmt.Errorf("pdf tanpa halaman")
 	}
 
-	// MaxPage: batasi PEMANGGILAN INI ke n halaman pertama — primitif
-	// generik (lihat Config.MaxPage), dipakai pipeline.resolveTextSource
-	// untuk probe 1-2 halaman. TIDAK di-log di sini (probe berjalan untuk
-	// SETIAP dokumen, jadi logging di titik ini hanya akan membanjiri
-	// konsol tanpa arti bagi pemakai) — pemanggil yang tahu KONTEKS
-	// pemanggilannya (probe vs. jalur normal) bertanggung jawab melapor
-	// bila memang perlu.
+	// n: batas LOOP pada PEMANGGILAN INI SAJA — primitif generik (lihat
+	// Config.MaxPage), dipakai pipeline.resolveTextSource untuk probe 1-2
+	// halaman.
+	//
+	// [Diperbaiki 2026-07-24, bug nyata dilaporkan user] SEBELUMNYA `n`
+	// yang sudah dipotong ini juga dipakai sebagai "total" di
+	// OnProgress/PageResult.Total/nilai balik — akibatnya probe halaman 1
+	// pada dokumen 3 halaman menampilkan "[1/1]" (bukan "[1/3]"), probe
+	// halaman 2 menampilkan "[2/2]", dan OCR utama untuk halaman 3 (yang
+	// tersisa, karena hal 1-2 sudah tersimpan dari probe) menampilkan
+	// "[3/3]" — persis pola aneh "1/1 2/2 3/3" yang dilaporkan, padahal
+	// dokumennya cuma 3 halaman (seharusnya selalu "X/3"). TIDAK di-log
+	// terpisah di sini (probe berjalan untuk SETIAP dokumen, jadi logging
+	// di titik ini hanya akan membanjiri konsol tanpa arti bagi pemakai).
+	n := nAsli
 	if e.cfg.MaxPage > 0 && n > e.cfg.MaxPage {
 		n = e.cfg.MaxPage
 	}
 
 	for i := 1; i <= n; i++ {
 		if err := ctx.Err(); err != nil {
-			return n, false, err
+			return nAsli, false, err
 		}
 		has, err := e.sink.HasPage(ctx, i)
 		if err != nil {
-			return n, false, err
+			return nAsli, false, err
 		}
 		if has {
 			continue
 		}
-		e.sink.OnProgress(i, n, "menyiapkan halaman")
-		res, err := e.ocrPage(ctx, doc, i, n)
+		e.sink.OnProgress(i, nAsli, "menyiapkan halaman")
+		res, err := e.ocrPage(ctx, doc, i, nAsli)
 		if err != nil {
-			return n, false, fmt.Errorf("halaman %d: %w", i, err)
+			return nAsli, false, fmt.Errorf("halaman %d: %w", i, err)
 		}
 		stop, err := e.sink.OnPage(ctx, res)
 		if err != nil {
-			return n, false, err
+			return nAsli, false, err
 		}
 		if stop {
-			return n, true, nil
+			return nAsli, true, nil
 		}
 	}
-	return n, false, nil
+	return nAsli, false, nil
 }
 
 // renderAdaptif merender halaman dengan DPI yang dipilih otomatis lewat skor

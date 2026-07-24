@@ -34,6 +34,15 @@ const (
 	// aktif, ia tetap aktif SELAMANYA sampai akhir dokumen — jadi seluruh
 	// isi Lampiran ikut tersedot masuk sebagai node penutup.
 	SectionLampiran Section = "lampiran"
+	// SectionNarasi (2026-07-24, permintaan user): dipakai HANYA untuk
+	// dokumen yang lolos lewat ParseAllowNonRegulation (lihat parser.go)
+	// dan TIDAK punya anchor struktural apa pun (bukan cuma tanpa Pasal —
+	// juga tanpa Menimbang/Mengingat/Memperhatikan/Memutuskan/Menetapkan/
+	// BAB/Diktum sama sekali). Mencakup SELURUH isi dokumen (header surat,
+	// paragraf pembuka, poin bernomor/berhuruf, penutup) sebagai satu
+	// section datar — lihat parseNarasi. Peraturan/Qanun asli TIDAK PERNAH
+	// masuk section ini karena selalu punya Menimbang/Mengingat.
+	SectionNarasi Section = "narasi"
 )
 
 // NodeType adalah jenis unit struktural pada satu baris.

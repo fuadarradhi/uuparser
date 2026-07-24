@@ -21,12 +21,13 @@ import (
 //     persis seperti sebelum fitur ini ada).
 //  2. Bandingkan hasil OCR halaman 1 dengan `pdftotext` halaman 1 yang sama
 //     (internal/textcheck.Compare).
-//  3. Cocok -> pdftotext dipakai untuk SISA dokumen, TANPA batas MaxPage
-//     (permintaan eksplisit: mode poppler mengabaikan MAX_PAGE, beda dari
+//  3. Cocok -> pdftotext dipakai untuk SISA dokumen, TANPA batas
+//     PageCountRange (permintaan eksplisit: mode poppler mengabaikan
+//     PAGE_COUNT_RANGE, beda dari
 //     mode OCR yang memang dibatasi untuk keperluan uji cepat).
 //  4. Tidak cocok -> ulangi di halaman 2.
 //  5. Tetap tidak cocok -> serahkan ke pemanggil untuk OCR biasa (dibatasi
-//     MaxPage bila diset) — TIDAK ADA yang diproses ulang, karena halaman 1
+//     PageCountRange bila diset) — TIDAK ADA yang diproses ulang, karena halaman 1
 //     dan 2 yang sudah di-OCR pada langkah probe di atas tetap tersimpan
 //     (per-page resume yang sudah ada menganggapnya "sudah selesai").
 //
@@ -146,7 +147,7 @@ func resolveTextSource(ctx context.Context, deps Deps, sink *docSink, job store.
 	}
 
 	// Halaman 1 dan 2 sama-sama tidak cocok (atau dokumen sengaja diakhiri
-	// lebih pendek) -> OCR biasa, dibatasi MaxPage seperti sebelum fitur ini
+	// lebih pendek) -> OCR biasa, dibatasi PageCountRange seperti sebelum fitur ini
 	// ada.
 	if serr := deps.Store.SetTextSource(ctx, job.ID, "ocr"); serr != nil {
 		logx.Warn("textcheck: tandai text_source=ocr: %v", serr)
@@ -155,8 +156,8 @@ func resolveTextSource(ctx context.Context, deps Deps, sink *docSink, job store.
 }
 
 // runPdftotextMode mengisi SELURUH halaman dokumen (1..nAsli) memakai teks
-// lapisan PDF, TANPA model visi dan TANPA batas MaxPage — sesuai permintaan
-// eksplisit user bahwa mode poppler mengabaikan MAX_PAGE.
+// lapisan PDF, TANPA model visi dan TANPA batas PageCountRange — sesuai
+// permintaan eksplisit user bahwa mode poppler mengabaikan PAGE_COUNT_RANGE.
 //
 // Dipanggil selalu dari halaman 1 (bukan hanya sisanya setelah probe):
 // halaman yang sudah tersimpan dari tahap probe di resolveTextSource (atau

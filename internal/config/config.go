@@ -18,75 +18,107 @@ import (
 	"strings"
 )
 
-// TahunFilter adalah hasil urai env YEAR — operator perbandingan + nilai
-// tahun. Op kosong berarti tanpa saringan sama sekali (lihat Aktif()).
-type TahunFilter struct {
-	Op    string // "", "=", ">=", "<=", ">", "<"
-	Value int
+// IntRange adalah rentang bilangan bulat INKLUSIF opsional — dipakai
+// bersama oleh env YEAR_RANGE dan PAGE_COUNT_RANGE (parsing & pembandingan
+// sama persis, cuma domain angkanya beda: tahun vs jumlah halaman). Min/Max
+// == 0 berarti sisi itu tidak dibatasi (baik tahun maupun jumlah halaman
+// tidak pernah 0, jadi 0 aman dipakai sebagai penanda "tak terbatas").
+// Min==0 && Max==0 berarti filter tidak aktif sama sekali (lihat Aktif()).
+//
+// [Diubah 2026-07-24, permintaan user] SEBELUMNYA (TahunFilter/env YEAR)
+// pakai sintaks operator (">=2020", "<=2024", "=2024") — dikeluhkan
+// membingungkan. Sekarang sintaks rentang biasa, lihat parseIntRange.
+// PAGE_COUNT_RANGE (sebelumnya PAGE_COUNT_MAX, cuma batas atas) menyusul
+// dengan sintaks & tipe yang SAMA — permintaan user: bisa juga menyaring
+// dokumen yang TERLALU PENDEK (mis. "5-10": halaman < 5 sering tidak cukup
+// panjang untuk kelihatan kesalahan parsernya).
+type IntRange struct {
+	Min, Max int
 }
 
 // Aktif melaporkan apakah filter ini benar-benar menyaring sesuatu.
-func (f TahunFilter) Aktif() bool { return f.Op != "" }
+func (f IntRange) Aktif() bool { return f.Min > 0 || f.Max > 0 }
 
-// Cocok membandingkan satu tahun dokumen terhadap filter ini. Hanya masuk
-// akal dipanggil bila Aktif() true.
-func (f TahunFilter) Cocok(tahun int) bool {
-	switch f.Op {
-	case "=":
-		return tahun == f.Value
-	case ">=":
-		return tahun >= f.Value
-	case "<=":
-		return tahun <= f.Value
-	case ">":
-		return tahun > f.Value
-	case "<":
-		return tahun < f.Value
-	default:
-		return true // Op kosong = tidak menyaring apa pun
+// Cocok membandingkan satu angka terhadap rentang ini. Hanya masuk akal
+// dipanggil bila Aktif() true.
+func (f IntRange) Cocok(v int) bool {
+	if f.Min > 0 && v < f.Min {
+		return false
 	}
+	if f.Max > 0 && v > f.Max {
+		return false
+	}
+	return true
 }
 
-// String untuk log/pesan (mis. "YEAR>=2023").
-func (f TahunFilter) String() string {
-	if !f.Aktif() {
+// String untuk log/pesan (mis. "2022-2024", ">=2020", "<=2024").
+func (f IntRange) String() string {
+	switch {
+	case !f.Aktif():
 		return "(tanpa saringan)"
+	case f.Min > 0 && f.Max > 0 && f.Min == f.Max:
+		return strconv.Itoa(f.Min)
+	case f.Min > 0 && f.Max > 0:
+		return fmt.Sprintf("%d-%d", f.Min, f.Max)
+	case f.Min > 0:
+		return fmt.Sprintf(">=%d", f.Min)
+	default:
+		return fmt.Sprintf("<=%d", f.Max)
 	}
-	return f.Op + strconv.Itoa(f.Value)
 }
 
-// parseTahunFilter mengurai isi env YEAR. Operator dikenali sebagai PREFIKS
-// (urutan pemeriksaan sengaja ">="/"<=" dulu sebelum ">"/"<" tunggal, supaya
-// tidak salah potong). Tanpa operator sama sekali -> ">=" (kompatibel dengan
-// perilaku lama MIN_TAHUN, yang selalu berarti "minimal tahun ini"). String
-// kosong atau angka tak valid -> filter tidak aktif (Op kosong).
-func parseTahunFilter(raw string) TahunFilter {
+// parseIntRange mengurai isi env YEAR_RANGE/PAGE_COUNT_RANGE. Bentuk yang
+// dikenali:
+//
+//	"5-10"  -> Min=5, Max=10 (rentang inklusif)
+//	"10"    -> Min=10, Max=10 (persis satu angka)
+//	"5-"    -> Min=5, Max=0  (5 dan seterusnya)
+//	"-10"   -> Min=0, Max=10 (sampai 10)
+//	""      -> filter tidak aktif
+//
+// String kosong, format tak dikenali, atau angka tak valid -> filter tidak
+// aktif (Min=Max=0) — SENGAJA gagal-aman ke "tanpa saringan" daripada
+// menolak semua dokumen karena salah ketik.
+func parseIntRange(raw string) IntRange {
 	s := strings.TrimSpace(raw)
 	if s == "" {
-		return TahunFilter{}
+		return IntRange{}
 	}
-	op := ">="
-	switch {
-	case strings.HasPrefix(s, ">="):
-		op, s = ">=", s[2:]
-	case strings.HasPrefix(s, "<="):
-		op, s = "<=", s[2:]
-	case strings.HasPrefix(s, "="):
-		op, s = "=", s[1:]
-	case strings.HasPrefix(s, ">"):
-		op, s = ">", s[1:]
-	case strings.HasPrefix(s, "<"):
-		op, s = "<", s[1:]
+	if i := strings.Index(s, "-"); i >= 0 {
+		var r IntRange
+		if minPart := strings.TrimSpace(s[:i]); minPart != "" {
+			if v, err := strconv.Atoi(minPart); err == nil && v > 0 {
+				r.Min = v
+			}
+		}
+		if maxPart := strings.TrimSpace(s[i+1:]); maxPart != "" {
+			if v, err := strconv.Atoi(maxPart); err == nil && v > 0 {
+				r.Max = v
+			}
+		}
+		return r
 	}
-	v, err := strconv.Atoi(strings.TrimSpace(s))
-	if err != nil || v <= 0 {
-		return TahunFilter{}
+	if v, err := strconv.Atoi(s); err == nil && v > 0 {
+		return IntRange{Min: v, Max: v}
 	}
-	return TahunFilter{Op: op, Value: v}
+	return IntRange{}
 }
 
-// pageLimitNum mengurai MAX_PAGE/MIN_PAGE — BEDA dari num() karena di sini
-// 0 adalah nilai SAH (berarti "tanpa batas"/"tanpa minimum"), bukan sinyal
+// YearRange dan PageCountRange adalah alias IntRange — nama berbeda murni
+// supaya kode pemanggil (Config.Tahun, Config.PageCountRange) tetap jelas
+// menyebut domainnya masing-masing, walau tipe & logikanya SAMA PERSIS
+// (lihat IntRange).
+type YearRange = IntRange
+type PageCountRange = IntRange
+
+// parseYearRange dan parsePageCountRange adalah alias parseIntRange —
+// dipertahankan sebagai nama terpisah supaya titik pemanggilan di Load()
+// tetap jelas terbaca merujuk env yang mana.
+func parseYearRange(raw string) YearRange           { return parseIntRange(raw) }
+func parsePageCountRange(raw string) PageCountRange { return parseIntRange(raw) }
+
+// pageLimitNum mengurai CLASSIFY_PAGE_WINDOW — BEDA dari num() karena di
+// sini 0 adalah nilai SAH (berarti "tanpa minimum"), bukan sinyal
 // "pakai nilai bawaan". Hanya string kosong/tak-numerik/negatif yang jatuh
 // ke nilai bawaan.
 func pageLimitNum(s string, def int) int {
@@ -161,43 +193,61 @@ type Config struct {
 
 	// Tahun menyaring dokumen SAAT DIDAFTARKAN dari sumber, berdasarkan
 	// sort_tahun (metadata JDIH, HANYA untuk urutan — lihat
-	// downloader.RemoteDoc). Menggantikan MIN_TAHUN (2026-07-23): dulu hanya
-	// bisa ">=", sekarang mendukung operator eksplisit lewat env YEAR, mis.
-	// "=2023" (persis tahun itu saja), ">=2023" (minimal), ">2020", "<=2019",
-	// "<2019". Tanpa operator (mis. "2023" polos) diperlakukan sebagai ">="
-	// untuk kompatibilitas dengan perilaku lama. String kosong (bawaan) =
-	// tanpa saringan sama sekali.
+	// downloader.RemoteDoc).
+	//
+	// [Diubah 2026-07-24, permintaan user] env-nya sekarang YEAR_RANGE
+	// (sebelumnya YEAR), sintaksnya rentang biasa (sebelumnya operator
+	// ">="/"<="/"="): "2022-2024" (rentang inklusif), "2024" (persis satu
+	// tahun), "2020-" (2020 dan seterusnya), "-2024" (sampai 2024). String
+	// kosong (bawaan) = tanpa saringan sama sekali. Lihat YearRange/
+	// parseYearRange.
 	//
 	// Ini KEBALIKAN dari filosofi "tombol yang jawabannya sudah pasti tidak
 	// perlu jadi .env": jawabannya justru BELUM pasti secara sengaja — dipakai
-	// untuk memperkecil cakupan uji coba parser (mis. YEAR=>=2020 dulu,
+	// untuk memperkecil cakupan uji coba parser (mis. YEAR_RANGE=2020- dulu,
 	// diperbesar bertahap) sambil mengamati tahun berapa parser sudah bagus.
 	//
 	// Saat filter aktif (Tahun.Aktif()): dokumen TANPA sort_tahun (metadata
 	// sumber tak menyediakannya) IKUT disaring — tidak didaftarkan. Permintaan
-	// user: kalau YEAR diisi, harus benar-benar ada tahun yang memenuhi,
-	// bukan lolos karena tidak diketahui. Hanya saat YEAR kosong (tanpa
-	// saringan sama sekali) dokumen tanpa tahun boleh masuk.
-	Tahun TahunFilter
+	// user: kalau YEAR_RANGE diisi, harus benar-benar ada tahun yang
+	// memenuhi, bukan lolos karena tidak diketahui. Hanya saat YEAR_RANGE
+	// kosong (tanpa saringan sama sekali) dokumen tanpa tahun boleh masuk.
+	Tahun YearRange
 
-	// MaxPage (konsep diubah 2026-07-24 — SEBELUMNYA memotong tiap dokumen
-	// jadi hanya MaxPage halaman pertama; SEKARANG sebuah SARINGAN
+	// PageCountRange (konsep diubah 2026-07-24 — SEBELUMNYA memotong tiap
+	// dokumen jadi hanya sekian halaman pertama; SEKARANG sebuah SARINGAN
 	// ANTRIAN): dokumen yang jumlah halaman ASLINYA (documents.total_pages,
-	// dicatat sekali saat unduh) melebihi MaxPage TIDAK PERNAH diambil untuk
-	// OCR sama sekali selama MaxPage masih berlaku — bukan diproses
-	// sebagian. Begitu sebuah dokumen lolos dan diambil, ia SELALU diproses
-	// utuh sampai halaman terakhir (lihat store.ClaimForOCR).
+	// dicatat sekali saat unduh) di LUAR rentang ini TIDAK PERNAH diambil
+	// untuk OCR sama sekali — bukan diproses sebagian. Begitu sebuah
+	// dokumen lolos dan diambil, ia SELALU diproses utuh sampai halaman
+	// terakhir (lihat store.ClaimForOCR).
 	//
-	// Antrian juga diurutkan berdasar total_pages MENAIK (dokumen PENDEK
-	// duluan) — permintaan eksplisit user supaya iterasi uji parser tidak
-	// tersandera satu peraturan tebal.
+	// [Diganti nama & diperluas 2026-07-24, permintaan user] env-nya
+	// sekarang PAGE_COUNT_RANGE (sebelumnya PAGE_COUNT_MAX/MAX_PAGE, cuma
+	// batas ATAS) — sekarang rentang penuh, sintaks SAMA seperti
+	// YEAR_RANGE (lihat IntRange/parsePageCountRange): "5-10" (rentang
+	// inklusif), "10" (persis 10 halaman), "5-" (5 halaman ke atas), "-10"
+	// (sampai 10 halaman). Permintaan user: dokumen yang TERLALU PENDEK
+	// juga bisa disaring (mis. dokumen di bawah 5 halaman sering tidak
+	// cukup panjang untuk kelihatan kesalahan parsernya).
 	//
 	// Dokumen dengan total_pages belum diketahui (NULL — penghitungan saat
-	// unduh gagal) TETAP diambil seperti biasa, tidak ikut disaring.
+	// unduh gagal) TETAP diambil seperti biasa, tidak ikut disaring oleh
+	// sisi mana pun dari rentang ini.
 	//
-	// SENGAJA masih pengaturan sementara khusus masa debug: 0 berarti TANPA
-	// saringan sama sekali (matikan setelah masa debug selesai). Bawaan: 5.
-	MaxPage int
+	// SENGAJA masih pengaturan sementara khusus masa debug: filter tidak
+	// aktif (IntRange{}) berarti TANPA saringan sama sekali (matikan
+	// setelah masa debug selesai). Bawaan: Max=5 (Min tidak dibatasi).
+	PageCountRange PageCountRange
+
+	// PageCountOrder (2026-07-24, permintaan user): arah urutan antrian
+	// ClaimForOCR berdasar total_pages — "asc" (dokumen PENDEK duluan,
+	// bawaan; permintaan awal user supaya iterasi uji parser tidak
+	// tersandera satu peraturan tebal) atau "desc" (dokumen PANJANG
+	// duluan — permintaan user supaya bisa juga sengaja uji dokumen
+	// paling tebal lebih dulu). Nilai lain/tak dikenal jatuh ke "asc".
+	// Env: PAGE_COUNT_ORDER.
+	PageCountOrder string
 
 	// MinPage (konsep dikoreksi 2026-07-24 — SEBELUMNYA dokumen di bawah
 	// jumlah halaman ini ditolak LANGSUNG sebagai "bukan peraturan" TANPA
@@ -209,8 +259,14 @@ type Config struct {
 	// halaman 2. Selama window belum habis DAN masih ada halaman lain,
 	// classify mencoba dulu halaman berikutnya sebelum menolak.
 	//
-	// Dokumen yang jumlah halaman ASLINYA lebih pendek dari MinPage (
-	// TERMASUK yang cuma 1 halaman) TETAP diproses & diklasifikasi APA
+	// [Diganti nama 2026-07-24, permintaan user] env-nya sekarang
+	// CLASSIFY_PAGE_WINDOW (sebelumnya MIN_PAGE — dikeluhkan menyesatkan,
+	// terkesan "jumlah halaman minimum dokumen" padahal bukan itu artinya
+	// sama sekali). Field Go ini (MinPage) TIDAK diganti nama, cuma env
+	// key-nya.
+	//
+	// Dokumen yang jumlah halaman ASLINYA lebih pendek dari jendela ini
+	// (TERMASUK yang cuma 1 halaman) TETAP diproses & diklasifikasi APA
 	// ADANYA dari halaman yang tersedia — window otomatis tidak menunggu
 	// halaman yang tidak ada. 0 berarti keputusan diambil dari HALAMAN
 	// PERTAMA yang dicoba saja (tanpa menunggu halaman lain). Bawaan: 2.
@@ -220,10 +276,10 @@ type Config struct {
 	// bila 1 tak cocok) — bandingkan hasil OCR dengan lapisan teks PDF
 	// (`pdftotext`, poppler-utils) untuk halaman yang sama (lihat
 	// internal/textcheck). Cocok -> SISA dokumen diisi dari pdftotext, jauh
-	// lebih murah (tanpa model visi sama sekali) DAN TANPA batas MaxPage
-	// (poppler tidak dibatasi MAX_PAGE, beda dari mode OCR). Tidak cocok di
-	// kedua halaman -> OCR biasa seperti sebelum fitur ini ada (dibatasi
-	// MaxPage bila diset).
+	// lebih murah (tanpa model visi sama sekali) DAN TANPA batas
+	// PageCountRange (poppler tidak dibatasi PAGE_COUNT_RANGE, beda dari
+	// mode OCR). Tidak cocok di kedua halaman -> OCR biasa seperti sebelum
+	// fitur ini ada (dibatasi PageCountRange bila diset).
 	//
 	// Otomatis nonaktif (walau TEXT_CHECK=true) bila biner pdftotext tidak
 	// ditemukan di PATH — lihat textcheck.Available(). Bawaan: true.
@@ -312,22 +368,23 @@ func Load(path string) (Config, error) {
 		LibPath:      get("LIB_PATH", filepath.Join(cwd, "libs")),
 		Verbose:      boolean(get("VERBOSE", "false")),
 
-		PromptDir:     get("PROMPT_DIR", filepath.Join(cwd, "prompts")),
-		ChatTemplate:  get("CHAT_TEMPLATE", ""),
-		LowMemory:     boolean(get("LOW_MEMORY", "false")),
-		DPIJelas:      num(get("DPI_SHARP", "100"), 100),
-		DPISedang:     num(get("DPI_MEDIUM", "150"), 150),
-		DPIBlur:       num(get("DPI_BLUR", "200"), 200),
-		AmbangJelas:   floatNum(get("BLUR_THRESHOLD_SHARP", "5e8"), 5e8),
-		AmbangSedang:  floatNum(get("BLUR_THRESHOLD_MEDIUM", "5e7"), 5e7),
-		Tahun:         parseTahunFilter(get("YEAR", "")),
-		MaxPage:       pageLimitNum(get("MAX_PAGE", "5"), 5),
-		MinPage:       pageLimitNum(get("MIN_PAGE", "2"), 2),
-		TextCheck:     boolean(get("TEXT_CHECK", "true")),
-		CheapTier:     boolean(get("CHEAP_TIER", "true")),
-		TesseractLang: get("TESSERACT_LANG", "ind"),
-		DebugResult:   boolean(get("DEBUG_RESULT", "false")),
-		DebugDir:      get("DEBUG_DIR", "debug"),
+		PromptDir:      get("PROMPT_DIR", filepath.Join(cwd, "prompts")),
+		ChatTemplate:   get("CHAT_TEMPLATE", ""),
+		LowMemory:      boolean(get("LOW_MEMORY", "false")),
+		DPIJelas:       num(get("DPI_SHARP", "100"), 100),
+		DPISedang:      num(get("DPI_MEDIUM", "150"), 150),
+		DPIBlur:        num(get("DPI_BLUR", "200"), 200),
+		AmbangJelas:    floatNum(get("BLUR_THRESHOLD_SHARP", "5e8"), 5e8),
+		AmbangSedang:   floatNum(get("BLUR_THRESHOLD_MEDIUM", "5e7"), 5e7),
+		Tahun:          parseYearRange(get("YEAR_RANGE", "")),
+		PageCountRange: parsePageCountRange(get("PAGE_COUNT_RANGE", "-5")),
+		PageCountOrder: normalizeSortOrder(get("PAGE_COUNT_ORDER", "asc")),
+		MinPage:        pageLimitNum(get("CLASSIFY_PAGE_WINDOW", "2"), 2),
+		TextCheck:      boolean(get("TEXT_CHECK", "true")),
+		CheapTier:      boolean(get("CHEAP_TIER", "true")),
+		TesseractLang:  get("TESSERACT_LANG", "ind"),
+		DebugResult:    boolean(get("DEBUG_RESULT", "false")),
+		DebugDir:       get("DEBUG_DIR", "debug"),
 
 		LogDir: get("LOG_DIR", filepath.Join(cwd, "log")),
 	}
@@ -413,6 +470,17 @@ func boolean(s string) bool {
 		return true
 	}
 	return false
+}
+
+// normalizeSortOrder mengurai PAGE_COUNT_ORDER: "asc" atau "desc" (tidak
+// peka besar/kecil huruf). Nilai lain/tak dikenal/kosong jatuh ke "asc" —
+// gagal-aman ke perilaku yang sudah ada sebelum PAGE_COUNT_ORDER ditambah,
+// daripada menolak start atau diam-diam salah urut.
+func normalizeSortOrder(s string) string {
+	if strings.EqualFold(strings.TrimSpace(s), "desc") {
+		return "desc"
+	}
+	return "asc"
 }
 
 // mustExist memberi pesan yang menyebut kunci, jalur yang dicari, dan apa yang

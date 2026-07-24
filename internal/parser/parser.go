@@ -24,6 +24,59 @@ func Parse(pages []string) (Result, error) {
 		return Result{}, ErrNotLegalDocument
 	}
 
+	return parseSegments(lines, cls)
+}
+
+// nonRegulationJenisWhitelist (2026-07-24, permintaan user): jenis dokumen
+// yang boleh melewati gerbang deterministik "layak dokumen hukum" (classify
+// di classify.go) TANPA harus punya Pasal/BAB/Diktum/Menimbang-dst — jenis
+// ini memang SAH tidak selalu berformat begitu. SENGAJA hanya "SURAT
+// EDARAN" untuk sekarang (permintaan eksplisit user) — jenis lain
+// (Pengumuman, Maklumat, Nota Dinas, dst, yang punya masalah serupa) BELUM
+// di-bypass sampai diminta terpisah.
+var nonRegulationJenisWhitelist = map[string]bool{
+	"SURAT EDARAN": true,
+}
+
+// ParseAllowNonRegulation berperilaku PERSIS seperti Parse, KECUALI: bila
+// jenis (hasil classify tahap OCR — BUKAN diturunkan dari isi teks ini) ada
+// di nonRegulationJenisWhitelist, gerbang deterministik classify() DILEWATI
+// sepenuhnya alih-alih menolak dengan ErrNotLegalDocument.
+//
+// CATATAN PENTING (batasan yang disengaja, belum diperbaiki): dokumen yang
+// di-bypass tetap diurai lewat segmentize/parseBatangTubuh SEPERTI BIASA —
+// untuk Surat Edaran yang benar-benar narasi datar TANPA Menimbang/
+// Mengingat/Memperhatikan SAMA SEKALI (bukan cuma tanpa Pasal, seperti
+// contoh nyata dari user), segmentize() bisa saja tidak menemukan titik
+// awal batang_tubuh sama sekali — hasilnya Result{Nodes: nil} + SATU
+// DocumentWarning "Tidak ada node terbentuk...", BUKAN error, tapi JUGA
+// tidak ada node terstruktur apa pun. Teks mentahnya tetap aman di
+// document_pages/ocr.txt terlepas dari ini — ini murni soal pemecahan jadi
+// node terstruktur, yang untuk Surat Edaran naratif memang belum ada
+// desainnya (opsi "(c)" yang pernah ditawarkan, belum dikerjakan).
+func ParseAllowNonRegulation(pages []string, jenis string) (Result, error) {
+	if !nonRegulationJenisWhitelist[strings.ToUpper(strings.TrimSpace(jenis))] {
+		return Parse(pages)
+	}
+
+	if len(pages) == 0 {
+		return Result{}, ErrEmptyInput
+	}
+	lines := stitch(pages)
+	if len(lines) == 0 {
+		return Result{}, ErrEmptyInput
+	}
+	// TIDAK ADA pengecekan cls.isLegal di sini — persis itu yang
+	// membedakan jalur ini dari Parse().
+	cls := classify(lines)
+	return parseSegments(lines, cls)
+}
+
+// parseSegments adalah badan Parse() SETELAH gerbang classify (segmentize +
+// urai per-segmen + gabung) — dipisah dari Parse supaya ParseAllowNonRegulation
+// bisa memakai ulang PERSIS logika yang sama tanpa duplikasi, hanya berbeda
+// di keputusan gerbangnya.
+func parseSegments(lines []Line, cls classifyResult) (Result, error) {
 	segs, docWarns := segmentize(lines, cls)
 
 	var all []Node
@@ -44,6 +97,8 @@ func Parse(pages []string) (Result, error) {
 			b = parsePenjelasanPasal(s.lines)
 		case SectionLampiran:
 			b = parseLampiran(s.lines)
+		case SectionNarasi:
+			b = parseNarasi(s.lines)
 		default:
 			continue
 		}

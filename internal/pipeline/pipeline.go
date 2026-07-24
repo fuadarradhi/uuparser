@@ -51,11 +51,14 @@ type Deps struct {
 	LowMemory bool
 
 	// Tahun: lihat config.Config.Tahun — Op kosong berarti tanpa saringan.
-	Tahun config.TahunFilter
+	Tahun config.YearRange
 
-	// MaxPage/MinPage: lihat config.Config.MaxPage / MinPage.
-	MaxPage int
+	// PageCountRange: lihat config.Config.PageCountRange.
+	PageCountRange config.PageCountRange
+	// MinPage: lihat config.Config.MinPage.
 	MinPage int
+	// PageCountOrder: lihat config.Config.PageCountOrder.
+	PageCountOrder string
 
 	// TextCheck: lihat config.Config.TextCheck.
 	TextCheck bool

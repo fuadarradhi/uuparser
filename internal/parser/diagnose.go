@@ -38,9 +38,15 @@ type Stats struct {
 	// diagnosa "tidak ada batang tubuh" (lihat di bawah) tidak salah
 	// menganggap dokumen jenis ini gagal parse hanya karena ia memang
 	// tidak dan tidak seharusnya punya Pasal sama sekali.
-	Diktum        int `json:"diktum"`
-	Ayat          int `json:"ayat"`
-	ItemPreamble  int `json:"item_preamble"`
+	Diktum       int `json:"diktum"`
+	Ayat         int `json:"ayat"`
+	ItemPreamble int `json:"item_preamble"`
+	// Narasi (2026-07-24): jumlah node di SectionNarasi (lihat
+	// parser.ParseAllowNonRegulation/parseNarasi) — dokumen yang memang
+	// TIDAK diharapkan punya Pasal/Diktum sama sekali (mis. Surat Edaran
+	// naratif). Dipakai supaya pengecekan "batang tubuh kosong" di bawah
+	// tidak salah menandai dokumen begini sebagai FAIL.
+	Narasi        int `json:"narasi"`
 	NodeWarnings  int `json:"node_warnings"`
 	TotalNodes    int `json:"total_nodes"`
 	SectionsFound int `json:"sections_found"`
@@ -86,8 +92,10 @@ func Diagnose(res Result) Report {
 
 	// --- cek keberadaan batang tubuh (Pasal ATAU Diktum — keduanya
 	// eksklusif tapi SAMA-SAMA sah sebagai struktur batang tubuh; lihat
-	// Stats.Diktum) ---
-	if st.Pasal == 0 && st.Diktum == 0 {
+	// Stats.Diktum). Dokumen SectionNarasi (lihat Stats.Narasi) SENGAJA
+	// dikecualikan — dokumen begitu memang tidak dan tidak seharusnya
+	// punya Pasal/Diktum sama sekali. ---
+	if st.Pasal == 0 && st.Diktum == 0 && st.Narasi == 0 {
 		issues = append(issues, Issue{SeverityNeedsReview, "NO_PASAL",
 			"Tidak ada satupun Pasal maupun Diktum terdeteksi di batang tubuh"})
 	}
@@ -124,7 +132,7 @@ func Diagnose(res Result) Report {
 			break
 		}
 	}
-	if st.Pasal == 0 && st.Diktum == 0 {
+	if st.Pasal == 0 && st.Diktum == 0 && st.Narasi == 0 {
 		status = StatusFail
 	}
 
@@ -137,6 +145,9 @@ func computeStats(res Result) Stats {
 	s.TotalNodes = len(res.Nodes)
 	for _, n := range res.Nodes {
 		sections[n.Section] = true
+		if n.Section == SectionNarasi {
+			s.Narasi++
+		}
 		if len(n.Warnings) > 0 {
 			s.NodeWarnings += len(n.Warnings)
 		}
