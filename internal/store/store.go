@@ -148,7 +148,12 @@ func (s *Store) ClaimForDownload(ctx context.Context) (DownloadJob, error) {
 // MarkDownloaded menyimpan lokasi & hash berkas. Bila berkas dengan hash sama
 // SUDAH ada (dokumen identik dari sumber lain), dokumen ini ditandai duplikat
 // dan tidak diproses lebih lanjut. Mengembalikan true bila duplikat.
-func (s *Store) MarkDownloaded(ctx context.Context, id int64, pdfPath, sha string, size int64) (bool, error) {
+// MarkDownloaded menandai unduhan selesai. totalPages diisi pemanggil dari
+// extractor.PageCount(dest) SEGERA setelah berkas ditulis ke disk (2026-07-24)
+// — lihat downloader_worker.go. nil berarti penghitungannya gagal (mis. PDF
+// rusak); disimpan sebagai NULL, bukan 0, supaya beda dari "memang 0
+// halaman" dan tidak ikut disaring oleh ClaimForOCR (lihat query di sana).
+func (s *Store) MarkDownloaded(ctx context.Context, id int64, pdfPath, sha string, size int64, totalPages *int) (bool, error) {
 	var existing *int64
 	err := s.pool.QueryRow(ctx, `
 		SELECT id FROM documents
@@ -162,17 +167,18 @@ func (s *Store) MarkDownloaded(ctx context.Context, id int64, pdfPath, sha strin
 		_, err := s.pool.Exec(ctx, `
 			UPDATE documents
 			SET status = 'duplicate', reject_reason = 'duplikat_isi', duplicate_of = $2,
-			    pdf_path = $3, pdf_sha256 = $4, file_size = $5,
+			    pdf_path = $3, pdf_sha256 = $4, file_size = $5, total_pages = $6,
 			    downloaded_at = now(), updated_at = now()
-			WHERE id = $1`, id, *existing, pdfPath, sha, size)
+			WHERE id = $1`, id, *existing, pdfPath, sha, size, totalPages)
 		return true, err
 	}
 
 	_, err = s.pool.Exec(ctx, `
 		UPDATE documents
 		SET status = 'downloaded', pdf_path = $2, pdf_sha256 = $3, file_size = $4,
-		    downloaded_at = now(), updated_at = now(), attempts = 0, last_error = NULL
-		WHERE id = $1`, id, pdfPath, sha, size)
+		    total_pages = $5, downloaded_at = now(), updated_at = now(),
+		    attempts = 0, last_error = NULL
+		WHERE id = $1`, id, pdfPath, sha, size, totalPages)
 	return false, err
 }
 
@@ -214,7 +220,21 @@ type OCRJob struct {
 }
 
 // ClaimForOCR mengambil dokumen yang sudah terunduh dan belum diproses.
-func (s *Store) ClaimForOCR(ctx context.Context) (OCRJob, error) {
+//
+// maxPage (2026-07-24, konsep baru menggantikan pemotongan per-halaman):
+// dokumen yang total_pages-nya (dihitung SEKALI saat unduh — lihat
+// MarkDownloaded) MELEBIHI maxPage TIDAK PERNAH diambil sama sekali selama
+// maxPage masih berlaku — bukan dipotong di tengah seperti skema lama.
+// total_pages IS NULL (penghitungan saat unduh gagal) TETAP diambil seperti
+// biasa — supaya dokumen begitu tidak tersangkut permanen hanya karena
+// jumlah halamannya tidak diketahui. maxPage<=0 berarti tanpa saringan sama
+// sekali (mode produksi, MAX_PAGE dimatikan).
+//
+// Urutan queue JUGA berubah: total_pages ASC disisipkan sebagai penentu
+// utama (setelah dokumen 'processing' yang harus didahulukan, dan prioritas
+// sumber) — dokumen PENDEK dikerjakan lebih dulu, permintaan eksplisit user
+// supaya iterasi uji parser tidak tersandera satu peraturan tebal.
+func (s *Store) ClaimForOCR(ctx context.Context, maxPage int) (OCRJob, error) {
 	var j OCRJob
 	err := s.pool.QueryRow(ctx, `
 		UPDATE documents SET status = 'processing', updated_at = now()
@@ -229,19 +249,38 @@ func (s *Store) ClaimForOCR(ctx context.Context) (OCRJob, error) {
 			SELECT d.id FROM documents d
 			LEFT JOIN sources s ON s.id = d.first_source_id
 			WHERE d.status IN ('downloaded', 'processing')
+			      AND ($1 <= 0 OR d.total_pages IS NULL OR d.total_pages <= $1)
 			ORDER BY (d.status = 'processing') DESC,
 			         COALESCE(s.priority, 1000),
+			         d.total_pages ASC NULLS LAST,
 			         d.sort_tahun DESC NULLS LAST,
 			         d.sort_nomor DESC NULLS LAST,
 			         d.created_at
 			LIMIT 1 FOR UPDATE OF d SKIP LOCKED
 		)
-		RETURNING id, pdf_path`,
+		RETURNING id, pdf_path`, maxPage,
 	).Scan(&j.ID, &j.PDFPath)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return OCRJob{}, ErrNoWork
 	}
 	return j, err
+}
+
+// GetTotalPages mengembalikan jumlah halaman ASLI dokumen yang sudah dicatat
+// SEKALI saat unduh (lihat MarkDownloaded), tanpa membuka berkas PDF-nya.
+// ok=false berarti belum tercatat (dokumen dari sebelum fitur ini ada, atau
+// penghitungan saat unduh gagal) — pemanggil sebaiknya jatuh ke
+// extractor.PageCount sebagai jaga-jaga.
+func (s *Store) GetTotalPages(ctx context.Context, documentID int64) (n int, ok bool, err error) {
+	var v *int
+	err = s.pool.QueryRow(ctx, `SELECT total_pages FROM documents WHERE id = $1`, documentID).Scan(&v)
+	if err != nil {
+		return 0, false, err
+	}
+	if v == nil {
+		return 0, false, nil
+	}
+	return *v, true, nil
 }
 
 func (s *Store) MarkOCRFailed(ctx context.Context, id int64, errMsg string, maxAttempts int) error {
@@ -297,6 +336,31 @@ func (s *Store) DPIPage1(ctx context.Context, documentID int64) (int, error) {
 		return 0, nil
 	}
 	return *dpi, nil
+}
+
+// GetTextSource mengembalikan keputusan sumber teks untuk dokumen ini
+// ('ocr' | 'pdftotext'), atau string kosong bila belum diputuskan — lihat
+// pipeline.resolveTextSource.
+func (s *Store) GetTextSource(ctx context.Context, documentID int64) (string, error) {
+	var v *string
+	err := s.pool.QueryRow(ctx, `SELECT text_source FROM documents WHERE id = $1`, documentID).Scan(&v)
+	if err != nil {
+		return "", err
+	}
+	if v == nil {
+		return "", nil
+	}
+	return *v, nil
+}
+
+// SetTextSource menandai keputusan sumber teks dokumen ini. Sekali
+// diputuskan, dipakai apa adanya saat dokumen dilanjutkan (resume) —
+// keputusan TIDAK dihitung ulang per halaman maupun antar-penjalanan.
+func (s *Store) SetTextSource(ctx context.Context, documentID int64, source string) error {
+	_, err := s.pool.Exec(ctx, `
+		UPDATE documents SET text_source = $2, updated_at = now() WHERE id = $1`,
+		documentID, source)
+	return err
 }
 
 func (s *Store) HasPage(ctx context.Context, documentID int64, page int) (bool, error) {

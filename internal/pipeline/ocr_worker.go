@@ -70,7 +70,7 @@ func drainOCR(ctx context.Context, deps Deps) (workedAny bool) {
 		if ctx.Err() != nil {
 			return workedAny
 		}
-		job, err := deps.Store.ClaimForOCR(ctx)
+		job, err := deps.Store.ClaimForOCR(ctx, deps.MaxPage)
 		if err == store.ErrNoWork {
 			return workedAny
 		}
@@ -111,6 +111,17 @@ type docSink struct {
 	// classified menandai bahwa pemeriksaan "ini peraturan atau bukan" sudah
 	// dijalankan untuk dokumen ini, sehingga tidak diulang tiap halaman.
 	classified bool
+
+	// tier (2026-07-24): "" (batang tubuh, wajib GLM-OCR) | "penjelasan" |
+	// "lampiran" — lihat OnPage di bawah dan internal/pipeline/tier.go.
+	// Naik satu arah saja: begitu "lampiran", tidak pernah turun lagi
+	// (LAMPIRAN selalu bagian PALING AKHIR dokumen).
+	tier string
+	// tierSwitch: true PERSIS pada panggilan OnPage yang MENAIKKAN tier
+	// untuk PERTAMA kalinya (dipakai sebagai alasan `stop=true` yang BUKAN
+	// penolakan dokumen — lihat processDocument/resolveTextSource, yang
+	// harus membedakannya dari sink.stopped).
+	tierSwitch bool
 
 	// debug menulis keluaran mode-debug (DEBUG_RESULT=true) — nil bila mode
 	// itu tidak aktif. Aman dipanggil methodnya meski nil (lihat debug_writer.go).
@@ -182,6 +193,37 @@ func (d *docSink) OnPage(ctx context.Context, r extractor.PageResult) (bool, err
 			return false, nil
 		}
 		return d.classify(ctx, r.Text)
+	}
+
+	// Deteksi tier hemat (2026-07-24, permintaan user): begitu SATU halaman
+	// memuat awal blok LAMPIRAN atau PENJELASAN, halaman SELANJUTNYA
+	// diproses via jalur lebih murah (pdftotext -> Tesseract/GLM-OCR sesuai
+	// tier — lihat tier.go), bukan GLM-OCR penuh seperti batang tubuh.
+	// Berhenti DI SINI (stop=true) HANYA supaya Document() menyerahkan
+	// kendali ke processDocument/resolveTextSource — d.tierSwitch (bukan
+	// d.stopped) memberi tahu pemanggil ini BUKAN penolakan dokumen.
+	// Halaman r.Page ITU SENDIRI sudah tersimpan lewat GLM-OCR biasa di
+	// atas — perubahan tier baru berlaku dari halaman SETELAHNYA.
+	//
+	// CATATAN keterbatasan yang disengaja: bila anchor ini kebetulan muncul
+	// pada probe resolveTextSource (halaman 1-2), stop=true di sana
+	// diperlakukan sebagai "lanjutkan probe seperti biasa" (lihat
+	// resolveTextSource) — d.tier tetap tersimpan untuk dipakai nanti, TAPI
+	// jalur OCR utama (ex.Document tanpa MaxPage) tidak mengecek d.tier di
+	// awal, hanya bereaksi saat anchor MUNCUL LAGI. Kasus ini secara
+	// praktis mustahil (Penjelasan/Lampiran tidak pernah ada di halaman
+	// 1-2 dokumen legal sungguhan), jadi sengaja tidak ditangani lebih jauh.
+	if d.deps.CheapTier && d.tier != "lampiran" {
+		switch {
+		case parser.HasLampiranAnchor(r.Text):
+			d.tier = "lampiran"
+			d.tierSwitch = true
+			return true, nil
+		case d.tier == "" && parser.HasPenjelasanAnchor(r.Text):
+			d.tier = "penjelasan"
+			d.tierSwitch = true
+			return true, nil
+		}
 	}
 	return false, nil
 }
@@ -390,6 +432,18 @@ func gabungPenetapan(pasti, model store.Penetapan) store.Penetapan {
 	}
 }
 
+// documentPageCount mengembalikan jumlah halaman ASLI dokumen, diutamakan
+// dari documents.total_pages yang sudah dicatat SEKALI saat unduh (lihat
+// downloader_worker.go/MarkDownloaded) — jauh lebih murah daripada membuka
+// PDF-nya lagi. Jatuh ke extractor.PageCount HANYA bila belum tercatat
+// (dokumen dari sebelum fitur ini ada, atau penghitungan saat unduh gagal).
+func documentPageCount(ctx context.Context, deps Deps, job store.OCRJob) (int, error) {
+	if n, ok, err := deps.Store.GetTotalPages(ctx, job.ID); err == nil && ok {
+		return n, nil
+	}
+	return extractor.PageCount(job.PDFPath)
+}
+
 func processDocument(ctx context.Context, deps Deps, job store.OCRJob) {
 	sink := &docSink{deps: deps, docID: job.ID, prompts: deps.Prompts}
 	if deps.DebugResult {
@@ -413,13 +467,16 @@ func processDocument(ctx context.Context, deps Deps, job store.OCRJob) {
 	}
 	defer sink.debug.tutup()
 
-	// Jumlah halaman diambil lebih dulu supaya baris kemajuan sudah punya
-	// angka total sejak tahap melanjutkan, bukan menunggu halaman pertama
-	// diproses (yang membuat persentase tampil 0% terus). Angka ASLI ini
-	// juga dipakai untuk pemeriksaan MinPage di bawah — SEBELUM potongan
-	// MaxPage diterapkan di extractor.Document, karena MinPage menyoal
-	// keaslian dokumen (sampul-saja?), bukan versi yang sudah dipotong.
-	nAsli, perr := extractor.PageCount(job.PDFPath)
+	// Jumlah halaman: dibaca dari documents.total_pages (dicatat SEKALI saat
+	// unduh — lihat downloader_worker.go/MarkDownloaded), bukan dihitung
+	// ulang dengan membuka PDF lagi di sini. Jatuh ke extractor.PageCount
+	// HANYA sebagai jaga-jaga (dokumen dari sebelum fitur ini ada, atau
+	// penghitungan saat unduh gagal). Angka ASLI ini dipakai untuk
+	// pemeriksaan MinPage di bawah DAN diteruskan ke resolveTextSource —
+	// TIDAK ADA lagi pemotongan MaxPage di sini: dokumen yang lolos
+	// ClaimForOCR (sudah disaring di sana berdasar MAX_PAGE) selalu diproses
+	// UTUH sampai halaman terakhirnya.
+	nAsli, perr := documentPageCount(ctx, deps, job)
 	if perr == nil {
 		sink.total = nAsli
 	}
@@ -456,6 +513,25 @@ func processDocument(ctx context.Context, deps Deps, job store.OCRJob) {
 		return
 	}
 
+	// textcheck (2026-07-24): coba dulu halaman 1 (lalu 2) — bila lapisan
+	// teks PDF (`pdftotext`) terbukti sama-akurat dengan OCR, sisa dokumen
+	// dituntaskan lewat pdftotext (jauh lebih murah, TANPA batas MaxPage)
+	// dan fungsi ini SUDAH SELESAI menangani dokumennya. Lihat textsource.go.
+	handled, useOCR, terr := resolveTextSource(ctx, deps, sink, job, sink.total)
+	if terr != nil {
+		finishInterrupted(deps, job.ID, "menentukan sumber teks", terr)
+		return
+	}
+	if handled {
+		if sink.stopped != "" {
+			logx.Skip("dokumen dihentikan — %s", sink.stopped)
+		} else {
+			logx.OK("ocr selesai (pdftotext) · %d halaman", nAsli)
+		}
+		return
+	}
+	_ = useOCR // selalu true di titik ini — dijaga tetap eksplisit agar niatnya jelas dibaca.
+
 	// dpiPaksa: bila halaman 1 SUDAH diproses (dokumen ini dilanjutkan
 	// setelah terhenti di tengah jalan), pakai DPI yang sama untuk sisa
 	// halaman — jangan menghitung ulang skor ketajaman seolah halaman
@@ -471,13 +547,28 @@ func processDocument(ctx context.Context, deps Deps, job store.OCRJob) {
 		DPIPaksa:  dpiPaksa,
 		AutoCrop:  ocrAutoCrop,
 		OCRClient: deps.Vision, OCRMaxTokens: ocrMaxTokens,
-		MaxPage: deps.MaxPage,
+		// MaxPage sengaja TIDAK diisi (nol = tanpa batas): pemotongan
+		// per-dokumen sudah digantikan skema baru — dokumen yang
+		// KESELURUHAN halamannya melebihi MAX_PAGE tidak pernah sampai ke
+		// titik ini sama sekali (disaring di ClaimForOCR). Begitu sebuah
+		// dokumen diambil, ia SELALU diproses utuh sampai halaman terakhir.
 	}, sink)
 
 	total, stopped, err := ex.Document(ctx, job.PDFPath)
 	switch {
 	case err != nil:
 		finishInterrupted(deps, job.ID, "proses dokumen", err)
+	case stopped && sink.tierSwitch:
+		// BUKAN dokumen ditolak — cuma masuk tier hemat (PENJELASAN/
+		// LAMPIRAN, lihat OnPage). Halaman terakhir (sink.ocred) sudah
+		// tersimpan lewat GLM-OCR biasa; lanjutkan SISA halaman lewat
+		// tier.go, bukan GLM-OCR penuh.
+		lastPage := sink.ocred
+		if terr := runTieredMode(ctx, deps, sink, job, nAsli); terr != nil {
+			finishInterrupted(deps, job.ID, "tier hemat (penjelasan/lampiran)", terr)
+			return
+		}
+		logx.OK("ocr+perbaikan selesai (tier hemat sejak hal %d) · %d halaman", lastPage+1, nAsli)
 	case stopped:
 		// Status sudah disetel oleh classify (rejected/duplicate).
 		logx.Skip("dokumen dihentikan — %s", sink.stopped)

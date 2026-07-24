@@ -135,6 +135,18 @@ CREATE TABLE IF NOT EXISTS documents (
     -- menghindari join tiap kali UI hanya ingin daftar dokumen + status
     -- ringkasnya. Sumber kebenaran tetap parse_snapshots.status.
     parse_status      text,
+
+    -- text_source (2026-07-24): 'ocr' | 'pdftotext' — lihat
+    -- internal/pipeline (resolveTextSource) & internal/textcheck. Diputuskan
+    -- SEKALI per dokumen dari perbandingan halaman 1 (lalu 2 bila halaman 1
+    -- tak cocok) antara hasil OCR dan lapisan teks PDF (`pdftotext`). NULL
+    -- berarti belum diputuskan (dokumen belum sampai tahap OCR, atau fitur
+    -- ini nonaktif/pdftotext tak terpasang saat dokumen itu diproses).
+    -- 'pdftotext': SISA halaman dokumen diisi dari lapisan teks PDF, TANPA
+    -- model visi dan TANPA batas MAX_PAGE. 'ocr': dokumen diproses seperti
+    -- sebelum fitur ini ada (dibatasi MAX_PAGE bila diset).
+    text_source       text,
+
     created_at        timestamptz NOT NULL DEFAULT now(),
     updated_at        timestamptz NOT NULL DEFAULT now()
 );
@@ -142,6 +154,7 @@ CREATE TABLE IF NOT EXISTS documents (
 -- Untuk database yang sudah dibuat SEBELUM kolom parse_status ditambahkan
 -- (2026-07-24) — pola sama seperti kolom lain di atas, aman dijalankan ulang.
 ALTER TABLE documents ADD COLUMN IF NOT EXISTS parse_status text;
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS text_source text;
 
 CREATE INDEX IF NOT EXISTS idx_documents_status ON documents (status);
 CREATE INDEX IF NOT EXISTS idx_documents_parse_status ON documents (parse_status);

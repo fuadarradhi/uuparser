@@ -18,6 +18,7 @@ import (
 	"syscall"
 
 	"github.com/fuadarradhi/uuparser/internal/config"
+	"github.com/fuadarradhi/uuparser/internal/depcheck"
 	"github.com/fuadarradhi/uuparser/internal/localllm"
 	"github.com/fuadarradhi/uuparser/internal/logx"
 	"github.com/fuadarradhi/uuparser/internal/pipeline"
@@ -60,6 +61,13 @@ func run() int {
 		return 1
 	}
 	defer logx.Close()
+
+	// Dependensi opsional (pdftotext, tesseract, paket bahasanya) diperiksa
+	// SEKALI di awal, sebelum apa pun lain — supaya operator langsung tahu
+	// di log startup kalau TEXT_CHECK/CHEAP_TIER akan berjalan degradasi,
+	// bukan menebak belakangan dari peringatan yang baru muncul saat
+	// dokumen pertama diproses. Tidak fatal — lihat internal/depcheck.
+	depcheck.Run(cfg)
 
 	// Prompt dibaca dari disk saat start supaya dapat disunting tanpa
 	// membangun ulang binari; sidik jarinya ikut disimpan per halaman.
@@ -147,6 +155,8 @@ func run() int {
 		AmbangJelas: cfg.AmbangJelas, AmbangSedang: cfg.AmbangSedang,
 		LowMemory: cfg.LowMemory, Tahun: cfg.Tahun,
 		MaxPage: cfg.MaxPage, MinPage: cfg.MinPage,
+		TextCheck: cfg.TextCheck,
+		CheapTier: cfg.CheapTier, TesseractLang: cfg.TesseractLang,
 		DebugResult: cfg.DebugResult, DebugDir: cfg.DebugDir,
 	})
 	return 0

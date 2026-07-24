@@ -57,6 +57,13 @@ type Deps struct {
 	MaxPage int
 	MinPage int
 
+	// TextCheck: lihat config.Config.TextCheck.
+	TextCheck bool
+
+	// CheapTier/TesseractLang: lihat config.Config.CheapTier / TesseractLang.
+	CheapTier     bool
+	TesseractLang string
+
 	// DebugResult: lihat config.Config.DebugResult.
 	DebugResult bool
 	// DebugDir: lihat config.Config.DebugDir — folder TERPISAH dari

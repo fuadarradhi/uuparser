@@ -99,11 +99,15 @@ type Config struct {
 	OCRClient    *localllm.Client
 	OCRMaxTokens int
 
-	// MaxPage (2026-07-23), bila > 0, membatasi jumlah halaman yang BENAR-
-	// BENAR di-OCR/diurai untuk SATU dokumen — sisanya diabaikan seolah
-	// dokumen itu hanya sepanjang MaxPage halaman (lihat Document). 0 berarti
-	// tanpa batas. Permintaan eksplisit user untuk mempercepat iterasi debug
-	// parser lintas banyak peraturan.
+	// MaxPage membatasi jumlah halaman yang diproses PADA SATU PEMANGGILAN
+	// Document() ini saja — 0 berarti tanpa batas (sampai halaman terakhir
+	// dokumen). Primitif tingkat-rendah, BUKAN lagi terhubung ke pengaturan
+	// .env MAX_PAGE (konsep itu berubah 2026-07-24: sekarang jadi saringan
+	// ANTRIAN di store.ClaimForOCR, bukan pemotongan per-dokumen — lihat
+	// config.Config.MaxPage). Field ini sekarang HANYA dipakai
+	// pipeline.resolveTextSource untuk probe 1-2 halaman pertama saat
+	// memutuskan OCR-vs-pdftotext; jalur OCR normal selalu memanggil
+	// Document() dengan MaxPage=0 (utuh).
 	MaxPage int
 }
 
@@ -149,6 +153,31 @@ func PageCount(pdfPath string) (int, error) {
 	return doc.NumPages(), nil
 }
 
+// OCRSinglePage meng-OCR SATU halaman lewat model visi — jalur PERSIS sama
+// dengan yang dipakai Document() per halaman (termasuk retry-saat-kosong
+// dan pembersihan pengulangan degeneratif), TAPI tanpa harus memanggil
+// Document() untuk seluruh dokumen.
+//
+// Dipakai pipeline (2026-07-24) untuk fallback GLM-OCR per halaman DI LUAR
+// pemanggilan Document() penuh — mis. halaman LAMPIRAN yang lapisan teks
+// PDF-nya gagal, lihat internal/pipeline/tier.go.
+//
+// Config.DPIPaksa WAJIB diisi pemanggil (biasanya dari DPI halaman 1 yang
+// sudah tersimpan — lihat store.DPIPage1) supaya halaman ini konsisten
+// dengan halaman lain dokumen yang sama, bukan menjalani probe ketajaman
+// sendiri seolah ia "halaman pertama". Config.Sink (diisi lewat New) tetap
+// dipakai untuk baris kemajuan (OnProgress) selama panggilan model
+// berlangsung — boleh berupa sink yang sama dipakai Document(), OnPage/
+// HasPage-nya TIDAK disentuh oleh method ini.
+func (e *Extractor) OCRSinglePage(ctx context.Context, pdfPath string, pageNum, total int) (PageResult, error) {
+	doc, err := raster.Open(pdfPath)
+	if err != nil {
+		return PageResult{}, fmt.Errorf("rasterisasi: %w", err)
+	}
+	defer doc.Close()
+	return e.ocrPage(ctx, doc, pageNum, total)
+}
+
 // Document memproses satu PDF halaman demi halaman. Mengembalikan jumlah
 // halaman dokumen dan apakah proses dihentikan lebih awal oleh PageSink.
 func (e *Extractor) Document(ctx context.Context, pdfPath string) (totalPages int, stopped bool, err error) {
@@ -163,13 +192,14 @@ func (e *Extractor) Document(ctx context.Context, pdfPath string) (totalPages in
 		return 0, false, fmt.Errorf("pdf tanpa halaman")
 	}
 
-	// MaxPage: potong seolah dokumen ini hanya sepanjang itu — sisanya
-	// diabaikan SEPENUHNYA (bukan di-render sama sekali), sehingga baris
-	// kemajuan, jumlah halaman tersimpan (documents.total_pages), dan hasil
-	// urai parser semuanya konsisten memperlakukan potongan ini sebagai
-	// "seluruh" dokumen. Lihat Config.MaxPage.
+	// MaxPage: batasi PEMANGGILAN INI ke n halaman pertama — primitif
+	// generik (lihat Config.MaxPage), dipakai pipeline.resolveTextSource
+	// untuk probe 1-2 halaman. TIDAK di-log di sini (probe berjalan untuk
+	// SETIAP dokumen, jadi logging di titik ini hanya akan membanjiri
+	// konsol tanpa arti bagi pemakai) — pemanggil yang tahu KONTEKS
+	// pemanggilannya (probe vs. jalur normal) bertanggung jawab melapor
+	// bila memang perlu.
 	if e.cfg.MaxPage > 0 && n > e.cfg.MaxPage {
-		logx.Info("dokumen %d halaman, dibatasi MAX_PAGE=%d — sisanya diabaikan", n, e.cfg.MaxPage)
 		n = e.cfg.MaxPage
 	}
 
@@ -296,7 +326,11 @@ func (e *Extractor) ocrPage(ctx context.Context, doc *raster.Doc, pageNum, total
 	// DPI TAMPIL DI KONSOL (permintaan user, 2026-07-22) — sebelumnya cuma
 	// masuk log/info.log. Dimensi & DPI sama-sama berguna dipantau langsung
 	// selagi proses jalan, bukan cuma ditinjau belakangan dari berkas log.
-	dims := fmt.Sprintf("DPI %d · %dx%d px", dpiPakai, pg.W, pg.H)
+	//
+	// Awalan "GLM" (permintaan user, 2026-07-24): supaya di konsol langsung
+	// kelihatan mesin mana yang SEDANG aktif untuk halaman ini —
+	// dibandingkan dengan "Tesseract" dan "PDF2Text" (tier.go/textsource.go).
+	dims := fmt.Sprintf("GLM · DPI %d · %dx%d px", dpiPakai, pg.W, pg.H)
 	params := localllm.Params{
 		MaxTokens: maxTokens,
 		OnStage: func(stage string) {

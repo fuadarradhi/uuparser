@@ -180,13 +180,23 @@ type Config struct {
 	// saringan sama sekali) dokumen tanpa tahun boleh masuk.
 	Tahun TahunFilter
 
-	// MaxPage (2026-07-23): batas jumlah halaman yang BENAR-BENAR di-OCR
-	// dan diurai per dokumen — sisanya diabaikan begitu saja, seolah
-	// dokumen itu hanya sepanjang MaxPage halaman. SENGAJA dibuat sebagai
-	// pengaturan sementara khusus masa debug: permintaan eksplisit user,
-	// supaya satu peraturan yang tebal tidak menyita seluruh waktu uji coba
-	// sampai peraturan lain tak sempat diperiksa. 0 berarti TANPA batas
-	// (matikan sepenuhnya setelah masa debug selesai). Bawaan: 5.
+	// MaxPage (konsep diubah 2026-07-24 — SEBELUMNYA memotong tiap dokumen
+	// jadi hanya MaxPage halaman pertama; SEKARANG sebuah SARINGAN
+	// ANTRIAN): dokumen yang jumlah halaman ASLINYA (documents.total_pages,
+	// dicatat sekali saat unduh) melebihi MaxPage TIDAK PERNAH diambil untuk
+	// OCR sama sekali selama MaxPage masih berlaku — bukan diproses
+	// sebagian. Begitu sebuah dokumen lolos dan diambil, ia SELALU diproses
+	// utuh sampai halaman terakhir (lihat store.ClaimForOCR).
+	//
+	// Antrian juga diurutkan berdasar total_pages MENAIK (dokumen PENDEK
+	// duluan) — permintaan eksplisit user supaya iterasi uji parser tidak
+	// tersandera satu peraturan tebal.
+	//
+	// Dokumen dengan total_pages belum diketahui (NULL — penghitungan saat
+	// unduh gagal) TETAP diambil seperti biasa, tidak ikut disaring.
+	//
+	// SENGAJA masih pengaturan sementara khusus masa debug: 0 berarti TANPA
+	// saringan sama sekali (matikan setelah masa debug selesai). Bawaan: 5.
 	MaxPage int
 
 	// MinPage (2026-07-23): dokumen dengan jumlah halaman ASLI (sebelum
@@ -197,6 +207,41 @@ type Config struct {
 	// Judul+Menimbang+Mengingat+Memutuskan+batang tubuh+penutup, yang hampir
 	// tak mungkin muat 1 halaman). 0 berarti TANPA batas minimum. Bawaan: 2.
 	MinPage int
+
+	// TextCheck (2026-07-24): sebelum OCR penuh, coba dulu halaman 1 (lalu 2
+	// bila 1 tak cocok) — bandingkan hasil OCR dengan lapisan teks PDF
+	// (`pdftotext`, poppler-utils) untuk halaman yang sama (lihat
+	// internal/textcheck). Cocok -> SISA dokumen diisi dari pdftotext, jauh
+	// lebih murah (tanpa model visi sama sekali) DAN TANPA batas MaxPage
+	// (poppler tidak dibatasi MAX_PAGE, beda dari mode OCR). Tidak cocok di
+	// kedua halaman -> OCR biasa seperti sebelum fitur ini ada (dibatasi
+	// MaxPage bila diset).
+	//
+	// Otomatis nonaktif (walau TEXT_CHECK=true) bila biner pdftotext tidak
+	// ditemukan di PATH — lihat textcheck.Available(). Bawaan: true.
+	TextCheck bool
+
+	// CheapTier (2026-07-24): begitu suatu halaman terdeteksi memuat awal
+	// blok PENJELASAN atau LAMPIRAN (lihat parser.HasPenjelasanAnchor/
+	// HasLampiranAnchor), halaman-halaman SELANJUTNYA tidak lagi wajib
+	// lewat model visi (GLM-OCR) — coba pdftotext dulu, baru Tesseract
+	// (tier "penjelasan") atau GLM-OCR (tier "lampiran", karena sering
+	// berisi tabel/peta yang tetap butuh model visi) — lihat
+	// internal/pipeline/tier.go. Permintaan user: data di bagian ini
+	// sekunder, boleh lebih murah daripada batang tubuh.
+	//
+	// Butuh TEXT_CHECK juga aktif secara EFEKTIF (pdftotext terpasang) agar
+	// bermanfaat penuh; tanpa tesseract terpasang, tier "penjelasan" jatuh
+	// ke GLM-OCR sebagai jaring pengaman (bukan kehilangan data). Bawaan:
+	// true.
+	CheapTier bool
+
+	// TesseractLang: kode bahasa untuk `tesseract -l <kode>` (lihat
+	// internal/textcheck.RunTesseract). PASTIKAN paket bahasa yang sesuai
+	// terpasang (mis. tesseract-ocr-ind untuk "ind") — traineddata "eng"
+	// bawaan akan mengacak-acak istilah/imbuhan bahasa Indonesia. Bawaan:
+	// "ind".
+	TesseractLang string
 
 	// DebugResult (2026-07-22): saat true, tiap dokumen menulis
 	// <DebugDir>/<id>/ocr.txt + thinking.txt (jika ada panggilan model) +
@@ -259,19 +304,22 @@ func Load(path string) (Config, error) {
 		LibPath:      get("LIB_PATH", filepath.Join(cwd, "libs")),
 		Verbose:      boolean(get("VERBOSE", "false")),
 
-		PromptDir:    get("PROMPT_DIR", filepath.Join(cwd, "prompts")),
-		ChatTemplate: get("CHAT_TEMPLATE", ""),
-		LowMemory:    boolean(get("LOW_MEMORY", "false")),
-		DPIJelas:     num(get("DPI_JELAS", "100"), 100),
-		DPISedang:    num(get("DPI_SEDANG", "150"), 150),
-		DPIBlur:      num(get("DPI_BLUR", "200"), 200),
-		AmbangJelas:  floatNum(get("BLUR_AMBANG_JELAS", "5e8"), 5e8),
-		AmbangSedang: floatNum(get("BLUR_AMBANG_SEDANG", "5e7"), 5e7),
-		Tahun:        parseTahunFilter(get("TAHUN", "")),
-		MaxPage:      pageLimitNum(get("MAX_PAGE", "5"), 5),
-		MinPage:      pageLimitNum(get("MIN_PAGE", "2"), 2),
-		DebugResult:  boolean(get("DEBUG_RESULT", "false")),
-		DebugDir:     get("DEBUG_DIR", "debug"),
+		PromptDir:     get("PROMPT_DIR", filepath.Join(cwd, "prompts")),
+		ChatTemplate:  get("CHAT_TEMPLATE", ""),
+		LowMemory:     boolean(get("LOW_MEMORY", "false")),
+		DPIJelas:      num(get("DPI_JELAS", "100"), 100),
+		DPISedang:     num(get("DPI_SEDANG", "150"), 150),
+		DPIBlur:       num(get("DPI_BLUR", "200"), 200),
+		AmbangJelas:   floatNum(get("BLUR_AMBANG_JELAS", "5e8"), 5e8),
+		AmbangSedang:  floatNum(get("BLUR_AMBANG_SEDANG", "5e7"), 5e7),
+		Tahun:         parseTahunFilter(get("TAHUN", "")),
+		MaxPage:       pageLimitNum(get("MAX_PAGE", "5"), 5),
+		MinPage:       pageLimitNum(get("MIN_PAGE", "2"), 2),
+		TextCheck:     boolean(get("TEXT_CHECK", "true")),
+		CheapTier:     boolean(get("CHEAP_TIER", "true")),
+		TesseractLang: get("TESSERACT_LANG", "ind"),
+		DebugResult:   boolean(get("DEBUG_RESULT", "false")),
+		DebugDir:      get("DEBUG_DIR", "debug"),
 
 		LogDir: get("LOG_DIR", filepath.Join(cwd, "log")),
 	}

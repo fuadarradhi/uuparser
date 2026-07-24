@@ -114,6 +114,26 @@ func HasKonsideransAnchor(text string) bool {
 	return hasDiktumAnchor(stitch([]string{text}))
 }
 
+// HasPenjelasanAnchor melaporkan apakah teks memuat baris awal blok
+// PENJELASAN (rePenjelasan — sama persis dipakai segmentize untuk memotong
+// batang tubuh). Diekspor (2026-07-24) untuk dipakai pipeline
+// (internal/pipeline/ocr_worker.go) mendeteksi, PER HALAMAN selagi OCR
+// masih berjalan, kapan dokumen memasuki bagian penjelasan resmi — data
+// sekunder yang boleh memakai jalur OCR lebih murah (pdftotext/Tesseract)
+// daripada model visi penuh.
+func HasPenjelasanAnchor(text string) bool {
+	return rePenjelasan.MatchString(text)
+}
+
+// HasLampiranAnchor melaporkan apakah teks memuat baris awal blok LAMPIRAN
+// (reLampiran). Pemakaian sama seperti HasPenjelasanAnchor, TAPI beda
+// keputusan hilir: LAMPIRAN sering berisi tabel/peta/struktur organisasi
+// yang butuh model visi, jadi pipeline tetap memakai GLM-OCR untuk tier
+// ini (hanya Tesseract yang dilewati, bukan model visi-nya).
+func HasLampiranAnchor(text string) bool {
+	return reLampiran.MatchString(text)
+}
+
 // LooksLegal melaporkan apakah teks (gabungan beberapa halaman OCR) sudah
 // menunjukkan ciri dokumen perundang-undangan. Dipakai sebagai gate awal saat
 // ekstraksi: bila beberapa halaman pertama tidak menunjukkan ciri apa pun, OCR

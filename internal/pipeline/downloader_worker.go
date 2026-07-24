@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/fuadarradhi/uuparser/internal/downloader"
+	"github.com/fuadarradhi/uuparser/internal/extractor"
 	"github.com/fuadarradhi/uuparser/internal/fsutil"
 	"github.com/fuadarradhi/uuparser/internal/logx"
 	"github.com/fuadarradhi/uuparser/internal/store"
@@ -158,7 +159,22 @@ func processOneDownload(ctx context.Context, deps Deps, job store.DownloadJob) {
 		return
 	}
 
-	dup, err := deps.Store.MarkDownloaded(ctx, job.ID, dest, sha, int64(len(body)))
+	// Jumlah halaman dihitung SEKALI di sini (2026-07-24, konsep baru
+	// menggantikan pemotongan per-halaman saat OCR) — dipakai belakangan
+	// oleh ClaimForOCR untuk menyaring & mengurutkan antrian berdasar
+	// MAX_PAGE, tanpa perlu membuka berkas PDF lagi tiap kali dokumen itu
+	// diklaim/dilanjutkan. Kegagalan di sini (PDF rusak, dst) TIDAK
+	// menggagalkan unduhan — disimpan sebagai NULL, dan tetap lolos saringan
+	// ClaimForOCR (lihat komentar di sana); galat aslinya akan tetap
+	// tertangkap normal saat tahap OCR membuka berkasnya.
+	var totalPages *int
+	if n, perr := extractor.PageCount(dest); perr != nil {
+		logx.Warn("downloader: %s: hitung jumlah halaman gagal: %v", job.DownloadURL, perr)
+	} else {
+		totalPages = &n
+	}
+
+	dup, err := deps.Store.MarkDownloaded(ctx, job.ID, dest, sha, int64(len(body)), totalPages)
 	if err != nil {
 		logx.Warn("downloader: tandai selesai: %v", err)
 		return
